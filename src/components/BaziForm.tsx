@@ -202,7 +202,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   };
 
   const renderCommonSelects = () => (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       <div className="space-y-1">
         <Label className="text-xs">性别</Label>
         <Select value={String(gender)} onValueChange={(v) => setGender(Number(v) as 0 | 1)}>
@@ -228,7 +228,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         </Select>
       </div>
       {mode !== 'bazi' ? (
-        <div className="space-y-1">
+        <div className="space-y-1 col-span-2 sm:col-span-1">
           <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
             <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
               className="w-3 h-3 rounded border-gold/30 accent-[var(--color-crimson)]" />
