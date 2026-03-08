@@ -30,7 +30,7 @@ export default function PillarCard({ pillar, label, isDayMaster, index }: Pillar
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className={cn(
-        'relative rounded-xl border overflow-hidden',
+        'relative rounded-xl border overflow-hidden h-full',
         isDayMaster
           ? 'border-gold shadow-lg shadow-gold/10 dark:shadow-gold/20'
           : 'border-gold/20',
