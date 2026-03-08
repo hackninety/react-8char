@@ -1,73 +1,72 @@
-# React + TypeScript + Vite
+# 八字排盘 (BaZi PaiPan)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+基于 React + TypeScript 的现代八字排盘工具，采用渊海子平体系，提供完整的四柱八字排盘、大运流年流月流日流时分析、JSON 导出等功能。
 
-Currently, two official plugins are available:
+## 技术栈
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **框架**: Vite + React 18 + TypeScript
+- **UI**: Tailwind CSS + shadcn/ui + lucide-react
+- **动画**: framer-motion
+- **排盘核心**: [mystilight-8char-v2](../mystilight-8char-v2) (fork 扩展版)
+- **通知**: react-hot-toast
 
-## React Compiler
+## 功能特性
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **四柱排盘** - 公历/农历/八字反查三种输入方式
+- **真太阳时** - 基于出生城市经度自动校正（80+ 城市，按省分组）
+- **五行力量** - 可视化进度条展示五行力量分布
+- **命盘要素** - 胎元、胎息、命宫、身宫
+- **渊海子平** - 身强、湿度、阴阳、月令、太岁分析
+- **命理分析** - 喜用神、日时分析、三命通会
+- **干支关系** - 天干关系、地支关系（合冲刑害）
+- **大运流年** - 五级联动：大运 → 流年 → 流月 → 流日 → 流时
+- **JSON 导出** - 压缩格式，含渊海子平/分派元信息，可直接喂 AI 分析
+- **AI Prompt** - 一键生成 AI 分析专用提示词
+- **响应式** - 移动端适配
+- **暗色模式** - 支持明暗主题切换
 
-## Expanding the ESLint configuration
+## 开发
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# 安装依赖
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# 启动开发服务器
+npm run dev
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# 构建生产版本
+npm run build
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 预览生产构建
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 项目结构
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+  main.tsx              # 入口
+  App.tsx               # 主组件（主题、状态管理）
+  lib/
+    bazi.ts             # 排盘逻辑（调用 mystilight-8char-v2）
+    cities.ts           # 城市列表（80+ 城市，按省分组）
+    utils.ts            # 工具函数（五行颜色、十神颜色等）
+    prompt-template.ts  # AI 提示词模板
+  components/
+    BaziForm.tsx        # 输入表单（公历/农历/八字反查）
+    BaziChart.tsx       # 排盘结果总布局
+    PillarCard.tsx      # 四柱卡片
+    WuXingChart.tsx     # 五行力量图
+    ShenShaList.tsx     # 命盘要素/渊海子平/命理分析/干支关系
+    DaYunTimeline.tsx   # 大运·流年·流月·流日·流时
+    JsonExport.tsx      # JSON 导出/复制/AI Prompt
+    ThemeToggle.tsx     # 主题切换
+```
+
+## 依赖说明
+
+本项目核心排盘计算依赖 `mystilight-8char-v2`（本地 file: 引用），该库是 [mystilight-8char](https://github.com/mystilight/mystilight-8char) 的 fork 扩展版本，在不修改原版代码的前提下新增了流月/流日/流时/十神计算等扩展 API。
+
+## 许可证
+
+MIT

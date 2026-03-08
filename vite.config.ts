@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "mystilight-8char-v2": path.resolve(__dirname, "../mystilight-8char-v2/src/v2/index.mjs"),
     },
   },
 })
