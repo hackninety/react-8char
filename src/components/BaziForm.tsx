@@ -202,8 +202,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   };
 
   const renderCommonSelects = () => (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="space-y-1 w-[88px]">
+    <div className="grid grid-cols-3 gap-3">
+      <div className="space-y-1">
         <Label className="text-xs">性别</Label>
         <Select value={String(gender)} onValueChange={(v) => setGender(Number(v) as 0 | 1)}>
           <SelectTrigger className="border-gold/20 h-8 text-xs">
@@ -215,7 +215,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1 w-[80px]">
+      <div className="space-y-1">
         <Label className="text-xs">分派</Label>
         <Select value={String(sect)} onValueChange={(v) => setSect(Number(v) as 1 | 2)}>
           <SelectTrigger className="border-gold/20 h-8 text-xs">
@@ -227,17 +227,18 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </SelectContent>
         </Select>
       </div>
-      {mode !== 'bazi' && (
-        <>
-          <label className="flex items-center gap-1 h-8 cursor-pointer select-none shrink-0">
+      {mode !== 'bazi' ? (
+        <div className="space-y-1">
+          <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
             <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
               className="w-3 h-3 rounded border-gold/30 accent-[var(--color-crimson)]" />
             <MapPin className="w-3 h-3 text-muted-foreground" />
+            <span className="text-muted-foreground">真太阳时</span>
           </label>
-          {useTrueSolar && (
-            <>
+          {useTrueSolar ? (
+            <div className="flex gap-1">
               <Select value={province} onValueChange={(v) => v && handleProvinceChange(v)}>
-                <SelectTrigger className="border-gold/20 h-8 text-xs w-[72px]">
+                <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
                   <SelectValue>{province}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -247,7 +248,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                 </SelectContent>
               </Select>
               <Select value={cityName} onValueChange={(v) => v && handleCityNameChange(v)}>
-                <SelectTrigger className="border-gold/20 h-8 text-xs w-[80px]">
+                <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
                   <SelectValue>{cityName}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -257,7 +258,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                 </SelectContent>
               </Select>
               <Select value={district} onValueChange={(v) => v && setDistrict(v)}>
-                <SelectTrigger className="border-gold/20 h-8 text-xs w-[80px]">
+                <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
                   <SelectValue>{district}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -266,9 +267,15 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-            </>
+            </div>
+          ) : (
+            <div className="h-8 flex items-center text-xs text-muted-foreground/50 border border-dashed border-gold/10 rounded-md px-2">
+              不校正（北京时间）
+            </div>
           )}
-        </>
+        </div>
+      ) : (
+        <div />
       )}
     </div>
   );
