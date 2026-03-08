@@ -35,12 +35,12 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const currentYear = new Date().getFullYear();
   const [mode, setMode] = useState<InputMode>('solar');
 
-  // 公历 / 农历 共用
-  const [year, setYear] = useState(1990);
-  const [month, setMonth] = useState(5);
-  const [day, setDay] = useState(15);
-  const [hour, setHour] = useState(14);
-  const [minute, setMinute] = useState(30);
+  // 公历 / 农历 共用（string 类型以支持清空）
+  const [yearStr, setYearStr] = useState('1990');
+  const [monthStr, setMonthStr] = useState('5');
+  const [dayStr, setDayStr] = useState('15');
+  const [hourStr, setHourStr] = useState('14');
+  const [minuteStr, setMinuteStr] = useState('30');
   const [isLeapMonth, setIsLeapMonth] = useState(false);
 
   // 共用
@@ -50,6 +50,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [province, setProvince] = useState('北京');
   const [cityName, setCityName] = useState('北京');
   const [district, setDistrict] = useState(PROVINCES[0].cities[0].districts[0].name);
+  const [livingPlace, setLivingPlace] = useState('');
+  const [userNote, setUserNote] = useState('');
 
   // 八字反查 — 8 个独立天干地支
   const [yearGan, setYearGan] = useState('');
@@ -65,10 +67,40 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let solarYear = year, solarMonth = month, solarDay = day, solarHour = hour, solarMinute = minute;
+    setLookupError('');
+
+    const fields = [
+      { label: '年', raw: yearStr },
+      { label: '月', raw: monthStr },
+      { label: '日', raw: dayStr },
+      { label: '时', raw: hourStr },
+      { label: '分', raw: minuteStr },
+    ];
+    for (const f of fields) {
+      if (f.raw.trim() === '' || isNaN(Number(f.raw))) {
+        setLookupError(`请填写完整的出生时间（${f.label}不能为空且须为数字）`);
+        return;
+      }
+    }
+
+    let solarYear = Number(yearStr);
+    let solarMonth = Number(monthStr);
+    let solarDay = Number(dayStr);
+    let solarHour = Number(hourStr);
+    let solarMinute = Number(minuteStr);
+
+    if (solarYear < 1900 || solarYear > currentYear) {
+      setLookupError(`年份须在 1900 ~ ${currentYear} 之间`);
+      return;
+    }
+    if (solarMonth < 1 || solarMonth > 12) { setLookupError('月份须在 1 ~ 12 之间'); return; }
+    if (solarDay < 1 || solarDay > 31) { setLookupError('日期须在 1 ~ 31 之间'); return; }
+    if (solarHour < 0 || solarHour > 23) { setLookupError('小时须在 0 ~ 23 之间'); return; }
+    if (solarMinute < 0 || solarMinute > 59) { setLookupError('分钟须在 0 ~ 59 之间'); return; }
+
     if (mode === 'lunar') {
       try {
-        const solar = lunarToSolar(year, month, day, hour, minute, isLeapMonth);
+        const solar = lunarToSolar(solarYear, solarMonth, solarDay, solarHour, solarMinute, isLeapMonth);
         solarYear = solar.year;
         solarMonth = solar.month;
         solarDay = solar.day;
@@ -86,6 +118,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       gender, sect,
       city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
       longitude: lng,
+      livingPlace: livingPlace.trim() || undefined,
+      userNote: userNote.trim() || undefined,
     });
   };
 
@@ -120,6 +154,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       gender, sect,
       city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
       longitude: lng,
+      livingPlace: livingPlace.trim() || undefined,
+      userNote: userNote.trim() || undefined,
     });
   };
 
@@ -127,28 +163,28 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
       <div className="space-y-1.5">
         <Label htmlFor="year" className="text-xs">{mode === 'lunar' ? '农历年' : '年'}</Label>
-        <Input id="year" type="number" min={1900} max={currentYear} value={year}
-          onChange={(e) => setYear(Number(e.target.value))} className="border-gold/20 focus:border-gold/50" />
+        <Input id="year" type="text" inputMode="numeric" placeholder="1990" value={yearStr}
+          onChange={(e) => setYearStr(e.target.value)} className="border-gold/20 focus:border-gold/50" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="month" className="text-xs">{mode === 'lunar' ? '农历月' : '月'}</Label>
-        <Input id="month" type="number" min={1} max={12} value={month}
-          onChange={(e) => setMonth(Number(e.target.value))} className="border-gold/20 focus:border-gold/50" />
+        <Input id="month" type="text" inputMode="numeric" placeholder="5" value={monthStr}
+          onChange={(e) => setMonthStr(e.target.value)} className="border-gold/20 focus:border-gold/50" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="day" className="text-xs">{mode === 'lunar' ? '农历日' : '日'}</Label>
-        <Input id="day" type="number" min={1} max={31} value={day}
-          onChange={(e) => setDay(Number(e.target.value))} className="border-gold/20 focus:border-gold/50" />
+        <Input id="day" type="text" inputMode="numeric" placeholder="15" value={dayStr}
+          onChange={(e) => setDayStr(e.target.value)} className="border-gold/20 focus:border-gold/50" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="hour" className="text-xs">时</Label>
-        <Input id="hour" type="number" min={0} max={23} value={hour}
-          onChange={(e) => setHour(Number(e.target.value))} className="border-gold/20 focus:border-gold/50" />
+        <Input id="hour" type="text" inputMode="numeric" placeholder="14" value={hourStr}
+          onChange={(e) => setHourStr(e.target.value)} className="border-gold/20 focus:border-gold/50" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="minute" className="text-xs">分</Label>
-        <Input id="minute" type="number" min={0} max={59} value={minute}
-          onChange={(e) => setMinute(Number(e.target.value))} className="border-gold/20 focus:border-gold/50" />
+        <Input id="minute" type="text" inputMode="numeric" placeholder="30" value={minuteStr}
+          onChange={(e) => setMinuteStr(e.target.value)} className="border-gold/20 focus:border-gold/50" />
       </div>
     </div>
   );
@@ -202,8 +238,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   };
 
   const renderCommonSelects = () => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      <div className="space-y-1">
+    <div className="flex flex-wrap gap-3">
+      <div className="space-y-1 w-[calc(16.667%-8px)] min-w-[100px]">
         <Label className="text-xs">性别</Label>
         <Select value={String(gender)} onValueChange={(v) => setGender(Number(v) as 0 | 1)}>
           <SelectTrigger className="border-gold/20 h-8 text-xs">
@@ -215,7 +251,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1 w-[calc(16.667%-8px)] min-w-[100px]">
         <Label className="text-xs">分派</Label>
         <Select value={String(sect)} onValueChange={(v) => setSect(Number(v) as 1 | 2)}>
           <SelectTrigger className="border-gold/20 h-8 text-xs">
@@ -227,56 +263,64 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </SelectContent>
         </Select>
       </div>
-      {mode !== 'bazi' ? (
-        <div className="space-y-1 col-span-2 sm:col-span-1">
-          <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
-            <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
-              className="w-3 h-3 rounded border-gold/30 accent-[var(--color-crimson)]" />
-            <MapPin className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">真太阳时</span>
-          </label>
-          {useTrueSolar ? (
-            <div className="flex gap-1">
-              <Select value={province} onValueChange={(v) => v && handleProvinceChange(v)}>
-                <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
-                  <SelectValue>{province}</SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {PROVINCES.map(p => (
-                    <SelectItem key={p.name} value={p.name} className="text-xs">{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={cityName} onValueChange={(v) => v && handleCityNameChange(v)}>
-                <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
-                  <SelectValue>{cityName}</SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {cityList.map(ct => (
-                    <SelectItem key={ct.name} value={ct.name} className="text-xs">{ct.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={district} onValueChange={(v) => v && setDistrict(v)}>
-                <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
-                  <SelectValue>{district}</SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {districtList.map(d => (
-                    <SelectItem key={d.name} value={d.name} className="text-xs">{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div className="h-8 flex items-center text-xs text-muted-foreground/50 border border-dashed border-gold/10 rounded-md px-2">
-              不校正（北京时间）
-            </div>
-          )}
-        </div>
-      ) : (
-        <div />
-      )}
+      <div className="space-y-1 w-[calc(33.333%-8px)] min-w-[200px] flex-1">
+        <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
+          <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
+            className="w-3 h-3 rounded border-gold/30 accent-[var(--color-crimson)]" />
+          <MapPin className="w-3 h-3 text-muted-foreground" />
+          <span className="text-muted-foreground">真太阳时（出生地）</span>
+        </label>
+        {useTrueSolar ? (
+          <div className="flex gap-1">
+            <Select value={province} onValueChange={(v) => v && handleProvinceChange(v)}>
+              <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
+                <SelectValue>{province}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {PROVINCES.map(p => (
+                  <SelectItem key={p.name} value={p.name} className="text-xs">{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={cityName} onValueChange={(v) => v && handleCityNameChange(v)}>
+              <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
+                <SelectValue>{cityName}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {cityList.map(ct => (
+                  <SelectItem key={ct.name} value={ct.name} className="text-xs">{ct.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={district} onValueChange={(v) => v && setDistrict(v)}>
+              <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
+                <SelectValue>{district}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {districtList.map(d => (
+                  <SelectItem key={d.name} value={d.name} className="text-xs">{d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="h-8 flex items-center text-xs text-muted-foreground/50 border border-dashed border-gold/10 rounded-md px-2">
+            不校正（北京时间）
+          </div>
+        )}
+      </div>
+      <div className="space-y-1 w-[calc(33.333%-8px)] min-w-[200px] flex-1">
+        <Label className="text-xs">常居住地（影响 AI 对八字的分析参考）</Label>
+        <Input type="text" placeholder="如：上海" value={livingPlace}
+          onChange={(e) => setLivingPlace(e.target.value)}
+          className="border-gold/20 h-8 text-xs focus:border-gold/50" />
+      </div>
+      <div className="w-full space-y-1">
+        <Label className="text-xs">给 AI 的备注</Label>
+        <Input type="text" placeholder="有什么需要告诉 AI 的都可以写在这里，会随 JSON 一起导出" value={userNote}
+          onChange={(e) => setUserNote(e.target.value)}
+          className="border-gold/20 h-8 text-xs focus:border-gold/50" />
+      </div>
     </div>
   );
 

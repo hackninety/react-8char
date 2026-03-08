@@ -31,6 +31,8 @@ export interface BaziInput {
   sect: 1 | 2;
   city?: string;
   longitude?: number;
+  livingPlace?: string;
+  userNote?: string;
 }
 
 export type BaziResult = EightCharJSON;
@@ -102,7 +104,14 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
       gender: result.gender,
       sect: result.sect,
       city: input.city || undefined,
+      livingPlace: input.livingPlace || undefined,
     },
+    ...(() => {
+      const notes: string[] = [];
+      if (input.city || input.livingPlace) notes.push('请结合出生地与当前居住地的地理、气候因素进行八字分析');
+      if (input.userNote) notes.push(input.userNote);
+      return notes.length ? { aiNote: notes.join('；') } : {};
+    })(),
     solarTimeInfo: (result as any)._solarTimeInfo,
     pillars: result.pillars,
     taiYuan: result.taiYuan,
