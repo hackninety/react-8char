@@ -1,136 +1,273 @@
-export interface CityInfo {
+export interface DistrictInfo {
   name: string;
-  province: string;
   longitude: number;
 }
 
-export interface ProvinceGroup {
-  province: string;
-  cities: CityInfo[];
+export interface CityData {
+  name: string;
+  districts: DistrictInfo[];
 }
 
-const raw: CityInfo[] = [
-  // 直辖市
-  { name: '北京', province: '北京', longitude: 116.40 },
-  { name: '天津', province: '天津', longitude: 117.20 },
-  { name: '上海', province: '上海', longitude: 121.47 },
-  { name: '重庆', province: '重庆', longitude: 106.55 },
-  // 黑龙江
-  { name: '哈尔滨', province: '黑龙江', longitude: 126.63 },
-  { name: '齐齐哈尔', province: '黑龙江', longitude: 123.97 },
-  { name: '大庆', province: '黑龙江', longitude: 125.10 },
-  // 吉林
-  { name: '长春', province: '吉林', longitude: 125.32 },
-  { name: '吉林市', province: '吉林', longitude: 126.55 },
-  // 辽宁
-  { name: '沈阳', province: '辽宁', longitude: 123.43 },
-  { name: '大连', province: '辽宁', longitude: 121.62 },
-  { name: '鞍山', province: '辽宁', longitude: 122.99 },
-  // 内蒙古
-  { name: '呼和浩特', province: '内蒙古', longitude: 111.75 },
-  { name: '包头', province: '内蒙古', longitude: 109.84 },
-  // 河北
-  { name: '石家庄', province: '河北', longitude: 114.48 },
-  { name: '唐山', province: '河北', longitude: 118.18 },
-  { name: '保定', province: '河北', longitude: 115.46 },
-  // 山西
-  { name: '太原', province: '山西', longitude: 112.53 },
-  { name: '大同', province: '山西', longitude: 113.30 },
-  // 山东
-  { name: '济南', province: '山东', longitude: 117.00 },
-  { name: '青岛', province: '山东', longitude: 120.38 },
-  { name: '烟台', province: '山东', longitude: 121.39 },
-  { name: '潍坊', province: '山东', longitude: 119.16 },
-  // 河南
-  { name: '郑州', province: '河南', longitude: 113.62 },
-  { name: '洛阳', province: '河南', longitude: 112.45 },
-  { name: '开封', province: '河南', longitude: 114.35 },
-  // 陕西
-  { name: '西安', province: '陕西', longitude: 108.95 },
-  { name: '咸阳', province: '陕西', longitude: 108.71 },
-  { name: '宝鸡', province: '陕西', longitude: 107.14 },
-  // 甘肃
-  { name: '兰州', province: '甘肃', longitude: 103.73 },
-  { name: '天水', province: '甘肃', longitude: 105.72 },
-  // 宁夏
-  { name: '银川', province: '宁夏', longitude: 106.27 },
-  // 青海
-  { name: '西宁', province: '青海', longitude: 101.78 },
-  // 新疆
-  { name: '乌鲁木齐', province: '新疆', longitude: 87.68 },
-  { name: '喀什', province: '新疆', longitude: 75.99 },
-  // 西藏
-  { name: '拉萨', province: '西藏', longitude: 91.11 },
-  // 四川
-  { name: '成都', province: '四川', longitude: 104.06 },
-  { name: '绵阳', province: '四川', longitude: 104.73 },
-  { name: '宜宾', province: '四川', longitude: 104.63 },
-  // 贵州
-  { name: '贵阳', province: '贵州', longitude: 106.71 },
-  { name: '遵义', province: '贵州', longitude: 106.93 },
-  // 云南
-  { name: '昆明', province: '云南', longitude: 102.73 },
-  { name: '大理', province: '云南', longitude: 100.23 },
-  // 广西
-  { name: '南宁', province: '广西', longitude: 108.33 },
-  { name: '桂林', province: '广西', longitude: 110.29 },
-  { name: '柳州', province: '广西', longitude: 109.41 },
-  // 广东
-  { name: '广州', province: '广东', longitude: 113.23 },
-  { name: '深圳', province: '广东', longitude: 114.07 },
-  { name: '东莞', province: '广东', longitude: 113.75 },
-  { name: '佛山', province: '广东', longitude: 113.12 },
-  { name: '珠海', province: '广东', longitude: 113.58 },
-  // 海南
-  { name: '海口', province: '海南', longitude: 110.35 },
-  { name: '三亚', province: '海南', longitude: 109.51 },
-  // 湖北
-  { name: '武汉', province: '湖北', longitude: 114.31 },
-  { name: '宜昌', province: '湖北', longitude: 111.29 },
-  { name: '襄阳', province: '湖北', longitude: 112.14 },
-  // 湖南
-  { name: '长沙', province: '湖南', longitude: 112.97 },
-  { name: '株洲', province: '湖南', longitude: 113.13 },
-  { name: '衡阳', province: '湖南', longitude: 112.57 },
-  // 江苏
-  { name: '南京', province: '江苏', longitude: 118.78 },
-  { name: '苏州', province: '江苏', longitude: 120.62 },
-  { name: '无锡', province: '江苏', longitude: 120.30 },
-  { name: '常州', province: '江苏', longitude: 119.97 },
-  // 安徽
-  { name: '合肥', province: '安徽', longitude: 117.28 },
-  { name: '芜湖', province: '安徽', longitude: 118.38 },
-  // 浙江
-  { name: '杭州', province: '浙江', longitude: 120.15 },
-  { name: '宁波', province: '浙江', longitude: 121.55 },
-  { name: '温州', province: '浙江', longitude: 120.67 },
-  { name: '金华', province: '浙江', longitude: 119.65 },
-  // 福建
-  { name: '福州', province: '福建', longitude: 119.30 },
-  { name: '厦门', province: '福建', longitude: 118.10 },
-  { name: '泉州', province: '福建', longitude: 118.59 },
-  // 江西
-  { name: '南昌', province: '江西', longitude: 115.89 },
-  { name: '九江', province: '江西', longitude: 115.99 },
-  // 台湾
-  { name: '台北', province: '台湾', longitude: 121.57 },
-  { name: '高雄', province: '台湾', longitude: 120.31 },
-  // 香港 / 澳门
-  { name: '香港', province: '香港', longitude: 114.17 },
-  { name: '澳门', province: '澳门', longitude: 113.55 },
+export interface ProvinceData {
+  name: string;
+  cities: CityData[];
+}
+
+function c(name: string, districts: [string, number][]): CityData {
+  return { name, districts: districts.map(([n, lng]) => ({ name: n, longitude: lng })) };
+}
+
+function s(name: string, longitude: number): CityData {
+  return { name, districts: [{ name: '市区', longitude }] };
+}
+
+export const PROVINCES: ProvinceData[] = [
+  {
+    name: '北京',
+    cities: [c('北京', [
+      ['东城区', 116.42], ['西城区', 116.37], ['朝阳区', 116.49], ['海淀区', 116.31],
+      ['丰台区', 116.29], ['石景山区', 116.22], ['通州区', 116.66], ['顺义区', 116.65],
+      ['大兴区', 116.34], ['昌平区', 116.23], ['房山区', 116.14], ['门头沟区', 116.10],
+      ['怀柔区', 116.63], ['密云区', 116.84], ['延庆区', 115.97], ['平谷区', 117.12],
+    ])],
+  },
+  {
+    name: '天津',
+    cities: [c('天津', [
+      ['和平区', 117.21], ['河东区', 117.23], ['河西区', 117.22], ['南开区', 117.15],
+      ['河北区', 117.20], ['红桥区', 117.15], ['东丽区', 117.31], ['西青区', 117.01],
+      ['津南区', 117.36], ['北辰区', 117.13], ['武清区', 117.04], ['宝坻区', 117.31],
+      ['滨海新区', 117.71], ['宁河区', 117.83], ['静海区', 116.97], ['蓟州区', 117.41],
+    ])],
+  },
+  {
+    name: '上海',
+    cities: [c('上海', [
+      ['黄浦区', 121.49], ['徐汇区', 121.44], ['长宁区', 121.42], ['静安区', 121.46],
+      ['普陀区', 121.40], ['虹口区', 121.51], ['杨浦区', 121.53], ['浦东新区', 121.57],
+      ['闵行区', 121.38], ['宝山区', 121.49], ['嘉定区', 121.27], ['金山区', 121.34],
+      ['松江区', 121.23], ['青浦区', 121.12], ['奉贤区', 121.47], ['崇明区', 121.40],
+    ])],
+  },
+  {
+    name: '重庆',
+    cities: [c('重庆', [
+      ['渝中区', 106.57], ['江北区', 106.57], ['南岸区', 106.64], ['沙坪坝区', 106.46],
+      ['九龙坡区', 106.51], ['大渡口区', 106.48], ['渝北区', 106.63], ['巴南区', 106.54],
+      ['北碚区', 106.44], ['涪陵区', 107.39], ['万州区', 108.41], ['永川区', 105.93],
+    ])],
+  },
+  {
+    name: '黑龙江',
+    cities: [
+      s('哈尔滨', 126.63), s('齐齐哈尔', 123.97), s('大庆', 125.10),
+      s('牡丹江', 129.63), s('佳木斯', 130.36),
+    ],
+  },
+  {
+    name: '吉林',
+    cities: [
+      s('长春', 125.32), s('吉林市', 126.55), s('四平', 124.37), s('延吉', 129.51),
+    ],
+  },
+  {
+    name: '辽宁',
+    cities: [
+      s('沈阳', 123.43), s('大连', 121.62), s('鞍山', 122.99),
+      s('抚顺', 123.96), s('丹东', 124.38), s('锦州', 121.13), s('营口', 122.23),
+    ],
+  },
+  {
+    name: '内蒙古',
+    cities: [
+      s('呼和浩特', 111.75), s('包头', 109.84), s('赤峰', 118.96),
+      s('鄂尔多斯', 109.99), s('呼伦贝尔', 119.77),
+    ],
+  },
+  {
+    name: '河北',
+    cities: [
+      s('石家庄', 114.48), s('唐山', 118.18), s('保定', 115.46),
+      s('邯郸', 114.49), s('秦皇岛', 119.60), s('廊坊', 116.68), s('沧州', 116.86),
+    ],
+  },
+  {
+    name: '山西',
+    cities: [
+      s('太原', 112.53), s('大同', 113.30), s('临汾', 111.52), s('运城', 111.01),
+    ],
+  },
+  {
+    name: '山东',
+    cities: [
+      s('济南', 117.00), s('青岛', 120.38), s('烟台', 121.39), s('潍坊', 119.16),
+      s('淄博', 118.05), s('临沂', 118.36), s('济宁', 116.59), s('威海', 122.12),
+    ],
+  },
+  {
+    name: '河南',
+    cities: [
+      s('郑州', 113.62), s('洛阳', 112.45), s('开封', 114.35),
+      s('南阳', 112.53), s('新乡', 113.88), s('许昌', 113.85),
+    ],
+  },
+  {
+    name: '陕西',
+    cities: [
+      c('西安', [
+        ['新城区', 108.96], ['碑林区', 108.93], ['莲湖区', 108.94], ['灞桥区', 109.06],
+        ['未央区', 108.95], ['雁塔区', 108.95], ['长安区', 108.94],
+        ['临潼区', 109.21], ['高陵区', 109.09], ['鄠邑区', 108.61],
+      ]),
+      s('咸阳', 108.71), s('宝鸡', 107.14), s('渭南', 109.51), s('汉中', 107.03),
+    ],
+  },
+  {
+    name: '甘肃',
+    cities: [s('兰州', 103.73), s('天水', 105.72), s('酒泉', 98.51)],
+  },
+  { name: '宁夏', cities: [s('银川', 106.27), s('固原', 106.28)] },
+  { name: '青海', cities: [s('西宁', 101.78), s('格尔木', 94.90)] },
+  {
+    name: '新疆',
+    cities: [
+      s('乌鲁木齐', 87.68), s('喀什', 75.99), s('伊宁', 81.33),
+      s('库尔勒', 86.15), s('克拉玛依', 84.87),
+    ],
+  },
+  { name: '西藏', cities: [s('拉萨', 91.11), s('日喀则', 88.88)] },
+  {
+    name: '四川',
+    cities: [
+      c('成都', [
+        ['锦江区', 104.08], ['青羊区', 104.06], ['金牛区', 104.05], ['武侯区', 104.04],
+        ['成华区', 104.10], ['龙泉驿区', 104.27], ['青白江区', 104.25], ['新都区', 104.16],
+        ['温江区', 103.85], ['双流区', 103.92], ['郫都区', 103.88],
+      ]),
+      s('绵阳', 104.73), s('宜宾', 104.63), s('南充', 106.11), s('德阳', 104.40),
+    ],
+  },
+  {
+    name: '贵州',
+    cities: [s('贵阳', 106.71), s('遵义', 106.93), s('六盘水', 104.83)],
+  },
+  {
+    name: '云南',
+    cities: [s('昆明', 102.73), s('大理', 100.23), s('丽江', 100.23), s('曲靖', 103.80)],
+  },
+  {
+    name: '广西',
+    cities: [
+      s('南宁', 108.33), s('桂林', 110.29), s('柳州', 109.41),
+      s('北海', 109.12), s('玉林', 110.18),
+    ],
+  },
+  {
+    name: '广东',
+    cities: [
+      c('广州', [
+        ['越秀区', 113.27], ['海珠区', 113.26], ['荔湾区', 113.24], ['天河区', 113.36],
+        ['白云区', 113.27], ['黄埔区', 113.46], ['番禺区', 113.38], ['花都区', 113.22],
+        ['南沙区', 113.53], ['从化区', 113.59], ['增城区', 113.81],
+      ]),
+      c('深圳', [
+        ['福田区', 114.06], ['罗湖区', 114.13], ['南山区', 113.93], ['盐田区', 114.24],
+        ['宝安区', 113.88], ['龙岗区', 114.25], ['龙华区', 114.04],
+        ['坪山区', 114.35], ['光明区', 113.94],
+      ]),
+      s('东莞', 113.75), s('佛山', 113.12), s('珠海', 113.58),
+      s('中山', 113.38), s('惠州', 114.42), s('汕头', 116.68), s('江门', 113.08),
+    ],
+  },
+  {
+    name: '海南',
+    cities: [s('海口', 110.35), s('三亚', 109.51), s('儋州', 109.58)],
+  },
+  {
+    name: '湖北',
+    cities: [
+      c('武汉', [
+        ['江岸区', 114.31], ['江汉区', 114.27], ['硚口区', 114.26], ['汉阳区', 114.27],
+        ['武昌区', 114.36], ['青山区', 114.39], ['洪山区', 114.40],
+        ['东西湖区', 114.14], ['蔡甸区', 114.03], ['江夏区', 114.31],
+      ]),
+      s('宜昌', 111.29), s('襄阳', 112.14), s('荆州', 112.24), s('十堰', 110.80),
+    ],
+  },
+  {
+    name: '湖南',
+    cities: [
+      c('长沙', [
+        ['芙蓉区', 113.03], ['天心区', 112.99], ['岳麓区', 112.93],
+        ['开福区', 112.99], ['雨花区', 113.04], ['望城区', 112.83],
+      ]),
+      s('株洲', 113.13), s('衡阳', 112.57), s('湘潭', 112.95), s('常德', 111.70),
+    ],
+  },
+  {
+    name: '江苏',
+    cities: [
+      c('南京', [
+        ['玄武区', 118.80], ['秦淮区', 118.79], ['建邺区', 118.73], ['鼓楼区', 118.77],
+        ['栖霞区', 118.91], ['雨花台区', 118.78], ['江宁区', 118.84],
+        ['浦口区', 118.63], ['六合区', 118.85],
+      ]),
+      s('苏州', 120.62), s('无锡', 120.30), s('常州', 119.97),
+      s('南通', 120.86), s('徐州', 117.18), s('扬州', 119.42), s('盐城', 120.14),
+    ],
+  },
+  {
+    name: '安徽',
+    cities: [
+      s('合肥', 117.28), s('芜湖', 118.38), s('蚌埠', 117.36), s('阜阳', 115.82),
+    ],
+  },
+  {
+    name: '浙江',
+    cities: [
+      c('杭州', [
+        ['上城区', 120.17], ['拱墅区', 120.14], ['西湖区', 120.13], ['滨江区', 120.21],
+        ['萧山区', 120.26], ['余杭区', 120.00], ['临平区', 120.30],
+        ['富阳区', 119.96], ['临安区', 119.72],
+      ]),
+      s('宁波', 121.55), s('温州', 120.67), s('金华', 119.65),
+      s('嘉兴', 120.76), s('绍兴', 120.58), s('台州', 121.42),
+    ],
+  },
+  {
+    name: '福建',
+    cities: [
+      s('福州', 119.30), s('厦门', 118.10), s('泉州', 118.59),
+      s('漳州', 117.65), s('莆田', 119.01),
+    ],
+  },
+  {
+    name: '江西',
+    cities: [
+      s('南昌', 115.89), s('九江', 115.99), s('赣州', 114.94), s('上饶', 117.97),
+    ],
+  },
+  { name: '台湾', cities: [s('台北', 121.57), s('高雄', 120.31), s('台中', 120.68)] },
+  { name: '香港', cities: [s('香港', 114.17)] },
+  { name: '澳门', cities: [s('澳门', 113.55)] },
 ];
 
-export const CITY_LIST: CityInfo[] = raw;
+export function findLongitude(
+  provinceName: string, cityName: string, districtName: string,
+): number | undefined {
+  const province = PROVINCES.find(p => p.name === provinceName);
+  const city = province?.cities.find(ct => ct.name === cityName);
+  const district = city?.districts.find(d => d.name === districtName);
+  return district?.longitude;
+}
 
-export const PROVINCE_GROUPS: ProvinceGroup[] = (() => {
-  const map = new Map<string, CityInfo[]>();
-  for (const c of raw) {
-    if (!map.has(c.province)) map.set(c.province, []);
-    map.get(c.province)!.push(c);
+export function getCityByName(name: string): { name: string; province: string; longitude: number } | undefined {
+  for (const p of PROVINCES) {
+    for (const ct of p.cities) {
+      if (ct.name === name) {
+        return { name: ct.name, province: p.name, longitude: ct.districts[0].longitude };
+      }
+    }
   }
-  return Array.from(map.entries()).map(([province, cities]) => ({ province, cities }));
-})();
-
-export function getCityByName(name: string): CityInfo | undefined {
-  return raw.find(c => c.name === name);
+  return undefined;
 }

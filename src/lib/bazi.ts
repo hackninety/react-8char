@@ -30,6 +30,7 @@ export interface BaziInput {
   gender: 0 | 1;
   sect: 1 | 2;
   city?: string;
+  longitude?: number;
 }
 
 export type BaziResult = EightCharJSON;
@@ -43,18 +44,20 @@ export function calculateBazi(input: BaziInput): BaziResult {
 
   let solarTimeApplied = false;
   let solarTimeOffset = 0;
-  if (input.city) {
+  let lng = input.longitude;
+  if (!lng && input.city) {
     const cityInfo = getCityByName(input.city);
-    if (cityInfo) {
-      solarTimeOffset = Math.round((cityInfo.longitude - 120) * 4);
-      const adjusted = applyTrueSolarTime(year, month, day, hour, minute, cityInfo.longitude);
-      year = adjusted.year;
-      month = adjusted.month;
-      day = adjusted.day;
-      hour = adjusted.hour;
-      minute = adjusted.minute;
-      solarTimeApplied = true;
-    }
+    lng = cityInfo?.longitude;
+  }
+  if (lng !== undefined) {
+    solarTimeOffset = Math.round((lng - 120) * 4);
+    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng);
+    year = adjusted.year;
+    month = adjusted.month;
+    day = adjusted.day;
+    hour = adjusted.hour;
+    minute = adjusted.minute;
+    solarTimeApplied = true;
   }
 
   const result = getCurrentEightCharJSON({

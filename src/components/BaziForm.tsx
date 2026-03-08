@@ -10,14 +10,13 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 import type { BaziInput } from '@/lib/bazi';
 import { TIAN_GAN, DI_ZHI, lunarToSolar, reverseLookupBazi } from '@/lib/bazi';
 import type { ReverseLookupResult } from '@/lib/bazi';
-import { PROVINCE_GROUPS } from '@/lib/cities';
+import { PROVINCES, findLongitude } from '@/lib/cities';
 
 type InputMode = 'solar' | 'lunar' | 'bazi';
 
@@ -47,7 +46,10 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   // 共用
   const [gender, setGender] = useState<0 | 1>(1);
   const [sect, setSect] = useState<1 | 2>(2);
-  const [city, setCity] = useState('北京');
+  const [useTrueSolar, setUseTrueSolar] = useState(true);
+  const [province, setProvince] = useState('北京');
+  const [cityName, setCityName] = useState('北京');
+  const [district, setDistrict] = useState(PROVINCES[0].cities[0].districts[0].name);
 
   // 八字反查 — 8 个独立天干地支
   const [yearGan, setYearGan] = useState('');
@@ -77,11 +79,13 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         return;
       }
     }
+    const lng = useTrueSolar ? findLongitude(province, cityName, district) : undefined;
     onSubmit({
       year: solarYear, month: solarMonth, day: solarDay,
       hour: solarHour, minute: solarMinute,
       gender, sect,
-      city: city === '_none_' ? undefined : city,
+      city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
+      longitude: lng,
     });
   };
 
@@ -109,11 +113,13 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   };
 
   const handleSelectLookupResult = (r: ReverseLookupResult) => {
+    const lng = useTrueSolar ? findLongitude(province, cityName, district) : undefined;
     onSubmit({
       year: r.year, month: r.month, day: r.day,
       hour: r.hour, minute: r.minute,
       gender, sect,
-      city: city === '_none_' ? undefined : city,
+      city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
+      longitude: lng,
     });
   };
 
@@ -176,58 +182,96 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     </div>
   );
 
+  const currentProvince = PROVINCES.find(p => p.name === province);
+  const cityList = currentProvince?.cities ?? [];
+  const currentCity = cityList.find(ct => ct.name === cityName);
+  const districtList = currentCity?.districts ?? [];
+
+  const handleProvinceChange = (v: string) => {
+    setProvince(v);
+    const p = PROVINCES.find(p => p.name === v);
+    const firstCity = p?.cities[0];
+    setCityName(firstCity?.name ?? '');
+    setDistrict(firstCity?.districts[0]?.name ?? '');
+  };
+
+  const handleCityNameChange = (v: string) => {
+    setCityName(v);
+    const ct = currentProvince?.cities.find(ct => ct.name === v);
+    setDistrict(ct?.districts[0]?.name ?? '');
+  };
+
   const renderCommonSelects = () => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      <div className="space-y-1.5">
-        <Label className="text-xs">性别</Label>
-        <Select value={String(gender)} onValueChange={(v) => setGender(Number(v) as 0 | 1)}>
-          <SelectTrigger className="border-gold/20">
-            <SelectValue>{gender === 1 ? '男（乾造）' : '女（坤造）'}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">男（乾造）</SelectItem>
-            <SelectItem value="0">女（坤造）</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">性别</Label>
+          <Select value={String(gender)} onValueChange={(v) => setGender(Number(v) as 0 | 1)}>
+            <SelectTrigger className="border-gold/20">
+              <SelectValue>{gender === 1 ? '男（乾造）' : '女（坤造）'}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">男（乾造）</SelectItem>
+              <SelectItem value="0">女（坤造）</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">分派</Label>
+          <Select value={String(sect)} onValueChange={(v) => setSect(Number(v) as 1 | 2)}>
+            <SelectTrigger className="border-gold/20">
+              <SelectValue>{sect === 2 ? '传统派' : '正统派'}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2">传统派</SelectItem>
+              <SelectItem value="1">正统派</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="space-y-1.5">
-        <Label className="text-xs">分派</Label>
-        <Select value={String(sect)} onValueChange={(v) => setSect(Number(v) as 1 | 2)}>
-          <SelectTrigger className="border-gold/20">
-            <SelectValue>{sect === 2 ? '传统派' : '正统派'}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="2">传统派</SelectItem>
-            <SelectItem value="1">正统派</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5 col-span-2 sm:col-span-1">
         <Label className="text-xs flex items-center gap-1">
-          <MapPin className="w-3 h-3" />
-          出生城市（真太阳时）
+          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+            <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-gold/30 accent-[var(--color-crimson)]" />
+            <MapPin className="w-3 h-3" />
+            真太阳时校正
+          </label>
         </Label>
-        <Select value={city} onValueChange={(v) => setCity(v ?? '_none_')}>
-          <SelectTrigger className="border-gold/20">
-            <SelectValue>{city === '_none_' ? '不校正（北京时间）' : city}</SelectValue>
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            <SelectItem value="_none_">不校正（北京时间）</SelectItem>
-            {PROVINCE_GROUPS.map((g, gi) => (
-              <span key={g.province}>
-                {gi > 0 && <SelectSeparator />}
-                <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground tracking-wider select-none pointer-events-none">
-                  {g.province}
-                </div>
-                {g.cities.map(c => (
-                  <SelectItem key={c.name} value={c.name}>
-                    {c.name}
-                  </SelectItem>
+        {useTrueSolar && (
+          <div className="grid grid-cols-3 gap-2">
+            <Select value={province} onValueChange={(v) => v && handleProvinceChange(v)}>
+              <SelectTrigger className="border-gold/20">
+                <SelectValue>{province}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {PROVINCES.map(p => (
+                  <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
                 ))}
-              </span>
-            ))}
-          </SelectContent>
-        </Select>
+              </SelectContent>
+            </Select>
+            <Select value={cityName} onValueChange={(v) => v && handleCityNameChange(v)}>
+              <SelectTrigger className="border-gold/20">
+                <SelectValue>{cityName}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {cityList.map(ct => (
+                  <SelectItem key={ct.name} value={ct.name}>{ct.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={district} onValueChange={(v) => v && setDistrict(v)}>
+              <SelectTrigger className="border-gold/20">
+                <SelectValue>{district}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {districtList.map(d => (
+                  <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
     </div>
   );
