@@ -283,8 +283,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }}>
       <Card className="border-gold/30 glow-gold overflow-hidden">
-        <CardHeader className="pillar-card-bg border-b border-gold/20 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground text-center">输入出生信息，一键生成完整八字命盘</p>
+        <CardHeader style={{ display: 'flex' }} className="pillar-card-bg border-b border-gold/20 min-h-[52px] items-center justify-center py-3">
+          <p className="text-sm text-muted-foreground text-center w-full">输入出生信息，一键生成完整八字命盘</p>
         </CardHeader>
         <CardContent className="pt-6">
           {/* 模式切换 */}
