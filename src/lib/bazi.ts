@@ -96,7 +96,6 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
       tool: '八字排盘 (react-8char)',
       system: '渊海子平',
       sect: input.sect === 2 ? '传统派' : '正统派',
-      version: '2.0.0',
       generatedAt: new Date().toISOString(),
     },
     input: {
