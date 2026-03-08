@@ -43,18 +43,19 @@ export default function BaziChart({ input, result }: BaziChartProps) {
       </motion.div>
 
       {/* 四柱大盘 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
         {PILLAR_KEYS.map((key, i) => {
           const pillar = pillars[key];
           if (!pillar) return null;
           return (
-            <PillarCard
-              key={key}
-              pillar={pillar}
-              label={PILLAR_LABELS[i]}
-              isDayMaster={key === 'day'}
-              index={i}
-            />
+            <div key={key} className="min-w-[160px] flex-1 sm:min-w-0">
+              <PillarCard
+                pillar={pillar}
+                label={PILLAR_LABELS[i]}
+                isDayMaster={key === 'day'}
+                index={i}
+              />
+            </div>
           );
         })}
       </div>

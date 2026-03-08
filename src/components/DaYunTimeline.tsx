@@ -70,7 +70,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
         {/* 第一行：大运 */}
         <div>
           <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">大运</div>
-          <div className="flex gap-2 w-full">
+          <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
             {dayunArr?.map((dy: any, dyIdx: number) => {
               const isCurrent = dy.ganZhi === currentDaYunGanZhi;
               const isSelected = selectedDaYun === dyIdx;
@@ -84,7 +84,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
                     setSelectedLiuRi(null);
                   }}
                   className={cn(
-                    'flex-1 flex flex-col items-center px-1 py-2 rounded-lg border transition-all cursor-pointer min-w-0',
+                    'flex-1 flex flex-col items-center px-1 py-2 rounded-lg border transition-all cursor-pointer min-w-[52px] shrink-0 sm:min-w-0 sm:shrink',
                     isSelected
                       ? 'border-gold bg-gold/15 shadow-sm shadow-gold/20'
                       : isCurrent
@@ -117,7 +117,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
               <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">
                 流年（{activeDaYun.ganZhi}运）
               </div>
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
                 {(activeDaYun.liunianArr as any[]).map((ln: any, lnIdx: number) => {
                   const isLnCurrent = String(ln.year) === String(currentLiuNianYear);
                   const isLnSelected = selectedLiuNian === lnIdx;
@@ -132,7 +132,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
                         setSelectedLiuRi(null);
                       }}
                       className={cn(
-                        'flex-1 flex flex-col items-center px-1 py-2 rounded-lg border transition-all cursor-pointer min-w-0',
+                        'flex-1 flex flex-col items-center px-1 py-2 rounded-lg border transition-all cursor-pointer min-w-[52px] shrink-0 sm:min-w-0 sm:shrink',
                         isLnSelected
                           ? 'border-crimson bg-crimson/10 shadow-sm'
                           : isLnCurrent
@@ -167,7 +167,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
               <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">
                 流月（{activeLiuNian.ganZhi} · {activeLiuNian.year}年）
               </div>
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
                 {liuYueArr.map((ly: any, lyIdx: number) => {
                   const isLySelected = selectedLiuYue === lyIdx;
                   return (
@@ -177,7 +177,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
                         setSelectedLiuRi(null);
                       }}
                       className={cn(
-                        'flex-1 flex flex-col items-center px-1 py-2 rounded-lg border transition-all cursor-pointer min-w-0',
+                        'flex-1 flex flex-col items-center px-1 py-2 rounded-lg border transition-all cursor-pointer min-w-[52px] shrink-0 sm:min-w-0 sm:shrink',
                         isLySelected
                           ? 'border-emerald-500 bg-emerald-500/10 shadow-sm'
                           : 'border-border/40 bg-background/50 hover:border-emerald-500/30 hover:bg-muted/30',
@@ -249,10 +249,10 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
               <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">
                 流时（{activeLiuRiItem.lunarDay} · {activeLiuRiItem.ganZhi}）
               </div>
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
                 {liuShiArr.map((ls) => (
                   <div key={ls.shiChenName}
-                    className="flex-1 flex flex-col items-center px-1 py-2 rounded-lg border border-border/40 bg-background/50 min-w-0">
+                    className="flex-1 flex flex-col items-center px-1 py-2 rounded-lg border border-border/40 bg-background/50 min-w-[52px] shrink-0 sm:min-w-0 sm:shrink">
                     <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:block">{ls.shiChenName}</span>
                     <span className="text-sm sm:text-base font-bold whitespace-nowrap">{ls.ganZhi}</span>
                     {ls.shiShen && (
