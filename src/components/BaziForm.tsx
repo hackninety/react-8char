@@ -310,14 +310,14 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         )}
       </div>
       <div className="space-y-1 w-[calc(33.333%-8px)] min-w-[200px] flex-1">
-        <Label className="text-xs">常居住地（影响 AI 对八字的分析参考）</Label>
+        <Label className="text-xs">常居住地（影响 AI 对八字的分析）</Label>
         <Input type="text" placeholder="如：上海" value={livingPlace}
           onChange={(e) => setLivingPlace(e.target.value)}
           className="border-gold/20 h-8 text-xs focus:border-gold/50" />
       </div>
       <div className="w-full space-y-1">
-        <Label className="text-xs">给 AI 的备注</Label>
-        <Input type="text" placeholder="有什么需要告诉 AI 的都可以写在这里，会随 JSON 一起导出" value={userNote}
+        <Label className="text-xs">备注</Label>
+        <Input type="text" placeholder="有什么需要告诉 AI 的都可以写在这里" value={userNote}
           onChange={(e) => setUserNote(e.target.value)}
           className="border-gold/20 h-8 text-xs focus:border-gold/50" />
       </div>

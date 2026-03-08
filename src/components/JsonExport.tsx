@@ -15,7 +15,6 @@ interface JsonExportProps {
 export default function JsonExport({ input, result }: JsonExportProps) {
   const exportData = buildExportJSON(input, result);
   const compactJson = JSON.stringify(exportData);
-  const prettyJson = JSON.stringify(exportData, null, 2);
 
   const handleDownload = () => {
     const blob = new Blob([compactJson], { type: 'application/json;charset=utf-8' });
@@ -100,7 +99,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
 
           <div className="mt-3 rounded-lg bg-muted/50 p-3 max-h-40 overflow-y-auto">
             <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap break-all font-mono leading-relaxed">
-              {prettyJson.slice(0, 1500)}{prettyJson.length > 1500 ? '\n...' : ''}
+              {compactJson.slice(0, 2000)}{compactJson.length > 2000 ? '...' : ''}
             </pre>
           </div>
         </CardContent>
