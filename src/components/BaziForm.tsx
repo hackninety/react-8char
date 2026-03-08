@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, MapPin, Calendar, Search, Moon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -284,10 +284,6 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }}>
       <Card className="border-gold/30 glow-gold overflow-hidden">
         <CardHeader className="pillar-card-bg border-b border-gold/20">
-          <CardTitle className="text-xl font-bold flex items-center gap-2 text-crimson dark:text-gold">
-            <Sparkles className="w-5 h-5" />
-            八字排盘
-          </CardTitle>
           <p className="text-sm text-muted-foreground">输入出生信息，一键生成完整八字命盘</p>
         </CardHeader>
         <CardContent className="pt-6">

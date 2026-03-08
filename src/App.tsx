@@ -11,22 +11,24 @@ import { calculateBazi } from '@/lib/bazi';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 export default function App() {
-  const [dark, setDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bazi-theme');
-      if (saved) return saved === 'dark';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const getSystemDark = () =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  const [dark, setDark] = useState(getSystemDark);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BaziResult | null>(null);
   const [input, setInput] = useState<BaziInput | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('bazi-theme', dark ? 'dark' : 'light');
   }, [dark]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const handleSubmit = useCallback((formInput: BaziInput) => {
     setLoading(true);
