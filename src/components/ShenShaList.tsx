@@ -176,7 +176,7 @@ export function MingLiCard({ result }: { result: BaziResult }) {
         {analysis.XiYongShen && analysis.XiYongShen.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">喜用神</h4>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
               {analysis.XiYongShen.map((item: string, i: number) => (
                 <motion.div
                   key={i}
@@ -198,7 +198,7 @@ export function MingLiCard({ result }: { result: BaziResult }) {
             <Separator className="bg-gold/10" />
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">日时分析</h4>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
                 {analysis.rishi.map((item: string, i: number) => (
                   <motion.div
                     key={i}
