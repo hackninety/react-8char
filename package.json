@@ -19,7 +19,7 @@
     "framer-motion": "^12.35.1",
     "lucide-react": "^0.577.0",
     "lunar-javascript": "^1.7.7",
-    "mystilight-8char-v2": "file:../mystilight-8char-v2",
+    "mystilight-8char-v2": "github:hackninety/mystilight-8char-v2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",

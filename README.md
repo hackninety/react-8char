@@ -57,9 +57,7 @@ npm run preview
    | Root directory | `/` |
    | Node.js version | `18` 或以上 |
 
-4. 点击 **Save and Deploy** 完成首次部署
-
-> **注意**：本项目通过 `file:` 协议引用了同级目录下的 `mystilight-8char-v2` 本地包，Cloudflare Pages 构建环境无法访问仓库外的目录。部署前需将 `mystilight-8char-v2` 的代码内联处理，或将 `mystilight-8char-v2` 发布至 npm 后修改依赖引用。
+4. 点击 **Save and Deploy** 完成部署，后续推送 main 分支自动触发重新构建。
 
 ### 方式二：使用 Wrangler CLI 部署
 
@@ -107,7 +105,7 @@ src/
 
 ## 依赖说明
 
-本项目核心排盘计算依赖 `mystilight-8char-v2`（本地 file: 引用），该库是 [mystilight-8char](https://github.com/mystilight/mystilight-8char) 的 fork 扩展版本，在不修改原版代码的前提下新增了流月/流日/流时/十神计算等扩展 API。
+本项目核心排盘计算依赖 [`mystilight-8char-v2`](https://github.com/hackninety/mystilight-8char-v2)，该库是 [mystilight-8char](https://github.com/mystilight/mystilight-8char) 的 fork 扩展版本，在不修改原版代码的前提下新增了流月/流日/流时/十神计算等扩展 API。依赖通过 GitHub 仓库直接引用（`github:hackninety/mystilight-8char-v2`），`npm install` 时自动拉取，无需额外配置。
 
 ## 许可证
 
