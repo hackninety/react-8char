@@ -41,6 +41,48 @@ npm run build
 npm run preview
 ```
 
+## 部署到 Cloudflare Pages
+
+### 方式一：通过 Cloudflare Dashboard（推荐首次部署）
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
+2. 选择 GitHub 仓库 `react-8char`，点击 **Begin setup**
+3. 配置构建参数：
+
+   | 配置项 | 值 |
+   |---|---|
+   | Framework preset | `Vite` |
+   | Build command | `npm run build` |
+   | Build output directory | `dist` |
+   | Root directory | `/` |
+   | Node.js version | `18` 或以上 |
+
+4. 点击 **Save and Deploy** 完成首次部署
+
+> **注意**：本项目通过 `file:` 协议引用了同级目录下的 `mystilight-8char-v2` 本地包，Cloudflare Pages 构建环境无法访问仓库外的目录。部署前需将 `mystilight-8char-v2` 的代码内联处理，或将 `mystilight-8char-v2` 发布至 npm 后修改依赖引用。
+
+### 方式二：使用 Wrangler CLI 部署
+
+```bash
+# 全局安装 Wrangler（如已安装可跳过）
+npm install -g wrangler
+
+# 登录 Cloudflare 账号
+wrangler login
+
+# 构建项目
+npm run build
+
+# 部署到 Cloudflare Pages（首次会提示创建项目名）
+wrangler pages deploy dist --project-name react-8char
+```
+
+后续更新只需重新执行最后两条命令即可。
+
+### 环境变量
+
+本项目无需配置服务端环境变量，所有计算均在浏览器端完成。
+
 ## 项目结构
 
 ```

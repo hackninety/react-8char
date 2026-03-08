@@ -223,7 +223,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
                           : 'border-border/40 bg-background/50 hover:border-purple-500/30 hover:bg-muted/30',
                       )}
                     >
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{lr.solarMonth}/{lr.solarDay}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{lr.lunarDay}</span>
                       <span className={cn('text-sm font-bold whitespace-nowrap', isLrSelected ? 'text-purple-600 dark:text-purple-400' : '')}>
                         {lr.ganZhi}
                       </span>
@@ -247,7 +247,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">
-                流时（{activeLiuRiItem.solarDay}日 · {activeLiuRiItem.ganZhi}）
+                流时（{activeLiuRiItem.lunarDay} · {activeLiuRiItem.ganZhi}）
               </div>
               <div className="flex gap-2 w-full">
                 {liuShiArr.map((ls) => (
