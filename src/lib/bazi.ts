@@ -6,6 +6,7 @@ import {
 } from 'mystilight-8char-v2';
 import type { EightCharJSON } from 'mystilight-8char-v2';
 import { getCityByName } from './cities';
+import { buildWuYunLiuQiExport } from './wuyunliuqi';
 
 // ─── Re-export v2 API 供组件使用 ──────────────────────
 
@@ -129,6 +130,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     zhiRelations: result.zhiRelations,
     shensha: (result as any).shensha,
     yuanHaiZiping: result.yuanHaiZiping,
+    wuYunLiuQi: buildWuYunLiuQiExport(result),
   };
 }
 

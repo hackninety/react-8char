@@ -3,6 +3,7 @@ import PillarCard from './PillarCard';
 import WuXingChart from './WuXingChart';
 import DaYunTimeline from './DaYunTimeline';
 import { MingPanCard, YuanHaiCard, MingLiCard, GanZhiRelCard } from './ShenShaList';
+import WuYunLiuQiCard from './WuYunLiuQiCard';
 import JsonExport from './JsonExport';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
@@ -74,6 +75,9 @@ export default function BaziChart({ input, result }: BaziChartProps) {
 
       {/* Row 3: 干支关系（全宽） */}
       <GanZhiRelCard result={result} />
+
+      {/* 五运六气（全宽） */}
+      <WuYunLiuQiCard result={result} />
 
       {/* 大运流年 */}
       <DaYunTimeline result={result} />
