@@ -417,3 +417,65 @@ export function buildWuYunLiuQiExport(result: BaziLike) {
     概述: w.summary,
   };
 }
+
+// ─── 导出 Markdown（单独复制 / AI）─────────────────────
+
+function yunTableMd(steps: QiStep[]): string {
+  const head = '| 步 | 五音 | 五行 | 起始 |\n| --- | --- | --- | --- |';
+  const rows = steps.map((s) => `| ${s.step} | ${s.wuYin ?? ''} | ${s.element} | ${s.startDate ?? '—'} |`);
+  return [head, ...rows].join('\n');
+}
+
+function qiTableMd(steps: QiStep[]): string {
+  const head = '| 步 | 六气 | 三阴三阳 | 五行 | 起始 |\n| --- | --- | --- | --- | --- |';
+  const rows = steps.map(
+    (s) => `| ${s.step} | ${s.qi ?? ''} | ${s.yinYang ?? ''} | ${s.element} | ${s.startDate ?? '—'} |`,
+  );
+  return [head, ...rows].join('\n');
+}
+
+/** 将五运六气格式化为 Markdown 文本（用于单独复制 / 喂 AI） */
+export function buildWuYunLiuQiMarkdown(w: WuYunLiuQiResult): string {
+  const lines: string[] = [
+    `# 五运六气 · ${w.ganZhi}年`,
+    '',
+    `> 运气年以大寒为界${w.startDate ? `（${w.startDate}起）` : ''}`,
+    '',
+    `- **中运**：${w.zhongYun.label}`,
+    `- **司天**：${w.siTian.name}`,
+    `- **在泉**：${w.zaiQuan.name}`,
+    `- **运气同化**：${w.tongHua.length ? w.tongHua.join('、') : '无'}`,
+    '',
+    '## 五运',
+    '',
+    '### 主运（每年固定 · 木火土金水）',
+    '',
+    yunTableMd(w.zhuYun),
+    '',
+    '### 客运（始于中运 · 相生顺布）',
+    '',
+    yunTableMd(w.keYun),
+    '',
+    '## 六气',
+    '',
+    '### 主气（每年固定 · 大寒起）',
+    '',
+    qiTableMd(w.zhuQi),
+    '',
+    '### 客气（三之气＝司天 · 终之气＝在泉）',
+    '',
+    qiTableMd(w.keQi),
+    '',
+  ];
+  if (w.pingQiHint) {
+    lines.push(`> 平气参考：${w.pingQiHint}`, '');
+  }
+  lines.push(w.summary);
+  return lines.join('\n');
+}
+
+/** 由八字结果直接派生五运六气 Markdown；无法计算时返回空串 */
+export function getWuYunLiuQiMarkdownFromResult(result: BaziLike): string {
+  const w = getWuYunLiuQiFromResult(result);
+  return w ? buildWuYunLiuQiMarkdown(w) : '';
+}

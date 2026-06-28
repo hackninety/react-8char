@@ -1,11 +1,17 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Orbit } from 'lucide-react';
+import { Orbit, Copy, Check } from 'lucide-react';
 import { cn, WU_XING_COLORS } from '@/lib/utils';
-import { getWuYunLiuQiFromResult, type QiStep, type WuYunLiuQiResult } from '@/lib/wuyunliuqi';
+import {
+  getWuYunLiuQiFromResult,
+  buildWuYunLiuQiMarkdown,
+  type QiStep,
+  type WuYunLiuQiResult,
+} from '@/lib/wuyunliuqi';
 import type { BaziResult } from '@/lib/bazi';
 
 interface WuYunLiuQiCardProps {
@@ -87,18 +93,45 @@ function StepRow({ title, children }: { title: string; children: React.ReactNode
 export default function WuYunLiuQiCard({ result }: WuYunLiuQiCardProps) {
   const data: WuYunLiuQiResult | null = useMemo(() => getWuYunLiuQiFromResult(result), [result]);
   const [tab, setTab] = useState<'yun' | 'qi'>('yun');
+  const [copied, setCopied] = useState(false);
 
   if (!data) return null;
 
   const siTianStep = 2; // 客气三之气 = 司天
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(buildWuYunLiuQiMarkdown(data));
+      setCopied(true);
+      toast.success('五运六气已复制（Markdown）');
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('复制失败，请手动复制');
+    }
+  };
+
   return (
     <Card className="border-gold/20 glow-gold">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-bold flex items-center gap-2 text-crimson dark:text-gold">
-          <Orbit className="w-4 h-4" />
-          五运六气
-        </CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-base font-bold flex items-center gap-2 text-crimson dark:text-gold">
+            <Orbit className="w-4 h-4" />
+            五运六气
+          </CardTitle>
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label="复制五运六气（Markdown）"
+            title="复制为 Markdown"
+            className="shrink-0 -mt-0.5 -mr-1 p-1.5 rounded-md text-muted-foreground hover:text-crimson dark:hover:text-gold hover:bg-muted/50 transition-colors cursor-pointer"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </button>
+        </div>
         <p className="text-xs text-muted-foreground">
           {data.ganZhi}年 · 运气年以大寒为界{data.startDate ? `（${data.startDate}起）` : ''}
         </p>
