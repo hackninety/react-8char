@@ -32,20 +32,21 @@ const MODE_LABELS: Record<InputMode, { label: string; icon: React.ReactNode }> =
 };
 
 export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
   const [mode, setMode] = useState<InputMode>('solar');
 
-  // 公历 / 农历 共用（string 类型以支持清空）
-  const [yearStr, setYearStr] = useState('1990');
-  const [monthStr, setMonthStr] = useState('5');
-  const [dayStr, setDayStr] = useState('15');
-  const [hourStr, setHourStr] = useState('14');
-  const [minuteStr, setMinuteStr] = useState('30');
+  // 公历 / 农历 共用（string 类型以支持清空）— 默认浏览器当前时间
+  const [yearStr, setYearStr] = useState(String(now.getFullYear()));
+  const [monthStr, setMonthStr] = useState(String(now.getMonth() + 1));
+  const [dayStr, setDayStr] = useState(String(now.getDate()));
+  const [hourStr, setHourStr] = useState(String(now.getHours()));
+  const [minuteStr, setMinuteStr] = useState(String(now.getMinutes()));
   const [isLeapMonth, setIsLeapMonth] = useState(false);
 
   // 共用
   const [gender, setGender] = useState<0 | 1>(1);
-  const [sect, setSect] = useState<1 | 2>(2);
+  const [sect, setSect] = useState<1 | 2>(1);
   const [useTrueSolar, setUseTrueSolar] = useState(true);
   const [province, setProvince] = useState('北京');
   const [cityName, setCityName] = useState('北京');
