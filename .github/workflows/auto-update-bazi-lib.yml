@@ -1,0 +1,74 @@
+name: Auto-update bazi lib
+
+# 定时检查八字库 fork（hackninety/mystilight-8char-v2）是否有新提交；
+# 有则更新 package-lock 锁定的提交、构建验证通过后提交推送 main，
+# 从而触发 Cloudflare Pages 自动部署。整条链路：
+#   upstream → (fork 的 sync-upstream.yml) → fork → (本工作流) → app → 部署
+#
+# 触发方式：每周一 07:00 UTC 自动（在 fork 同步 06:00 之后）+ 手动 Run。
+# fork 为公开仓库，匿名 https 即可拉取，无需任何密钥；推送用默认 GITHUB_TOKEN。
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-update-bazi-lib
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 检查 fork 是否有新提交
+        id: check
+        run: |
+          pinned=$(grep -oE 'mystilight-8char-v2\.git#[0-9a-f]+' package-lock.json | head -1 | sed 's/.*#//')
+          latest=$(git ls-remote https://github.com/hackninety/mystilight-8char-v2.git HEAD | awk '{print $1}')
+          echo "已锁定: ${pinned:-<none>}"
+          echo "fork 最新: ${latest:-<none>}"
+          if [ -n "$latest" ] && [ "$pinned" != "$latest" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "short=${latest:0:7}" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 允许匿名 https 拉取公开 fork（替代 git+ssh）
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+
+      - name: 更新依赖并构建验证
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          npm install "mystilight-8char-v2@github:hackninety/mystilight-8char-v2" --no-audit --no-fund
+          npm run build
+
+      - name: 提交并推送（触发 Cloudflare Pages 部署）
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          if git diff --quiet -- package-lock.json package.json; then
+            echo "锁文件无实际变化，跳过提交。"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json package.json
+          git commit -m "chore: 自动更新 mystilight-8char-v2 至 fork 最新 (${{ steps.check.outputs.short }})"
+          git push
+          echo "已推送，Cloudflare Pages 将自动部署。"
