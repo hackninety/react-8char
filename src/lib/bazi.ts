@@ -130,7 +130,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     zhiRelations: result.zhiRelations,
     shensha: (result as any).shensha,
     yuanHaiZiping: result.yuanHaiZiping,
-    wuYunLiuQi: buildWuYunLiuQiExport(result),
+    wuYunLiuQi: buildWuYunLiuQiExport(input),
   };
 }
 

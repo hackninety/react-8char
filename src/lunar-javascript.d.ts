@@ -5,7 +5,11 @@ declare module 'lunar-javascript' {
     getYear(): number;
     getMonth(): number;
     getDay(): number;
+    getHour(): number;
+    getMinute(): number;
+    getSecond(): number;
     toYmd(): string;
+    toYmdHms(): string;
   }
   interface LunarObj {
     getJieQiTable(): Record<string, LunarSolar>;

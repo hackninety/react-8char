@@ -7,15 +7,15 @@ import { Separator } from '@/components/ui/separator';
 import { Orbit, Copy, Check } from 'lucide-react';
 import { cn, WU_XING_COLORS } from '@/lib/utils';
 import {
-  getWuYunLiuQiFromResult,
+  getWuYunLiuQi,
   buildWuYunLiuQiMarkdown,
   type QiStep,
   type WuYunLiuQiResult,
 } from '@/lib/wuyunliuqi';
-import type { BaziResult } from '@/lib/bazi';
+import type { BaziInput } from '@/lib/bazi';
 
 interface WuYunLiuQiCardProps {
-  result: BaziResult;
+  input: BaziInput;
 }
 
 // 运气同化徽章配色
@@ -39,17 +39,34 @@ function HighlightPill({ label, name, element }: { label: string; name: string; 
   );
 }
 
+// 「本命」交司角标
+function BenMingTag() {
+  return (
+    <span className="absolute -top-1.5 -right-1 text-[8px] leading-none px-1 py-0.5 rounded bg-crimson text-white dark:bg-gold dark:text-black font-bold shadow-sm z-10">
+      命
+    </span>
+  );
+}
+
+const STEP_CELL_BASE =
+  'relative flex-1 flex flex-col items-center gap-0.5 rounded-lg border px-1 py-2 min-w-[56px] shrink-0 sm:min-w-0 sm:shrink transition-colors';
+
 // 六气步：上「三阴三阳」、下「气+五行」
-function QiStepCell({ s, highlight }: { s: QiStep; highlight?: boolean }) {
+function QiStepCell({ s, siTian }: { s: QiStep; siTian?: boolean }) {
   const colors = WU_XING_COLORS[s.element];
   const sub = s.qi ? s.qi.slice(2) : '';
   return (
     <div
       className={cn(
-        'flex-1 flex flex-col items-center gap-0.5 rounded-lg border px-1 py-2 min-w-[56px] shrink-0 sm:min-w-0 sm:shrink transition-colors',
-        highlight ? 'border-gold/60 bg-gold/5' : 'border-border/40 bg-background/50',
+        STEP_CELL_BASE,
+        s.current
+          ? 'border-gold ring-1 ring-gold/50 bg-gold/10'
+          : siTian
+            ? 'border-gold/60 bg-gold/5'
+            : 'border-border/40 bg-background/50',
       )}
     >
+      {s.current && <BenMingTag />}
       <span className="text-[10px] text-muted-foreground whitespace-nowrap">{s.step}</span>
       <span className={cn('text-xs font-semibold whitespace-nowrap', colors?.text || 'text-foreground')}>
         {s.yinYang}
@@ -68,7 +85,13 @@ function QiStepCell({ s, highlight }: { s: QiStep; highlight?: boolean }) {
 function YunStepCell({ s }: { s: QiStep }) {
   const colors = WU_XING_COLORS[s.element];
   return (
-    <div className="flex-1 flex flex-col items-center gap-0.5 rounded-lg border border-border/40 bg-background/50 px-1 py-2 min-w-[56px] shrink-0 sm:min-w-0 sm:shrink">
+    <div
+      className={cn(
+        STEP_CELL_BASE,
+        s.current ? 'border-gold ring-1 ring-gold/50 bg-gold/10' : 'border-border/40 bg-background/50',
+      )}
+    >
+      {s.current && <BenMingTag />}
       <span className="text-[10px] text-muted-foreground whitespace-nowrap">{s.step}</span>
       <span className={cn('text-base font-bold whitespace-nowrap', colors?.text || 'text-foreground')}>
         {s.wuYin}
@@ -90,8 +113,8 @@ function StepRow({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function WuYunLiuQiCard({ result }: WuYunLiuQiCardProps) {
-  const data: WuYunLiuQiResult | null = useMemo(() => getWuYunLiuQiFromResult(result), [result]);
+export default function WuYunLiuQiCard({ input }: WuYunLiuQiCardProps) {
+  const data: WuYunLiuQiResult | null = useMemo(() => getWuYunLiuQi(input), [input]);
   const [tab, setTab] = useState<'yun' | 'qi'>('yun');
   const [copied, setCopied] = useState(false);
 
@@ -161,6 +184,18 @@ export default function WuYunLiuQiCard({ result }: WuYunLiuQiCardProps) {
           )}
         </div>
 
+        {/* 本命交司：出生所值运步 / 气步 */}
+        {data.current && (
+          <div className="flex items-start gap-2 rounded-lg border border-gold/30 bg-gold/5 px-3 py-2">
+            <Badge className="shrink-0 bg-crimson text-white dark:bg-gold dark:text-black text-[10px] font-bold mt-0.5">
+              本命
+            </Badge>
+            <p className="text-xs leading-relaxed text-foreground/90">
+              {data.current.note.replace(/^出生交司：/, '')}
+            </p>
+          </div>
+        )}
+
         {/* 五运 / 六气 切换 */}
         <div className="flex gap-1 rounded-lg bg-muted/50 p-1 w-fit">
           {([
@@ -214,7 +249,7 @@ export default function WuYunLiuQiCard({ result }: WuYunLiuQiCardProps) {
               </StepRow>
               <StepRow title="客气（三之气＝司天 · 终之气＝在泉）">
                 {data.keQi.map((s, i) => (
-                  <QiStepCell key={s.step} s={s} highlight={i === siTianStep} />
+                  <QiStepCell key={s.step} s={s} siTian={i === siTianStep} />
                 ))}
               </StepRow>
             </>

@@ -77,7 +77,7 @@ export default function BaziChart({ input, result }: BaziChartProps) {
       <GanZhiRelCard result={result} />
 
       {/* 五运六气（全宽） */}
-      <WuYunLiuQiCard result={result} />
+      <WuYunLiuQiCard input={input} />
 
       {/* 大运流年 */}
       <DaYunTimeline result={result} />
