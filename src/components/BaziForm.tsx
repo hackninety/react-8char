@@ -17,6 +17,8 @@ import type { BaziInput } from '@/lib/bazi';
 import { TIAN_GAN, DI_ZHI, lunarToSolar, reverseLookupBazi } from '@/lib/bazi';
 import type { ReverseLookupResult } from '@/lib/bazi';
 import { PROVINCES, findLongitude } from '@/lib/cities';
+import { listEngines, DEFAULT_ENGINE } from '@/lib/engine';
+import type { EngineId } from '@/lib/engine';
 
 type InputMode = 'solar' | 'lunar' | 'bazi';
 
@@ -47,6 +49,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   // 共用
   const [gender, setGender] = useState<0 | 1>(1);
   const [sect, setSect] = useState<1 | 2>(1);
+  const [engineId, setEngineId] = useState<EngineId>(DEFAULT_ENGINE);
+  const [compareOn, setCompareOn] = useState(false);
   const [useTrueSolar, setUseTrueSolar] = useState(true);
   const [province, setProvince] = useState('北京');
   const [cityName, setCityName] = useState('北京');
@@ -117,6 +121,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       year: solarYear, month: solarMonth, day: solarDay,
       hour: solarHour, minute: solarMinute,
       gender, sect,
+      engine: engineId,
+      compare: compareOn,
       city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
       longitude: lng,
       livingPlace: livingPlace.trim() || undefined,
@@ -153,6 +159,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       year: r.year, month: r.month, day: r.day,
       hour: r.hour, minute: r.minute,
       gender, sect,
+      engine: engineId,
+      compare: compareOn,
       city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
       longitude: lng,
       livingPlace: livingPlace.trim() || undefined,
@@ -263,6 +271,27 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
             <SelectItem value="1">正统派</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-1 w-[calc(20%-8px)] min-w-[150px]">
+        <Label className="text-xs">排盘引擎</Label>
+        <Select value={engineId} onValueChange={(v) => v && setEngineId(v as EngineId)}>
+          <SelectTrigger className="border-gold/20 h-8 text-xs engine-select">
+            <SelectValue>{listEngines().find(e => e.id === engineId)?.name ?? engineId}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {listEngines().map(e => (
+              <SelectItem key={e.id} value={e.id} className="text-xs">{e.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1 min-w-[110px]">
+        <Label className="text-xs opacity-0 select-none">对拍</Label>
+        <label className="flex items-center gap-1.5 h-8 text-xs cursor-pointer select-none">
+          <input type="checkbox" checked={compareOn} onChange={(e) => setCompareOn(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-gold/30 accent-[var(--color-crimson)]" />
+          <span className="text-muted-foreground">双引擎对拍校验</span>
+        </label>
       </div>
       <div className="space-y-1 w-[calc(33.333%-8px)] min-w-[200px] flex-1">
         <label className="flex items-center gap-1 text-xs cursor-pointer select-none">

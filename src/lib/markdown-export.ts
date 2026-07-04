@@ -107,7 +107,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   // ── 标题 ──
   push('# 八字命盘 · 完整数据', '');
   push(
-    `> 工具：${data.meta?.tool ?? '八字排盘 (react-8char)'} · 体系：${data.meta?.system ?? '渊海子平'} · 分派：${sectCn} · 生成时间：${data.meta?.generatedAt ?? ''}`,
+    `> 工具：${data.meta?.tool ?? '八字排盘 (react-8char)'} · 体系：${data.meta?.system ?? '渊海子平'}${data.meta?.engine ? ` · 引擎：${data.meta.engine}` : ''} · 分派：${sectCn} · 生成时间：${data.meta?.generatedAt ?? ''}`,
     '',
   );
 
@@ -125,6 +125,22 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push(`- **真太阳时**：已按经度校正 ${st.offsetMinutes} 分钟${adj}（排盘以校正后时刻为准）`);
   }
   push('');
+
+  // ── 双引擎对拍（开启对拍校验时）──
+  const ec = data.engineCompare;
+  if (ec) {
+    push('## 双引擎对拍', '');
+    push(`- **对拍引擎**：${ec.engines}`);
+    push(`- **结论**：${ec.summary}`);
+    if (Array.isArray(ec.diffs) && ec.diffs.length) {
+      push('', '| 差异项 | 类型 | 引擎 A | 引擎 B |', '| --- | --- | --- | --- |');
+      ec.diffs.forEach((d: any) =>
+        push(`| ${td(d.label)} | ${d.kind === 'hard' ? '核心差异' : '流派性差异'} | ${td(d.a)} | ${td(d.b)} |`),
+      );
+      push('', '> 流派性差异（起运进位/宫位起法口径）属预期，可作为流派研究素材；核心差异需谨慎对待。');
+    }
+    push('');
+  }
 
   // ── 四柱八字 ──
   const pillars = data.pillars || {};

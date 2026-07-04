@@ -4,8 +4,10 @@ import WuXingChart from './WuXingChart';
 import DaYunTimeline from './DaYunTimeline';
 import { MingPanCard, YuanHaiCard, MingLiCard, GanZhiRelCard } from './ShenShaList';
 import WuYunLiuQiCard from './WuYunLiuQiCard';
+import EngineCompareBadge from './EngineCompareBadge';
 import JsonExport from './JsonExport';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
+import type { CompareReport, EngineMeta } from '@/lib/engine';
 
 interface BaziChartProps {
   input: BaziInput;
@@ -17,6 +19,8 @@ const PILLAR_KEYS = ['year', 'month', 'day', 'time'] as const;
 
 export default function BaziChart({ input, result }: BaziChartProps) {
   const { pillars, wuXingPower, gender } = result;
+  const engineMeta = (result as any).engine as EngineMeta | undefined;
+  const compareReport = (result as any)._compareReport as CompareReport | undefined;
 
   return (
     <motion.div
@@ -41,7 +45,13 @@ export default function BaziChart({ input, result }: BaziChartProps) {
             <span className="ml-2">· 日主 <span className="font-bold text-foreground">{pillars.dayMasterGan}</span></span>
           )}
         </p>
+        {engineMeta && (
+          <p className="text-[11px] text-muted-foreground/70">排盘引擎：{engineMeta.name}</p>
+        )}
       </motion.div>
+
+      {/* 双引擎对拍结果 */}
+      {compareReport && <EngineCompareBadge report={compareReport} />}
 
       {/* 四柱大盘 */}
       <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
@@ -61,9 +71,9 @@ export default function BaziChart({ input, result }: BaziChartProps) {
         })}
       </div>
 
-      {/* Row 1: 五行力量 | 命盘要素 */}
+      {/* Row 1: 五行力量 | 命盘要素（五行力量仅在引擎提供时显示） */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <WuXingChart wuXingPower={wuXingPower} />
+        {wuXingPower && Object.keys(wuXingPower).length > 0 && <WuXingChart wuXingPower={wuXingPower} />}
         <MingPanCard result={result} />
       </div>
 

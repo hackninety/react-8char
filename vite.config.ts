@@ -1,18 +1,18 @@
-import fs from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
-
-const localV2 = path.resolve(__dirname, "../mystilight-8char-v2/src/v2/index.mjs")
-const useLocalV2 = fs.existsSync(localV2)
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      ...(useLocalV2 ? { "mystilight-8char-v2": localV2 } : {}),
     },
+  },
+  optimizeDeps: {
+    // tyme4ts 只出现在动态 import 的引擎 chunk 里，dev 冷启动扫描不到；
+    // 显式预构建，避免首次对拍请求触发 re-optimization 导致加载悬挂
+    include: ["tyme4ts"],
   },
 })

@@ -31,6 +31,10 @@ export interface BaziInput {
   longitude?: number;
   livingPlace?: string;
   userNote?: string;
+  /** 排盘引擎（缺省 mystilight） */
+  engine?: import('./engine/types').EngineId;
+  /** 是否开启双引擎对拍校验 */
+  compare?: boolean;
 }
 
 export type BaziResult = EightCharJSON;
@@ -89,13 +93,28 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     }),
   }));
 
+  const engineMeta = (result as any).engine as { name?: string; school?: string } | undefined;
+  const compareReport = (result as any)._compareReport as
+    | { summary: string; items: unknown[]; a: { name: string }; b: { name: string } }
+    | undefined;
+
   return {
     meta: {
       tool: '八字排盘 (react-8char)',
-      system: '渊海子平',
+      system: engineMeta?.school || '渊海子平',
+      engine: engineMeta?.name,
       sect: input.sect === 2 ? '传统派' : '正统派',
       generatedAt: new Date().toISOString(),
     },
+    ...(compareReport
+      ? {
+          engineCompare: {
+            engines: `${compareReport.a.name} × ${compareReport.b.name}`,
+            summary: compareReport.summary,
+            diffs: compareReport.items,
+          },
+        }
+      : {}),
     input: {
       ...result.input,
       gender: result.gender,

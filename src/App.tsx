@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 import { Compass } from 'lucide-react';
@@ -7,7 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import BaziForm from '@/components/BaziForm';
 import BaziChart from '@/components/BaziChart';
 import ThemeToggle from '@/components/ThemeToggle';
-import { calculateBazi } from '@/lib/bazi';
+import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 export default function App() {
@@ -36,16 +36,30 @@ export default function App() {
     setInput(formInput);
 
     setTimeout(() => {
-      try {
-        const res = calculateBazi(formInput);
-        setResult(res);
-        toast.success('排盘成功！数据已准备好', { icon: '✨' });
-      } catch (err: any) {
-        console.error(err);
-        toast.error(`排盘失败：${err?.message || '未知错误'}`);
-      } finally {
-        setLoading(false);
-      }
+      void (async () => {
+        try {
+          // 经引擎门面排盘（引擎代码懒加载）
+          const res = await calculateChart(formInput, formInput.engine ?? DEFAULT_ENGINE);
+          setResult(res as unknown as BaziResult);
+          toast.success('排盘成功！数据已准备好', { icon: '✨' });
+          // 对拍校验异步补挂，不阻塞主盘展示
+          if (formInput.compare) {
+            try {
+              const rep = await compareEngines(formInput);
+              setResult((prev) =>
+                prev ? ({ ...(prev as any), _compareReport: rep } as BaziResult) : prev,
+              );
+            } catch (cmpErr) {
+              console.error('双引擎对拍失败', cmpErr);
+            }
+          }
+        } catch (err: any) {
+          console.error(err);
+          toast.error(`排盘失败：${err?.message || '未知错误'}`);
+        } finally {
+          setLoading(false);
+        }
+      })();
     }, 300);
   }, []);
 
@@ -85,36 +99,35 @@ export default function App() {
           <div className="space-y-8">
             <BaziForm onSubmit={handleSubmit} loading={loading} />
 
-            <AnimatePresence mode="wait">
-              {loading && (
+            {/* 不用 AnimatePresence mode="wait"：React 19 下退出动画会卡死、
+                结果面板永远等不到挂载（同 WuYunLiuQiCard 的已知问题），
+                改为条件渲染 + key 重挂载淡入 */}
+            {loading && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center py-16 space-y-4"
+              >
                 <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center py-16 space-y-4"
-                >
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                    className="w-12 h-12 rounded-full border-2 border-gold/20 border-t-gold"
-                  />
-                  <p className="text-sm text-muted-foreground">正在排盘，请稍候...</p>
-                </motion.div>
-              )}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  className="w-12 h-12 rounded-full border-2 border-gold/20 border-t-gold"
+                />
+                <p className="text-sm text-muted-foreground">正在排盘，请稍候...</p>
+              </motion.div>
+            )}
 
-              {!loading && result && input && (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  <BaziChart input={input} result={result} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {!loading && result && input && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <BaziChart input={input} result={result} />
+              </motion.div>
+            )}
           </div>
         </main>
 
