@@ -7,7 +7,8 @@
 - **框架**: Vite + React 18 + TypeScript
 - **UI**: Tailwind CSS + shadcn/ui + lucide-react
 - **动画**: framer-motion
-- **排盘核心**: [mystilight-8char-v2](../mystilight-8char-v2) (fork 扩展版)
+- **排盘核心**: [mystilight-8char](https://github.com/mystilight/mystilight-8char)（npm 直接依赖，渊海子平体系）+ 应用内扩展层 `src/lib/engine/mystilight/ext`（十神/流月/流日/流时/真太阳时/农历转换/八字反查）
+- **第二引擎**: [tyme4ts](https://github.com/6tail/tyme4ts)（6tail 标准干支历体系，用于双引擎对拍校验）
 - **通知**: react-hot-toast
 
 ## 功能特性

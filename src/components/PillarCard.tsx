@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { Pillar } from 'mystilight-8char-v2';
+import type { Pillar } from 'mystilight-8char';
 import { cn, getGanWuXing, getZhiWuXing, WU_XING_COLORS, getShiShenColor } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 

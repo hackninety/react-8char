@@ -1,24 +1,21 @@
-// @ts-ignore mystilight-8char-v2 .mjs entry
 import {
   getCurrentEightCharJSON,
   applyTrueSolarTime,
   getLiuYueForYear as _getLiuYueForYear,
-} from 'mystilight-8char-v2';
-import type { EightCharJSON } from 'mystilight-8char-v2';
+} from './engine/mystilight/ext';
+import type { EightCharJSON } from './engine/mystilight/ext';
 import { getCityByName } from './cities';
 import { buildWuYunLiuQiExport } from './wuyunliuqi';
 
-// ─── Re-export v2 API 供组件使用 ──────────────────────
+// ─── Re-export 引擎扩展 API 供组件使用 ─────────────────
+// 原 fork（mystilight-8char-v2）的 v2 能力已内置为应用内扩展层 engine/mystilight/ext，
+// 上游改为 npm 直接依赖 mystilight-8char，组件侧 API 保持不变。
 
-// @ts-ignore
-export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuShiForDay } from 'mystilight-8char-v2';
-// @ts-ignore
-export { TIAN_GAN, DI_ZHI, JIA_ZI_60 } from 'mystilight-8char-v2';
-// @ts-ignore
-export { lunarToSolar, reverseLookupBazi } from 'mystilight-8char-v2';
+export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuShiForDay } from './engine/mystilight/ext';
+export { TIAN_GAN, DI_ZHI, JIA_ZI_60 } from './engine/mystilight/ext';
+export { lunarToSolar, reverseLookupBazi } from './engine/mystilight/ext';
 
-// Re-export types from v2.d.ts
-export type { LiuYueItem, LiuRiItem, LiuShiItem, ReverseLookupResult } from 'mystilight-8char-v2';
+export type { LiuYueItem, LiuRiItem, LiuShiItem, ReverseLookupResult } from './engine/mystilight/ext';
 
 // ─── 应用层接口 ──────────────────────────────────────
 
@@ -41,7 +38,7 @@ export type BaziResult = EightCharJSON;
 // ─── 排盘主函数 ──────────────────────────────────────
 
 export function calculateBazi(input: BaziInput): BaziResult {
-  if (!getCurrentEightCharJSON) throw new Error('mystilight-8char-v2 加载失败');
+  if (!getCurrentEightCharJSON) throw new Error('mystilight-8char 加载失败');
 
   let { year, month, day, hour, minute } = input;
 
