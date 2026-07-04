@@ -1,10 +1,12 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Download, Copy, Sparkles, Bot } from 'lucide-react';
+import { Download, Copy, Sparkles, Bot, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { buildExportJSON, generateFileName } from '@/lib/bazi';
 import { generateAIPrompt } from '@/lib/prompt-template';
+import { buildExportMarkdown, generateMarkdownFileName } from '@/lib/markdown-export';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 interface JsonExportProps {
@@ -13,20 +15,30 @@ interface JsonExportProps {
 }
 
 export default function JsonExport({ input, result }: JsonExportProps) {
-  const exportData = buildExportJSON(input, result);
-  const compactJson = JSON.stringify(exportData);
+  const exportData = useMemo(() => buildExportJSON(input, result), [input, result]);
+  const compactJson = useMemo(() => JSON.stringify(exportData), [exportData]);
+  const markdown = useMemo(() => buildExportMarkdown(input, result), [input, result]);
 
-  const handleDownload = () => {
-    const blob = new Blob([compactJson], { type: 'application/json;charset=utf-8' });
+  const downloadBlob = (content: string, mime: string, filename: string) => {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = generateFileName(input);
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownload = () => {
+    downloadBlob(compactJson, 'application/json;charset=utf-8', generateFileName(input));
     toast.success('JSON 文件已下载');
+  };
+
+  const handleDownloadMarkdown = () => {
+    downloadBlob(markdown, 'text/markdown;charset=utf-8', generateMarkdownFileName(input));
+    toast.success('Markdown 文件已下载');
   };
 
   const handleCopyJSON = async () => {
@@ -51,6 +63,18 @@ export default function JsonExport({ input, result }: JsonExportProps) {
     }
   };
 
+  const handleCopyMarkdown = async () => {
+    try {
+      await navigator.clipboard.writeText(markdown);
+      toast.success('完整 Markdown 已复制！粘贴给 AI，分析更详细', {
+        duration: 4000,
+        icon: '📝',
+      });
+    } catch {
+      toast.error('复制失败，请手动复制');
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -68,9 +92,11 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               <Sparkles className="w-3 h-3" />
               已准备好喂 AI
             </div>
+            <span className="text-[11px] text-muted-foreground">Markdown 内容最完整，AI 分析更详细</span>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* 数据文件 */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Button
               variant="outline"
@@ -89,11 +115,30 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               复制 JSON
             </Button>
             <Button
+              variant="outline"
+              onClick={handleDownloadMarkdown}
+              className="border-gold/30 hover:bg-gold/5 cursor-pointer"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              导出 Markdown 文件
+            </Button>
+          </div>
+
+          {/* 一键喂 AI */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button
               onClick={handleCopyPrompt}
               className="crimson-gradient text-white hover:opacity-90 cursor-pointer shadow-md shadow-red-900/20"
             >
               <Bot className="w-4 h-4 mr-2" />
-              一键复制 AI Prompt
+              复制 AI Prompt（JSON）
+            </Button>
+            <Button
+              onClick={handleCopyMarkdown}
+              className="crimson-gradient text-white hover:opacity-90 cursor-pointer shadow-md shadow-red-900/20"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              复制 AI 分析（Markdown）
             </Button>
           </div>
 

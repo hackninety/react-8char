@@ -1,18 +1,9 @@
-export function generateAIPrompt(jsonData: Record<string, any>): string {
-  const jsonStr = JSON.stringify(jsonData);
+// AI 分析提示词：角色设定 + 分析框架（JSON / Markdown 两种数据格式共用）
 
-  const aiNote = jsonData.aiNote as string | undefined;
-  const userNote = aiNote ? `\n\n> **用户备注**：${aiNote}` : '';
+export const AI_ANALYST_ROLE =
+  '你是一位精通渊海子平体系的资深八字命理分析师，拥有数十年实战经验。请根据以下排盘数据进行深入、专业的命理分析。';
 
-  return `你是一位精通渊海子平体系的资深八字命理分析师，拥有数十年实战经验。请根据以下排盘数据进行深入、专业的命理分析。
-
-数据说明：JSON 中包含四柱、十神、五行力量、大运流年（含流月）、干支关系、神煞、渊海子平分析，以及五运六气（中运、司天在泉、主客运、主客气、运气同化）等完整信息，请充分利用所有字段。${userNote}
-
-\`\`\`json
-${jsonStr}
-\`\`\`
-
-## 请按以下框架逐项展开分析
+export const AI_ANALYSIS_FRAMEWORK = `## 请按以下框架逐项展开分析
 
 ### 1. 命盘总论
 - 日主强弱判断（结合月令、通根、透干、五行力量数据）
@@ -34,7 +25,7 @@ ${jsonStr}
 ### 5. 健康提示
 - 五行偏枯对健康的影响
 - 需要关注的身体部位与调养建议
-- 结合五运六气（wuYunLiuQi）：依出生之年的中运太过/不及、司天在泉与运气同化，分析先天禀赋的脏腑寒热燥湿倾向及易感病机，给出顺时养生（起居、饮食、情志）建议
+- 结合五运六气：依出生之年的中运太过/不及、司天在泉与运气同化，分析先天禀赋的脏腑寒热燥湿倾向及易感病机，给出顺时养生（起居、饮食、情志）建议
 
 ### 6. 大运流年详析
 - 当前所行大运的运势主题与吉凶
@@ -46,5 +37,21 @@ ${jsonStr}
 - 需要规避的事项
 - 人生发展总体建议
 
-要求：分析须引用 JSON 中的具体数据作为论据，用专业命理术语的同时给出通俗易懂的解释。`;
+要求：分析须引用命盘数据中的具体信息作为论据，用专业命理术语的同时给出通俗易懂的解释。`;
+
+export function generateAIPrompt(jsonData: Record<string, any>): string {
+  const jsonStr = JSON.stringify(jsonData);
+
+  const aiNote = jsonData.aiNote as string | undefined;
+  const userNote = aiNote ? `\n\n> **用户备注**：${aiNote}` : '';
+
+  return `${AI_ANALYST_ROLE}
+
+数据说明：JSON 中包含四柱、十神、五行力量、大运流年（含流月）、干支关系、神煞、渊海子平分析，以及五运六气（中运、司天在泉、主客运、主客气、运气同化）等完整信息，请充分利用所有字段。${userNote}
+
+\`\`\`json
+${jsonStr}
+\`\`\`
+
+${AI_ANALYSIS_FRAMEWORK}`;
 }
