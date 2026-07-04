@@ -8,7 +8,7 @@ import type { UnifiedBaziChart } from '../model';
 import type { Pillar, CurrentYun, DayunArrItem } from '../mystilight/upstream';
 import { getEngineDescriptor } from '../registry';
 import { getShiShen } from '../mystilight/ext/shishen';
-import { applyTrueSolarTime } from '../mystilight/ext/utils';
+import { applyTrueSolarTime, getTrueSolarOffset } from '../mystilight/ext/utils';
 import { getCityByName } from '../../cities';
 import { getGanWuXing, getZhiWuXing } from '../../utils';
 import { applySect } from './sects';
@@ -65,10 +65,17 @@ function resolveInput(input: BaziInput) {
   let lng = input.longitude;
   if (!lng && input.city) lng = getCityByName(input.city)?.longitude;
   if (lng !== undefined) {
-    const offsetMinutes = Math.round((lng - 120) * 4);
+    const off = getTrueSolarOffset(year, month, day, lng);
     const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng);
     ({ year, month, day, hour, minute } = adjusted);
-    solarTimeInfo = { applied: true, city: input.city, offsetMinutes, adjustedTime: adjusted };
+    solarTimeInfo = {
+      applied: true,
+      city: input.city,
+      offsetMinutes: off.total,
+      longitudeMinutes: off.longitudeMinutes,
+      eotMinutes: off.eotMinutes,
+      adjustedTime: adjusted,
+    };
   }
   return { year, month, day, hour, minute, solarTimeInfo };
 }

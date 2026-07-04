@@ -9,16 +9,55 @@ export interface AdjustedTime {
   minute: number;
 }
 
+/** 年内日序（1~366） */
+function dayOfYear(year: number, month: number, day: number): number {
+  return Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86_400_000) + 1;
+}
+
 /**
- * 真太阳时经度校正
- * 公式：真太阳时 ≈ 北京时间 + (经度 - 120) × 4 分钟
+ * 均时差（Equation of Time，分钟，可为负）。
+ * 经典近似式（Whitman/SPA 简式）：B = 2π(N-81)/364，
+ * EoT ≈ 9.87·sin(2B) − 7.53·cos(B) − 1.5·sin(B)，精度约 ±0.5 分钟，
+ * 满足分钟级排盘需求。全年浮动约 -14 ~ +16 分钟。
+ */
+export function equationOfTimeMinutes(year: number, month: number, day: number): number {
+  const n = dayOfYear(year, month, day);
+  const b = (2 * Math.PI * (n - 81)) / 364;
+  return 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+}
+
+export interface TrueSolarOffset {
+  /** 总偏移（分钟，四舍五入）= 经度差 + 均时差 */
+  total: number;
+  /** 经度差部分（分钟，四舍五入） */
+  longitudeMinutes: number;
+  /** 均时差部分（分钟，保留一位小数） */
+  eotMinutes: number;
+}
+
+/** 真太阳时总偏移：经度差 (lng-120)×4 分 + 均时差 EoT（单点实现，各引擎共用） */
+export function getTrueSolarOffset(
+  year: number, month: number, day: number, longitude: number,
+): TrueSolarOffset {
+  const lngMin = (longitude - 120) * 4;
+  const eot = equationOfTimeMinutes(year, month, day);
+  return {
+    total: Math.round(lngMin + eot),
+    longitudeMinutes: Math.round(lngMin),
+    eotMinutes: Math.round(eot * 10) / 10,
+  };
+}
+
+/**
+ * 真太阳时校正
+ * 公式：真太阳时 ≈ 北京时间 + (经度 - 120) × 4 分钟 + 均时差(EoT)
  * @param longitude 出生地经度
  */
 export function applyTrueSolarTime(
   year: number, month: number, day: number,
   hour: number, minute: number, longitude: number,
 ): AdjustedTime {
-  const offsetMinutes = Math.round((longitude - 120) * 4);
+  const offsetMinutes = getTrueSolarOffset(year, month, day, longitude).total;
   const dt = new Date(year, month - 1, day, hour, minute);
   dt.setMinutes(dt.getMinutes() + offsetMinutes);
 

@@ -1,6 +1,7 @@
 import {
   getCurrentEightCharJSON,
   applyTrueSolarTime,
+  getTrueSolarOffset,
   getLiuYueForYear as _getLiuYueForYear,
 } from './engine/mystilight/ext';
 import type { EightCharJSON } from './engine/mystilight/ext';
@@ -46,22 +47,29 @@ export function calculateBazi(input: BaziInput): BaziResult {
 
   let { year, month, day, hour, minute } = input;
 
-  let solarTimeApplied = false;
-  let solarTimeOffset = 0;
+  let solarTimeInfo: Record<string, unknown> = { applied: false };
   let lng = input.longitude;
   if (!lng && input.city) {
     const cityInfo = getCityByName(input.city);
     lng = cityInfo?.longitude;
   }
   if (lng !== undefined) {
-    solarTimeOffset = Math.round((lng - 120) * 4);
+    // 真太阳时 = 北京时间 + 经度差 + 均时差（单点实现见 ext/utils getTrueSolarOffset）
+    const off = getTrueSolarOffset(year, month, day, lng);
     const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng);
     year = adjusted.year;
     month = adjusted.month;
     day = adjusted.day;
     hour = adjusted.hour;
     minute = adjusted.minute;
-    solarTimeApplied = true;
+    solarTimeInfo = {
+      applied: true,
+      city: input.city,
+      offsetMinutes: off.total,
+      longitudeMinutes: off.longitudeMinutes,
+      eotMinutes: off.eotMinutes,
+      adjustedTime: { year, month, day, hour, minute },
+    };
   }
 
   const result = getCurrentEightCharJSON({
@@ -70,9 +78,7 @@ export function calculateBazi(input: BaziInput): BaziResult {
     sect: input.sect,
   });
 
-  (result as any)._solarTimeInfo = solarTimeApplied
-    ? { applied: true, city: input.city, offsetMinutes: solarTimeOffset, adjustedTime: { year, month, day, hour, minute } }
-    : { applied: false };
+  (result as any)._solarTimeInfo = solarTimeInfo;
 
   return result;
 }

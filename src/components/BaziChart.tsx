@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import PillarCard from './PillarCard';
 import WuXingChart from './WuXingChart';
 import DaYunTimeline from './DaYunTimeline';
-import { MingPanCard, YuanHaiCard, MingLiCard, GanZhiRelCard } from './ShenShaList';
+import { MingPanCard, YuanHaiCard, MingLiCard, GanZhiRelCard, ShenShaCard } from './ShenShaList';
 import WuYunLiuQiCard from './WuYunLiuQiCard';
 import EngineCompareBadge from './EngineCompareBadge';
 import JsonExport from './JsonExport';
@@ -85,6 +85,9 @@ export default function BaziChart({ input, result }: BaziChartProps) {
 
       {/* Row 3: 干支关系（全宽） */}
       <GanZhiRelCard result={result} />
+
+      {/* 神煞（全宽，引擎提供时显示） */}
+      <ShenShaCard result={result} />
 
       {/* 五运六气（全宽） */}
       <WuYunLiuQiCard input={input} />

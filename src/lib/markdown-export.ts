@@ -6,7 +6,7 @@ import { buildExportJSON, generateFileName } from './bazi';
 import type { BaziInput, BaziResult } from './bazi';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from './wuyunliuqi';
 import { getGanWuXing, getZhiWuXing } from './utils';
-import { AI_ANALYST_ROLE, AI_ANALYSIS_FRAMEWORK } from './prompt-template';
+import { AI_ANALYST_ROLE, AI_ANALYSIS_GUIDANCE } from './prompt-template';
 
 const WU_XING_ORDER = ['木', '火', '土', '金', '水'] as const;
 const PILLAR_KEYS = ['year', 'month', 'day', 'time'] as const;
@@ -58,10 +58,25 @@ function relText(rel: any): string {
   return String(rel);
 }
 
-// 神煞结构未在类型中固化，做防御式渲染
+// 神煞位置 key → 中文（mystilight 实际结构：{ nian/yue/ri/shi: string[], current: { daYun/liuNian/liuYue: string[] } }）
+const SHENSHA_KEY_CN: Record<string, string> = {
+  nian: '年柱', yue: '月柱', ri: '日柱', shi: '时柱',
+  daYun: '当前大运', liuNian: '当前流年', liuYue: '当前流月', liuRi: '当前流日',
+};
+
 function renderShensha(sh: any): string[] {
   const out: string[] = [];
   if (!sh) return out;
+  const pushEntry = (key: string, v: unknown) => {
+    if (Array.isArray(v)) {
+      if (v.length) out.push(`- **${SHENSHA_KEY_CN[key] || key}**：${v.join('、')}`);
+    } else if (v && typeof v === 'object') {
+      // current 之类的嵌套：逐项展开
+      for (const [ik, iv] of Object.entries(v)) pushEntry(ik, iv);
+    } else if (v != null && v !== '') {
+      out.push(`- **${SHENSHA_KEY_CN[key] || key}**：${String(v)}`);
+    }
+  };
   if (Array.isArray(sh)) {
     for (const item of sh) {
       if (item && typeof item === 'object') {
@@ -74,10 +89,7 @@ function renderShensha(sh: any): string[] {
       }
     }
   } else if (typeof sh === 'object') {
-    for (const [k, v] of Object.entries(sh)) {
-      const val = Array.isArray(v) ? v.join('、') : typeof v === 'object' ? JSON.stringify(v) : String(v);
-      out.push(`- **${k}**：${val}`);
-    }
+    for (const [k, v] of Object.entries(sh)) pushEntry(k, v);
   } else {
     out.push(`- ${String(sh)}`);
   }
@@ -99,7 +111,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   push(
     AI_ANALYST_ROLE,
     '',
-    '数据说明：以下为完整八字命盘数据（Markdown 格式），涵盖四柱八字、十神、藏干、五行力量、命盘要素、渊海子平、命理分析、干支关系、大运流年（含流月）、五运六气等，请充分利用全部信息进行分析。',
+    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞/干支关系依引擎能力提供），请充分利用全部信息进行分析。盘面数据流派无关，支持对话中随时切换盲派/调候/格局等视角重新解读（协议见文末）。',
   );
   if (data.aiNote) push('', `> **用户备注**：${data.aiNote}`);
   push('', '---', '');
@@ -122,7 +134,10 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   if (st?.applied) {
     const at = st.adjustedTime;
     const adj = at ? `，校正后 ${at.year}年${at.month}月${at.day}日 ${at.hour}时${at.minute}分` : '';
-    push(`- **真太阳时**：已按经度校正 ${st.offsetMinutes} 分钟${adj}（排盘以校正后时刻为准）`);
+    const parts = st.longitudeMinutes !== undefined && st.eotMinutes !== undefined
+      ? `（经度差 ${st.longitudeMinutes} 分 + 均时差 ${st.eotMinutes} 分）`
+      : '';
+    push(`- **真太阳时**：已校正 ${st.offsetMinutes} 分钟${parts}${adj}（排盘以校正后时刻为准）`);
   }
   push('');
 
@@ -319,8 +334,8 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     }
   });
 
-  // ── AI 分析框架 ──
-  push('---', '', AI_ANALYSIS_FRAMEWORK);
+  // ── AI 分析框架 + 多流派视角切换协议 ──
+  push('---', '', AI_ANALYSIS_GUIDANCE);
 
   return L.join('\n');
 }

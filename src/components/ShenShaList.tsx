@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollText, Star, BookOpen, Compass, Link } from 'lucide-react';
+import { ScrollText, Star, BookOpen, Compass, Link, Gem } from 'lucide-react';
 import type { BaziResult } from '@/lib/bazi';
 
 function InfoRow({ label, value }: { label: string; value: string | number | undefined }) {
@@ -238,6 +238,84 @@ export function MingLiCard({ result }: { result: BaziResult }) {
                 ))}
               </div>
             </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── 神煞 ──────────────────────────────────────────────
+
+const SHENSHA_POS_LABELS: [string, string][] = [
+  ['nian', '年柱'], ['yue', '月柱'], ['ri', '日柱'], ['shi', '时柱'],
+];
+const SHENSHA_CUR_LABELS: [string, string][] = [
+  ['daYun', '当前大运'], ['liuNian', '当前流年'], ['liuYue', '当前流月'], ['liuRi', '当前流日'],
+];
+
+// 吉神/凶煞粗分配色（凶煞标红，其余按吉神金色）
+const XIONG_SHA = /空亡|亡神|劫煞|灾煞|勾绞|红艳|童子|孤辰|寡宿|羊刃|飞刃|血刃|元辰|丧门|吊客|白虎|天罗|地网|阴差阳错|十恶大败|四废|披麻/;
+
+function ShenShaBadge({ name }: { name: string }) {
+  const isXiong = XIONG_SHA.test(name);
+  return (
+    <Badge
+      variant="outline"
+      className={
+        isXiong
+          ? 'text-[11px] border-crimson/25 bg-crimson/5 text-crimson dark:text-crimson-light'
+          : 'text-[11px] border-gold/25 bg-gold/5 text-amber-700 dark:text-gold'
+      }
+    >
+      {name}
+    </Badge>
+  );
+}
+
+export function ShenShaCard({ result }: { result: BaziResult }) {
+  const sh = (result as any).shensha;
+  if (!sh || typeof sh !== 'object') return null;
+
+  const rows = SHENSHA_POS_LABELS
+    .map(([key, label]) => ({ label, items: (sh[key] as string[]) || [] }))
+    .filter((r) => Array.isArray(r.items) && r.items.length > 0);
+  const cur = sh.current && typeof sh.current === 'object'
+    ? SHENSHA_CUR_LABELS
+        .map(([key, label]) => ({ label, items: (sh.current[key] as string[]) || [] }))
+        .filter((r) => Array.isArray(r.items) && r.items.length > 0)
+    : [];
+
+  if (rows.length === 0 && cur.length === 0) return null;
+
+  return (
+    <Card className="border-gold/20 glow-gold">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-bold flex items-center gap-2 text-crimson dark:text-gold">
+          <Gem className="w-4 h-4" />
+          神煞
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2.5">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-start gap-2">
+            <span className="shrink-0 w-16 text-xs text-muted-foreground pt-0.5">{r.label}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {r.items.map((name, i) => <ShenShaBadge key={`${name}-${i}`} name={name} />)}
+            </div>
+          </div>
+        ))}
+        {cur.length > 0 && (
+          <>
+            <Separator className="bg-gold/10" />
+            {cur.map((r) => (
+              <div key={r.label} className="flex items-start gap-2">
+                <span className="shrink-0 w-16 text-xs text-muted-foreground pt-0.5">{r.label}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {r.items.map((name, i) => <ShenShaBadge key={`${name}-${i}`} name={name} />)}
+                </div>
+              </div>
+            ))}
           </>
         )}
       </CardContent>
