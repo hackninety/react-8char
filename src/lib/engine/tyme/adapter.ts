@@ -8,6 +8,7 @@ import type { UnifiedBaziChart } from '../model';
 import type { Pillar, CurrentYun, DayunArrItem } from '../mystilight/upstream';
 import { getEngineDescriptor } from '../registry';
 import { getShiShen } from '../mystilight/ext/shishen';
+import { computeTymeShenSha } from './shensha';
 import { applyTrueSolarTime, getTrueSolarOffset } from '../mystilight/ext/utils';
 import { getCityByName } from '../../cities';
 import { getGanWuXing, getZhiWuXing } from '../../utils';
@@ -151,19 +152,28 @@ function calculate(input: BaziInput): UnifiedBaziChart {
     xiaoYun: null,
   };
 
+  const pillars = {
+    year: pillarOf(eightChar.getYear(), dayStem, year),
+    month: pillarOf(eightChar.getMonth(), dayStem, month),
+    day: pillarOf(eightChar.getDay(), dayStem, day),
+    time: pillarOf(eightChar.getHour(), dayStem, hour),
+    dayMasterGan: dayGanName,
+  };
+
+  // ── 命理神煞（tyme 侧补齐，形状同 mystilight） ──
+  const shensha = computeTymeShenSha(pillars, pillars.day.xunKong, {
+    daYun: curDy ? { gan: curDy.ganZhi[0], zhi: curDy.ganZhi[1] } : undefined,
+    liuNian: { gan: curYearSc.getHeavenStem().getName(), zhi: curYearSc.getEarthBranch().getName() },
+  });
+
   const descriptor = getEngineDescriptor('tyme');
   const chart: UnifiedBaziChart = {
     input: { year, month, day, hour, minute, second: 0 },
     current: { year: nowYear, month: new Date().getMonth() + 1, day: new Date().getDate() },
     sect: input.sect,
     gender: input.gender === 1 ? '男' : '女',
-    pillars: {
-      year: pillarOf(eightChar.getYear(), dayStem, year),
-      month: pillarOf(eightChar.getMonth(), dayStem, month),
-      day: pillarOf(eightChar.getDay(), dayStem, day),
-      time: pillarOf(eightChar.getHour(), dayStem, hour),
-      dayMasterGan: dayGanName,
-    },
+    pillars,
+    shensha,
     taiYuan: eightChar.getFetalOrigin().getName(),
     taiYuanNaYin: eightChar.getFetalOrigin().getSound().getName(),
     taiXi: eightChar.getFetalBreath().getName(),

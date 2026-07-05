@@ -30,7 +30,7 @@ const ENTRIES: Record<EngineId, EngineEntry> = {
       school: '6tail 干支历',
       summary: '6tail 新一代标准算法，支持多种起运流派与童限，适合对拍校验',
       capabilities: {
-        wuXingPower: false, shensha: false, yuanHaiZiping: false, analysis: false,
+        wuXingPower: false, shensha: true, yuanHaiZiping: false, analysis: false,
         ganZhiRelations: false, liuYue: true, liuRi: true, liuShi: true,
         reverseLookup: true, xiaoYun: true, childLimit: true,
       },
