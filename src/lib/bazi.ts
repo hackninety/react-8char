@@ -30,6 +30,8 @@ export interface BaziInput {
   sect: 1 | 2;
   city?: string;
   longitude?: number;
+  /** 出生地时区 UTC 偏移（小时，如东京 9、纽约 -5）；缺省 8（北京时）。仅手动经度时需指定 */
+  utcOffset?: number;
   livingPlace?: string;
   userNote?: string;
   /** 排盘引擎（缺省 mystilight） */
@@ -49,14 +51,17 @@ export function calculateBazi(input: BaziInput): BaziResult {
 
   let solarTimeInfo: Record<string, unknown> = { applied: false };
   let lng = input.longitude;
-  if (!lng && input.city) {
+  if (lng === undefined && input.city) {
     const cityInfo = getCityByName(input.city);
     lng = cityInfo?.longitude;
   }
   if (lng !== undefined) {
-    // 真太阳时 = 北京时间 + 经度差 + 均时差（单点实现见 ext/utils getTrueSolarOffset）
-    const off = getTrueSolarOffset(year, month, day, lng);
-    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng);
+    // 真太阳时 = 当地标准时 + 地方时差 + 均时差（单点实现见 ext/utils getTrueSolarOffset）。
+    // 时区中央经线 = UTC偏移×15；缺省北京时（UTC+8→120°），国外命例由 utcOffset 指定。
+    const utcOffset = input.utcOffset ?? 8;
+    const tzMeridian = utcOffset * 15;
+    const off = getTrueSolarOffset(year, month, day, lng, tzMeridian);
+    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng, tzMeridian);
     year = adjusted.year;
     month = adjusted.month;
     day = adjusted.day;
@@ -65,6 +70,7 @@ export function calculateBazi(input: BaziInput): BaziResult {
     solarTimeInfo = {
       applied: true,
       city: input.city,
+      utcOffset,
       offsetMinutes: off.total,
       longitudeMinutes: off.longitudeMinutes,
       eotMinutes: off.eotMinutes,

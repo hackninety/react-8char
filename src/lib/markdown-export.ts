@@ -134,10 +134,12 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   if (st?.applied) {
     const at = st.adjustedTime;
     const adj = at ? `，校正后 ${at.year}年${at.month}月${at.day}日 ${at.hour}时${at.minute}分` : '';
+    const foreign = st.utcOffset !== undefined && st.utcOffset !== 8;
     const parts = st.longitudeMinutes !== undefined && st.eotMinutes !== undefined
-      ? `（经度差 ${st.longitudeMinutes} 分 + 均时差 ${st.eotMinutes} 分）`
+      ? `（${foreign ? '地方时差' : '经度差'} ${st.longitudeMinutes} 分 + 均时差 ${st.eotMinutes} 分）`
       : '';
-    push(`- **真太阳时**：已校正 ${st.offsetMinutes} 分钟${parts}${adj}（排盘以校正后时刻为准）`);
+    const tzNote = foreign ? `，出生地时区 UTC${st.utcOffset >= 0 ? '+' : ''}${st.utcOffset}` : '';
+    push(`- **真太阳时**：已校正 ${st.offsetMinutes} 分钟${parts}${tzNote}${adj}（排盘以校正后时刻为准）`);
   }
   push('');
 

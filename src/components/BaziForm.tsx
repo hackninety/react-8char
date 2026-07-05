@@ -52,6 +52,11 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [engineId, setEngineId] = useState<EngineId>(DEFAULT_ENGINE);
   const [compareOn, setCompareOn] = useState(false);
   const [useTrueSolar, setUseTrueSolar] = useState(true);
+  // 出生地定位：城市下拉（国内）/ 手动经度（国外自由填写）
+  const [locMode, setLocMode] = useState<'city' | 'manual'>('city');
+  const [manualPlace, setManualPlace] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  const [manualTz, setManualTz] = useState('8'); // 出生地时区 UTC 偏移（小时）
   const [province, setProvince] = useState('北京');
   const [cityName, setCityName] = useState('北京');
   const [district, setDistrict] = useState(PROVINCES[0].cities[0].districts[0].name);
@@ -69,6 +74,32 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [timeZhi, setTimeZhi] = useState('');
   const [lookupResults, setLookupResults] = useState<ReverseLookupResult[]>([]);
   const [lookupError, setLookupError] = useState('');
+
+  // 解析出生地定位为 { city, longitude, utcOffset }；校验失败返回 null（已置错误提示）
+  const resolveLocation = (): Pick<BaziInput, 'city' | 'longitude' | 'utcOffset'> | null => {
+    if (!useTrueSolar) return {};
+    if (locMode === 'manual') {
+      const lng = parseFloat(manualLng);
+      if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+        setLookupError('请输入有效经度（-180 ~ 180，东经为正、西经为负，如 139.8035575）');
+        return null;
+      }
+      const tz = manualTz.trim() === '' ? 8 : parseFloat(manualTz);
+      if (!Number.isFinite(tz) || tz < -12 || tz > 14) {
+        setLookupError('请输入有效时区 UTC 偏移（-12 ~ 14，如东京 9、纽约 -5）');
+        return null;
+      }
+      return {
+        city: manualPlace.trim() || `经度${lng}°`,
+        longitude: lng,
+        utcOffset: tz,
+      };
+    }
+    return {
+      city: district === '市区' ? cityName : `${cityName} ${district}`,
+      longitude: findLongitude(province, cityName, district),
+    };
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,15 +147,15 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         return;
       }
     }
-    const lng = useTrueSolar ? findLongitude(province, cityName, district) : undefined;
+    const loc = resolveLocation();
+    if (!loc) return;
     onSubmit({
       year: solarYear, month: solarMonth, day: solarDay,
       hour: solarHour, minute: solarMinute,
       gender, sect,
       engine: engineId,
       compare: compareOn,
-      city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
-      longitude: lng,
+      ...loc,
       livingPlace: livingPlace.trim() || undefined,
       userNote: userNote.trim() || undefined,
     });
@@ -154,15 +185,15 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   };
 
   const handleSelectLookupResult = (r: ReverseLookupResult) => {
-    const lng = useTrueSolar ? findLongitude(province, cityName, district) : undefined;
+    const loc = resolveLocation();
+    if (!loc) return;
     onSubmit({
       year: r.year, month: r.month, day: r.day,
       hour: r.hour, minute: r.minute,
       gender, sect,
       engine: engineId,
       compare: compareOn,
-      city: useTrueSolar ? (district === '市区' ? cityName : `${cityName} ${district}`) : undefined,
-      longitude: lng,
+      ...loc,
       livingPlace: livingPlace.trim() || undefined,
       userNote: userNote.trim() || undefined,
     });
@@ -294,13 +325,31 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         </label>
       </div>
       <div className="space-y-1 w-[calc(33.333%-8px)] min-w-[200px] flex-1">
-        <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
-          <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
-            className="w-3 h-3 rounded border-gold/30 accent-[var(--color-crimson)]" />
-          <MapPin className="w-3 h-3 text-muted-foreground" />
-          <span className="text-muted-foreground">真太阳时（出生地）</span>
-        </label>
-        {useTrueSolar ? (
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
+            <input type="checkbox" checked={useTrueSolar} onChange={(e) => setUseTrueSolar(e.target.checked)}
+              className="w-3 h-3 rounded border-gold/30 accent-[var(--color-crimson)]" />
+            <MapPin className="w-3 h-3 text-muted-foreground" />
+            <span className="text-muted-foreground">真太阳时（出生地）</span>
+          </label>
+          {useTrueSolar && (
+            <div className="flex rounded-md overflow-hidden border border-gold/20 shrink-0">
+              {([['city', '城市'], ['manual', '手动经度']] as const).map(([m, lbl]) => (
+                <button key={m} type="button" onClick={() => setLocMode(m)}
+                  className={`px-2 py-0.5 text-[10px] transition-colors cursor-pointer ${
+                    locMode === m ? 'bg-crimson text-white dark:bg-gold dark:text-black' : 'text-muted-foreground hover:bg-muted/40'
+                  }`}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {!useTrueSolar ? (
+          <div className="h-8 flex items-center text-xs text-muted-foreground/50 border border-dashed border-gold/10 rounded-md px-2">
+            不校正（北京时间）
+          </div>
+        ) : locMode === 'city' ? (
           <div className="flex gap-1">
             <Select value={province} onValueChange={(v) => v && handleProvinceChange(v)}>
               <SelectTrigger className="border-gold/20 h-8 text-xs flex-1 min-w-0">
@@ -334,8 +383,22 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
             </Select>
           </div>
         ) : (
-          <div className="h-8 flex items-center text-xs text-muted-foreground/50 border border-dashed border-gold/10 rounded-md px-2">
-            不校正（北京时间）
+          <div className="space-y-1">
+            <Input type="text" placeholder="出生地名（选填，如 东京）" value={manualPlace}
+              onChange={(e) => setManualPlace(e.target.value)}
+              className="border-gold/20 h-8 text-xs focus:border-gold/50" />
+            <div className="flex gap-1">
+              <Input type="text" inputMode="decimal" placeholder="经度 139.8035575" value={manualLng}
+                onChange={(e) => setManualLng(e.target.value)}
+                className="border-gold/20 h-8 text-xs focus:border-gold/50 flex-1 min-w-0" />
+              <Input type="text" inputMode="decimal" title="出生地时区 UTC 偏移（小时），如东京 9、纽约 -5"
+                placeholder="UTC" value={manualTz}
+                onChange={(e) => setManualTz(e.target.value)}
+                className="border-gold/20 h-8 text-xs focus:border-gold/50 w-14 shrink-0" />
+            </div>
+            <p className="text-[10px] text-muted-foreground/70 leading-tight">
+              东经正 / 西经负；右侧填出生地时区（默认 8=北京）。国外出生请填当地时刻 + 当地时区。
+            </p>
           </div>
         )}
       </div>

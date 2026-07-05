@@ -27,19 +27,25 @@ export function equationOfTimeMinutes(year: number, month: number, day: number):
 }
 
 export interface TrueSolarOffset {
-  /** 总偏移（分钟，四舍五入）= 经度差 + 均时差 */
+  /** 总偏移（分钟，四舍五入）= 地方时差 + 均时差 */
   total: number;
-  /** 经度差部分（分钟，四舍五入） */
+  /** 地方时差部分（分钟，四舍五入）= (经度 − 时区中央经线) × 4 */
   longitudeMinutes: number;
   /** 均时差部分（分钟，保留一位小数） */
   eotMinutes: number;
 }
 
-/** 真太阳时总偏移：经度差 (lng-120)×4 分 + 均时差 EoT（单点实现，各引擎共用） */
+/**
+ * 真太阳时总偏移：地方时差 (经度 − 时区中央经线)×4 分 + 均时差 EoT。
+ * 单点实现，各引擎共用。
+ * @param longitude 出生地经度（东经正、西经负）
+ * @param tzMeridian 出生时刻所属时区的中央经线（= UTC偏移×15）；缺省 120（北京时/UTC+8），
+ *                   国内命例恒用之；国外命例须按当地时区传入（如日本 135、美东 −75）。
+ */
 export function getTrueSolarOffset(
-  year: number, month: number, day: number, longitude: number,
+  year: number, month: number, day: number, longitude: number, tzMeridian = 120,
 ): TrueSolarOffset {
-  const lngMin = (longitude - 120) * 4;
+  const lngMin = (longitude - tzMeridian) * 4;
   const eot = equationOfTimeMinutes(year, month, day);
   return {
     total: Math.round(lngMin + eot),
@@ -50,14 +56,15 @@ export function getTrueSolarOffset(
 
 /**
  * 真太阳时校正
- * 公式：真太阳时 ≈ 北京时间 + (经度 - 120) × 4 分钟 + 均时差(EoT)
- * @param longitude 出生地经度
+ * 公式：真太阳时 ≈ 当地标准时 + (经度 − 时区中央经线) × 4 分钟 + 均时差(EoT)
+ * @param longitude 出生地经度（东经正、西经负）
+ * @param tzMeridian 出生时刻所属时区中央经线，缺省 120（北京时）
  */
 export function applyTrueSolarTime(
   year: number, month: number, day: number,
-  hour: number, minute: number, longitude: number,
+  hour: number, minute: number, longitude: number, tzMeridian = 120,
 ): AdjustedTime {
-  const offsetMinutes = getTrueSolarOffset(year, month, day, longitude).total;
+  const offsetMinutes = getTrueSolarOffset(year, month, day, longitude, tzMeridian).total;
   const dt = new Date(year, month - 1, day, hour, minute);
   dt.setMinutes(dt.getMinutes() + offsetMinutes);
 

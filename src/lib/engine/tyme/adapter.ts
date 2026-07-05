@@ -63,14 +63,17 @@ function resolveInput(input: BaziInput) {
   let { year, month, day, hour, minute } = input;
   let solarTimeInfo: Record<string, unknown> = { applied: false };
   let lng = input.longitude;
-  if (!lng && input.city) lng = getCityByName(input.city)?.longitude;
+  if (lng === undefined && input.city) lng = getCityByName(input.city)?.longitude;
   if (lng !== undefined) {
-    const off = getTrueSolarOffset(year, month, day, lng);
-    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng);
+    const utcOffset = input.utcOffset ?? 8;
+    const tzMeridian = utcOffset * 15;
+    const off = getTrueSolarOffset(year, month, day, lng, tzMeridian);
+    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng, tzMeridian);
     ({ year, month, day, hour, minute } = adjusted);
     solarTimeInfo = {
       applied: true,
       city: input.city,
+      utcOffset,
       offsetMinutes: off.total,
       longitudeMinutes: off.longitudeMinutes,
       eotMinutes: off.eotMinutes,
