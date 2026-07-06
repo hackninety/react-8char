@@ -139,6 +139,10 @@
     }
     html {
         @apply font-sans scroll-smooth;
+        /* 始终为滚动条预留槽位：下拉框/弹层打开时 base-ui 会锁定 body 滚动
+           （body{overflow:hidden}）导致竖直滚动条消失，若不预留则页面宽度突变、
+           居中布局左右抖动。stable 让锁定前后内容盒宽度不变，消除抖动。 */
+        scrollbar-gutter: stable;
     }
 }
 
