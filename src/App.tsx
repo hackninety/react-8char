@@ -8,6 +8,7 @@ import BaziForm from '@/components/BaziForm';
 import BaziChart from '@/components/BaziChart';
 import ThemeToggle from '@/components/ThemeToggle';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
+import { saveChart, loadChart } from '@/lib/storage';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 export default function App() {
@@ -29,6 +30,20 @@ export default function App() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // 刷新后恢复上次命盘
+  useEffect(() => {
+    const saved = loadChart();
+    if (saved) {
+      setInput(saved.input);
+      setResult(saved.result);
+    }
+  }, []);
+
+  // 命盘变化即持久化（含对拍结果）
+  useEffect(() => {
+    if (input && result) saveChart(input, result);
+  }, [input, result]);
 
   const handleSubmit = useCallback((formInput: BaziInput) => {
     setLoading(true);
