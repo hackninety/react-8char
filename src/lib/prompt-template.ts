@@ -119,7 +119,7 @@ export function generateAIPrompt(jsonData: Record<string, any>): string {
 
   return `${AI_ANALYST_ROLE}
 
-数据说明：JSON 中包含四柱、十神、五行力量、大运流年（含流月）、干支关系、神煞、渊海子平分析，以及五运六气（中运、司天在泉、主客运、主客气、运气同化）等完整信息，请充分利用所有字段。${userNote}
+数据说明：JSON 中包含四柱、十神、五行力量、大运流年（含流月）、干支关系、神煞、渊海子平分析、五运六气（中运、司天在泉、主客运、主客气、运气同化），以及人生K线量化评分（lifeKline，逐年 0-100 分，简化扶抑模型仅供参考）等完整信息，请充分利用所有字段。${userNote}
 
 \`\`\`json
 ${jsonStr}

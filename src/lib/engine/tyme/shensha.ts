@@ -116,6 +116,19 @@ function collect(defs: Def[], p: GZ | undefined, key?: PillarKey): string[] {
 }
 
 /**
+ * 创建「任意干支 → 命中神煞列表」的查询函数（本命定盘一次，可反复查询大运/流年/流月）。
+ * 注意：本模块的神煞规则是引擎无关的经典查法（入参只是干支字符串），
+ * 位于 tyme/ 目录仅为历史原因，人生K线等通用模块也复用它。
+ */
+export function createShenShaLookup(
+  pillars: { year: GZ; month: GZ; day: GZ; time: GZ },
+  dayXunKong: string,
+): (gz: GZ) => string[] {
+  const defs = buildDefs(pillars.year, pillars.month, pillars.day, dayXunKong);
+  return (gz: GZ) => collect(defs, gz);
+}
+
+/**
  * 计算 tyme 引擎命盘的命理神煞。
  * @param pillars 本命四柱（gan/zhi）
  * @param dayXunKong 日柱旬空（两地支，如「午未」）

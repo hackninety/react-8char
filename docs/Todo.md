@@ -11,13 +11,17 @@
 `capabilities.shensha=true`。经 3 组命例逐柱与 mystilight 对照：tyme 无任何误报（是 mystilight 的正确子集，
 mystilight 另有福星/天厨/德秀/童子煞等本模块未纳入的类别）。
 
+### ✅ 人生 K 线可视化（2026-07）
+新增 [`src/lib/lifekline.ts`](../src/lib/lifekline.ts)（确定性评分引擎：喜忌定盘 → 大运基调 / 流年十神 /
+支冲刑合害 / 神煞吉凶 / 岁运并临 / 天克地冲，逐年 0-100 分 + OHLC）与
+[`src/components/LifeKlineChart.tsx`](../src/components/LifeKlineChart.tsx)（手绘 SVG 蜡烛图，零新依赖：
+红涨绿跌、5 年均线、大运分段底色、「今」标记、悬停逐年因素明细）。身强判定优先用渊海子平，
+tyme 引擎走简化扶抑 fallback（实测两法对同一命例判定一致）。评分数据同步进入
+Markdown 导出（大运均分表 + 峰谷 TOP5 含因素）与 JSON 导出（紧凑 lifeKline 字段），供 AI 引用。
+
 ## 计划中
 
-### 1. 人生 K 线可视化
-- **目标**：将大运流年的运势起伏绘制成类股票 K 线图（吉凶评分随时间的曲线/柱状），直观展示人生高低点。
-- **参考**：[curionox/lifekline](https://github.com/curionox/lifekline)（707★）、[miounet11/life-kline](https://github.com/miounet11/life-kline)（202★）。
-- **落点**：新增 `src/components/LifeKlineChart.tsx`，输入为 `dayunArr` + 流年十神/神煞加权评分；需先定义一套「运势评分」算法（喜用神得力度 + 神煞吉凶 + 刑冲合害）。
-- **注意**：纯前端可视化，工程量较大，建议独立分支推进。
+（暂无——两项均已完成，欢迎再提）
 
 ## 技术债（复查发现，非阻塞）
 

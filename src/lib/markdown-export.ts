@@ -5,6 +5,7 @@
 import { buildExportJSON, generateFileName } from './bazi';
 import type { BaziInput, BaziResult } from './bazi';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from './wuyunliuqi';
+import { buildLifeKline } from './lifekline';
 import { getGanWuXing, getZhiWuXing } from './utils';
 import { AI_ANALYST_ROLE, AI_ANALYSIS_GUIDANCE } from './prompt-template';
 
@@ -335,6 +336,31 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
       push('', '</details>', '');
     }
   });
+
+  // ── 人生K线（运势量化评分，供 AI 引用的确定性数值参考）──
+  const kline = buildLifeKline(result);
+  if (kline && kline.years.length >= 5) {
+    push('## 人生K线（运势量化评分）', '');
+    push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}），逐年综合大运基调、流年十神、支冲刑合害、神煞吉凶量化为 0-100 分。简化模型仅供参考，AI 分析时可引用其因素明细但应以命理逻辑为准。`, '');
+    if (kline.decades.length) {
+      push('### 大运运势均分', '');
+      push('| 大运 | 起止 | 均分 | 趋势 |', '| --- | --- | --- | --- |');
+      kline.decades.forEach((d, i) => {
+        const prev = i > 0 ? kline.decades[i - 1].avg : null;
+        const trend = prev === null ? '—' : d.avg - prev > 3 ? '↑' : d.avg - prev < -3 ? '↓' : '→';
+        push(`| ${d.ganZhi} | ${d.startYear}~${d.endYear} | ${d.avg} | ${trend} |`);
+      });
+      push('');
+    }
+    const sorted = [...kline.years].sort((a, b) => b.score - a.score);
+    const peaks = sorted.slice(0, 5);
+    const troughs = sorted.slice(-5).reverse();
+    push('### 峰值年份 TOP5', '');
+    peaks.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.score}分·${y.age}岁）**：${y.factors.join('；') || '平年'}`));
+    push('', '### 低谷年份 TOP5', '');
+    troughs.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.score}分·${y.age}岁）**：${y.factors.join('；') || '平年'}`));
+    push('');
+  }
 
   // ── AI 分析框架 + 多流派视角切换协议 ──
   push('---', '', AI_ANALYSIS_GUIDANCE);

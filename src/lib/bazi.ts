@@ -7,6 +7,7 @@ import {
 import type { EightCharJSON } from './engine/mystilight/ext';
 import { getCityByName } from './cities';
 import { buildWuYunLiuQiExport } from './wuyunliuqi';
+import { buildLifeKline } from './lifekline';
 
 // ─── Re-export 引擎扩展 API 供组件使用 ─────────────────
 // 原 fork（mystilight-8char-v2）的 v2 能力已内置为应用内扩展层 engine/mystilight/ext，
@@ -159,6 +160,19 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     shensha: (result as any).shensha,
     yuanHaiZiping: result.yuanHaiZiping,
     wuYunLiuQi: buildWuYunLiuQiExport(input),
+    // 人生K线量化评分（紧凑数组省 token：[年, 干支, 评分]）
+    ...(() => {
+      const k = buildLifeKline(result);
+      if (!k || k.years.length < 5) return {};
+      return {
+        lifeKline: {
+          judge: k.judge,
+          note: k.preferenceNote,
+          decadeAvg: k.decades.map((d) => [d.ganZhi, d.startYear, d.avg]),
+          years: k.years.map((y) => [y.year, y.ganZhi, y.score]),
+        },
+      };
+    })(),
   };
 }
 

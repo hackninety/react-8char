@@ -5,6 +5,7 @@ import DaYunTimeline from './DaYunTimeline';
 import { MingPanCard, YuanHaiCard, MingLiCard, GanZhiRelCard, ShenShaCard } from './ShenShaList';
 import WuYunLiuQiCard from './WuYunLiuQiCard';
 import EngineCompareBadge from './EngineCompareBadge';
+import LifeKlineChart from './LifeKlineChart';
 import JsonExport from './JsonExport';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 import type { CompareReport, EngineMeta } from '@/lib/engine';
@@ -94,6 +95,9 @@ export default function BaziChart({ input, result }: BaziChartProps) {
 
       {/* 大运流年 */}
       <DaYunTimeline result={result} />
+
+      {/* 人生K线（运势量化） */}
+      <LifeKlineChart result={result} />
 
       {/* JSON 导出 */}
       <JsonExport input={input} result={result} />
