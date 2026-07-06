@@ -337,28 +337,29 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     }
   });
 
-  // ── 人生K线（运势量化评分，供 AI 引用的确定性数值参考）──
+  // ── 人生K线五维量化评分（供 AI 引用的确定性数值参考）──
   const kline = buildLifeKline(result);
   if (kline && kline.years.length >= 5) {
-    push('## 人生K线（运势量化评分）', '');
-    push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}），逐年综合大运基调、流年十神、支冲刑合害、神煞吉凶量化为 0-100 分。简化模型仅供参考，AI 分析时可引用其因素明细但应以命理逻辑为准。`, '');
+    const five = (s: { total: number; career: number; wealth: number; love: number; health: number }) =>
+      `总${s.total}·事业${s.career}·财${s.wealth}·情${s.love}·健${s.health}`;
+    push('## 人生K线（五维运势量化评分）', '');
+    push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}；性别${kline.gender}），逐年将大运基调、流年十神、宫位冲刑合害、神煞吉凶按维度量化为 0-100 分，分「总运/事业/财运/感情/健康」。简化模型仅供参考，AI 可引用因素但应以命理逻辑为准；**注意各维可背离（如总分高而财运低）**。`, '');
     if (kline.decades.length) {
-      push('### 大运运势均分', '');
-      push('| 大运 | 起止 | 均分 | 趋势 |', '| --- | --- | --- | --- |');
-      kline.decades.forEach((d, i) => {
-        const prev = i > 0 ? kline.decades[i - 1].avg : null;
-        const trend = prev === null ? '—' : d.avg - prev > 3 ? '↑' : d.avg - prev < -3 ? '↓' : '→';
-        push(`| ${d.ganZhi} | ${d.startYear}~${d.endYear} | ${d.avg} | ${trend} |`);
+      push('### 大运各维均分', '');
+      push('| 大运 | 起止 | 总运 | 事业 | 财运 | 感情 | 健康 |', '| --- | --- | --- | --- | --- | --- | --- |');
+      kline.decades.forEach((d) => {
+        const a = d.avg;
+        push(`| ${d.ganZhi} | ${d.startYear}~${d.endYear} | ${a.total} | ${a.career} | ${a.wealth} | ${a.love} | ${a.health} |`);
       });
       push('');
     }
-    const sorted = [...kline.years].sort((a, b) => b.score - a.score);
+    const sorted = [...kline.years].sort((a, b) => b.scores.total - a.scores.total);
     const peaks = sorted.slice(0, 5);
     const troughs = sorted.slice(-5).reverse();
-    push('### 峰值年份 TOP5', '');
-    peaks.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.score}分·${y.age}岁）**：${y.factors.join('；') || '平年'}`));
-    push('', '### 低谷年份 TOP5', '');
-    troughs.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.score}分·${y.age}岁）**：${y.factors.join('；') || '平年'}`));
+    push('### 总运峰值年份 TOP5', '');
+    peaks.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.age}岁）** ${five(y.scores)}｜${y.factors.total.join('、') || '平年'}`));
+    push('', '### 总运低谷年份 TOP5', '');
+    troughs.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.age}岁）** ${five(y.scores)}｜${y.factors.total.join('、') || '平年'}`));
     push('');
   }
 

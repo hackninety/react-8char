@@ -160,16 +160,18 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     shensha: (result as any).shensha,
     yuanHaiZiping: result.yuanHaiZiping,
     wuYunLiuQi: buildWuYunLiuQiExport(input),
-    // 人生K线量化评分（紧凑数组省 token：[年, 干支, 评分]）
+    // 人生K线五维量化评分（紧凑数组省 token，列见 dims 图例）
     ...(() => {
       const k = buildLifeKline(result);
       if (!k || k.years.length < 5) return {};
       return {
         lifeKline: {
           judge: k.judge,
+          gender: k.gender,
           note: k.preferenceNote,
-          decadeAvg: k.decades.map((d) => [d.ganZhi, d.startYear, d.avg]),
-          years: k.years.map((y) => [y.year, y.ganZhi, y.score]),
+          dims: ['年', '干支', '总运', '事业', '财运', '感情', '健康'],
+          decadeAvg: k.decades.map((d) => [d.ganZhi, d.startYear, d.avg.total, d.avg.career, d.avg.wealth, d.avg.love, d.avg.health]),
+          years: k.years.map((y) => [y.year, y.ganZhi, y.scores.total, y.scores.career, y.scores.wealth, y.scores.love, y.scores.health]),
         },
       };
     })(),
