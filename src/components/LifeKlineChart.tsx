@@ -52,7 +52,11 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
     .join(' ');
 
   const h = hover !== null ? years[hover] : null;
-  const tipLeft = hover !== null ? Math.max(4, Math.min(xOf(hover) + 12, svgW - 240)) : 0;
+  const TIP_W = 224; // w-56
+  const cx = hover !== null ? xOf(hover) + SLOT_W / 2 : 0;
+  // 浮层放在光标一侧；右侧放不下就翻到左侧，始终不遮住正在看的那根K线（尤其末尾年份）
+  const flipLeft = cx + 14 + TIP_W > svgW;
+  const tipLeft = hover === null ? 0 : flipLeft ? Math.max(4, cx - 14 - TIP_W) : cx + 14;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
