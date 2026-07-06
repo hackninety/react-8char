@@ -8,7 +8,7 @@ import BaziForm from '@/components/BaziForm';
 import BaziChart from '@/components/BaziChart';
 import ThemeToggle from '@/components/ThemeToggle';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
-import { saveChart, loadChart } from '@/lib/storage';
+import { saveParams, loadParams } from '@/lib/storage';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 export default function App() {
@@ -31,21 +31,12 @@ export default function App() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // 刷新后恢复上次命盘
+  // 起盘参数持久化：刷新时据此重算命盘（不存渲染结果）
   useEffect(() => {
-    const saved = loadChart();
-    if (saved) {
-      setInput(saved.input);
-      setResult(saved.result);
-    }
-  }, []);
+    if (input) saveParams(input);
+  }, [input]);
 
-  // 命盘变化即持久化（含对拍结果）
-  useEffect(() => {
-    if (input && result) saveChart(input, result);
-  }, [input, result]);
-
-  const handleSubmit = useCallback((formInput: BaziInput) => {
+  const handleSubmit = useCallback((formInput: BaziInput, silent = false) => {
     setLoading(true);
     setResult(null);
     setInput(formInput);
@@ -56,7 +47,7 @@ export default function App() {
           // 经引擎门面排盘（引擎代码懒加载）
           const res = await calculateChart(formInput, formInput.engine ?? DEFAULT_ENGINE);
           setResult(res as unknown as BaziResult);
-          toast.success('排盘成功！数据已准备好', { icon: '✨' });
+          if (!silent) toast.success('排盘成功！数据已准备好', { icon: '✨' });
           // 对拍校验异步补挂，不阻塞主盘展示
           if (formInput.compare) {
             try {
@@ -77,6 +68,12 @@ export default function App() {
       })();
     }, 300);
   }, []);
+
+  // 刷新后：检测到已存起盘参数则据此重算命盘（静默，不弹成功提示）
+  useEffect(() => {
+    const params = loadParams();
+    if (params) handleSubmit(params, true);
+  }, [handleSubmit]);
 
   return (
     <TooltipProvider>
