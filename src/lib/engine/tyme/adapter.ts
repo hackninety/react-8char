@@ -74,6 +74,8 @@ function resolveInput(input: BaziInput) {
     solarTimeInfo = {
       applied: true,
       city: input.city,
+      longitude: lng,
+      latitude: input.latitude,
       utcOffset,
       offsetMinutes: off.total,
       longitudeMinutes: off.longitudeMinutes,

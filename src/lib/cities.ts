@@ -541,6 +541,24 @@ export function findLongitude(
   return district?.longitude;
 }
 
+// 省级代表纬度（以省会/中心城市为代表点）。
+// 纬度用于「地利」寒热气候判断——气候是区域性的，区县级微差对寒热信号无意义，
+// 故按省级气候带取值即可（直辖市/省会本身即代表点）。
+export const PROVINCE_LATITUDE: Record<string, number> = {
+  北京: 39.9, 天津: 39.1, 河北: 38.0, 山西: 37.9, 内蒙古: 40.8,
+  辽宁: 41.8, 吉林: 43.9, 黑龙江: 45.8, 上海: 31.2, 江苏: 32.1,
+  浙江: 30.3, 安徽: 31.8, 福建: 26.1, 江西: 28.7, 山东: 36.7,
+  河南: 34.7, 湖北: 30.6, 湖南: 28.2, 广东: 23.1, 广西: 22.8,
+  海南: 20.0, 重庆: 29.6, 四川: 30.7, 贵州: 26.6, 云南: 25.0,
+  西藏: 29.7, 陕西: 34.3, 甘肃: 36.1, 青海: 36.6, 宁夏: 38.5,
+  新疆: 43.8, 台湾: 25.0, 香港: 22.3, 澳门: 22.2,
+};
+
+/** 按省份取代表纬度（供地利寒热判断；未知省份返回 undefined） */
+export function findLatitude(provinceName: string): number | undefined {
+  return PROVINCE_LATITUDE[provinceName];
+}
+
 export function getCityByName(name: string): { name: string; province: string; longitude: number } | undefined {
   for (const p of PROVINCES) {
     for (const ct of p.cities) {

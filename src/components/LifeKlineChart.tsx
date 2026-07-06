@@ -92,6 +92,9 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
             <span style={{ color: DOWN }}>绿跌</span>
             <span className="ml-1" style={{ color: GOLD }}>金线=5年均线</span>
           </p>
+          {data.dili.hasLocation && (
+            <p className="text-[11px] text-muted-foreground/80 mt-0.5">🧭 {data.dili.note}</p>
+          )}
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto pb-1">

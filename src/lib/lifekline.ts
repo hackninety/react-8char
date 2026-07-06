@@ -13,6 +13,7 @@
 import type { BaziResult } from './bazi';
 import { getGanWuXing } from './utils';
 import { createShenShaLookup } from './engine/tyme/shensha';
+import { computeDiLi, type DiLiResult, type DiLiOffsets } from './dili';
 
 // ─── 基础表 ────────────────────────────────────────────
 
@@ -89,6 +90,8 @@ export interface LifeKlineData {
   years: KlineYearPoint[];
   decades: KlineDecade[];
   currentIndex: number;
+  /** 地利方位加成（出生地对各维的常数修正） */
+  dili: DiLiResult;
 }
 
 // ─── 工具 ──────────────────────────────────────────────
@@ -161,6 +164,19 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
     { year: p.year, month: p.month, day: p.day, time: p.time },
     p.day.xunKong || '',
   );
+
+  // 地利方位（出生地对各维的常数加成）
+  const st = (chart as any)._solarTimeInfo;
+  const dili = computeDiLi({
+    dayWuXing: dayWx,
+    judge,
+    monthZhi,
+    gender,
+    latitude: st?.latitude,
+    longitude: st?.longitude,
+    place: st?.city,
+  });
+  const diliKey: Record<KlineDim, keyof DiLiOffsets> = { total: 'total', career: 'career', wealth: 'wealth', love: 'love', health: 'health' };
 
   const byYear = new Map<number, KlineYearPoint>();
   for (const dy of dayunArr) {
@@ -255,6 +271,11 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
         add('total', -8, '天克地冲日柱'); add('health', -10, '天克地冲日柱'); add('career', -3, '天克地冲日柱');
       }
 
+      // ── 地利方位（出生地对各维的常数加成）──
+      if (dili.hasLocation) {
+        for (const d of KLINE_DIMS) add(d.key, dili.offsets[diliKey[d.key]], `地利·宜${dili.preferDirs}方`);
+      }
+
       const scores = mkRec(() => 0);
       for (const d of KLINE_DIMS) scores[d.key] = clamp(Math.round(S[d.key]), 8, 92);
 
@@ -307,5 +328,6 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
     judge, judgeSource: source, preferenceNote: note, gender,
     years, decades,
     currentIndex: years.findIndex((y) => y.year === nowYear),
+    dili,
   };
 }

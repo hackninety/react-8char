@@ -31,6 +31,8 @@ export interface BaziInput {
   sect: 1 | 2;
   city?: string;
   longitude?: number;
+  /** 出生地纬度（用于地利寒热判断，南正北负？——统一北纬为正）；城市模式按省级取，手动可填 */
+  latitude?: number;
   /** 出生地时区 UTC 偏移（小时，如东京 9、纽约 -5）；缺省 8（北京时）。仅手动经度时需指定 */
   utcOffset?: number;
   livingPlace?: string;
@@ -71,6 +73,8 @@ export function calculateBazi(input: BaziInput): BaziResult {
     solarTimeInfo = {
       applied: true,
       city: input.city,
+      longitude: lng,
+      latitude: input.latitude,
       utcOffset,
       offsetMinutes: off.total,
       longitudeMinutes: off.longitudeMinutes,
@@ -169,6 +173,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
           judge: k.judge,
           gender: k.gender,
           note: k.preferenceNote,
+          ...(k.dili.hasLocation ? { dili: k.dili.note, diliOffsets: k.dili.offsets } : {}),
           dims: ['年', '干支', '总运', '事业', '财运', '感情', '健康'],
           decadeAvg: k.decades.map((d) => [d.ganZhi, d.startYear, d.avg.total, d.avg.career, d.avg.wealth, d.avg.love, d.avg.health]),
           years: k.years.map((y) => [y.year, y.ganZhi, y.scores.total, y.scores.career, y.scores.wealth, y.scores.love, y.scores.health]),

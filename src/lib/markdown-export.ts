@@ -344,6 +344,9 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
       `总${s.total}·事业${s.career}·财${s.wealth}·情${s.love}·健${s.health}`;
     push('## 人生K线（五维运势量化评分）', '');
     push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}；性别${kline.gender}），逐年将大运基调、流年十神、宫位冲刑合害、神煞吉凶按维度量化为 0-100 分，分「总运/事业/财运/感情/健康」。简化模型仅供参考，AI 可引用因素但应以命理逻辑为准；**注意各维可背离（如总分高而财运低）**。`, '');
+    if (kline.dili.hasLocation) {
+      push(`> 地利方位：${kline.dili.note}（已按此对各维评分做常数微调；地利属先天禀赋修正，非改命）。`, '');
+    }
     if (kline.decades.length) {
       push('### 大运各维均分', '');
       push('| 大运 | 起止 | 总运 | 事业 | 财运 | 感情 | 健康 |', '| --- | --- | --- | --- | --- | --- | --- |');

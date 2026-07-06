@@ -16,7 +16,7 @@ import {
 import type { BaziInput } from '@/lib/bazi';
 import { TIAN_GAN, DI_ZHI, lunarToSolar, reverseLookupBazi } from '@/lib/bazi';
 import type { ReverseLookupResult } from '@/lib/bazi';
-import { PROVINCES, findLongitude } from '@/lib/cities';
+import { PROVINCES, findLongitude, findLatitude } from '@/lib/cities';
 import { listEngines, DEFAULT_ENGINE } from '@/lib/engine';
 import type { EngineId } from '@/lib/engine';
 
@@ -56,6 +56,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [locMode, setLocMode] = useState<'city' | 'manual'>('city');
   const [manualPlace, setManualPlace] = useState('');
   const [manualLng, setManualLng] = useState('');
+  const [manualLat, setManualLat] = useState(''); // 出生地纬度（北纬正、南纬负），用于地利寒热
   const [manualTz, setManualTz] = useState('8'); // 出生地时区 UTC 偏移（小时）
   const [province, setProvince] = useState('北京');
   const [cityName, setCityName] = useState('北京');
@@ -76,7 +77,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [lookupError, setLookupError] = useState('');
 
   // 解析出生地定位为 { city, longitude, utcOffset }；校验失败返回 null（已置错误提示）
-  const resolveLocation = (): Pick<BaziInput, 'city' | 'longitude' | 'utcOffset'> | null => {
+  const resolveLocation = (): Pick<BaziInput, 'city' | 'longitude' | 'latitude' | 'utcOffset'> | null => {
     if (!useTrueSolar) return {};
     if (locMode === 'manual') {
       const lng = parseFloat(manualLng);
@@ -89,15 +90,25 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         setLookupError('请输入有效时区 UTC 偏移（-12 ~ 14，如东京 9、纽约 -5）');
         return null;
       }
+      let lat: number | undefined;
+      if (manualLat.trim() !== '') {
+        lat = parseFloat(manualLat);
+        if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+          setLookupError('请输入有效纬度（-90 ~ 90，北纬正、南纬负，如东京 35.68）');
+          return null;
+        }
+      }
       return {
         city: manualPlace.trim() || `经度${lng}°`,
         longitude: lng,
+        latitude: lat,
         utcOffset: tz,
       };
     }
     return {
       city: district === '市区' ? cityName : `${cityName} ${district}`,
       longitude: findLongitude(province, cityName, district),
+      latitude: findLatitude(province),
     };
   };
 
@@ -388,8 +399,12 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
               onChange={(e) => setManualPlace(e.target.value)}
               className="border-gold/20 h-8 text-xs focus:border-gold/50" />
             <div className="flex gap-1">
-              <Input type="text" inputMode="decimal" placeholder="经度 139.8035575" value={manualLng}
+              <Input type="text" inputMode="decimal" placeholder="经度 139.80" value={manualLng}
                 onChange={(e) => setManualLng(e.target.value)}
+                className="border-gold/20 h-8 text-xs focus:border-gold/50 flex-1 min-w-0" />
+              <Input type="text" inputMode="decimal" title="出生地纬度（北纬正、南纬负），用于地利寒热判断，选填"
+                placeholder="纬度 35.68" value={manualLat}
+                onChange={(e) => setManualLat(e.target.value)}
                 className="border-gold/20 h-8 text-xs focus:border-gold/50 flex-1 min-w-0" />
               <Input type="text" inputMode="decimal" title="出生地时区 UTC 偏移（小时），如东京 9、纽约 -5"
                 placeholder="UTC" value={manualTz}
@@ -397,7 +412,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                 className="border-gold/20 h-8 text-xs focus:border-gold/50 w-14 shrink-0" />
             </div>
             <p className="text-[10px] text-muted-foreground/70 leading-tight">
-              东经正 / 西经负；右侧填出生地时区（默认 8=北京）。国外出生请填当地时刻 + 当地时区。
+              东经正/西经负、北纬正/南纬负；末位填时区(默认8=北京)。纬度用于地利寒热(选填)。国外出生请填当地时刻+当地时区。
             </p>
           </div>
         )}
