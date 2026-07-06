@@ -39,3 +39,42 @@ export function clearChart(): void {
     /* ignore */
   }
 }
+
+// ─── 表单快照（回填输入框，刷新不变）──────────────────
+
+const FORM_KEY = 'react-8char:form:v1';
+
+/** 排盘表单的全部可持久字段（排除 lookupResults/lookupError 等瞬时态） */
+export interface FormSnapshot {
+  mode: string;
+  yearStr: string; monthStr: string; dayStr: string; hourStr: string; minuteStr: string;
+  isLeapMonth: boolean;
+  gender: 0 | 1; sect: 1 | 2;
+  engine: string; compareOn: boolean;
+  useTrueSolar: boolean;
+  locMode: string; manualPlace: string; manualLng: string; manualLat: string; manualTz: string;
+  province: string; cityName: string; district: string;
+  livingPlace: string; userNote: string;
+  yearGan: string; yearZhi: string; monthGan: string; monthZhi: string;
+  dayGan: string; dayZhi: string; timeGan: string; timeZhi: string;
+}
+
+export function saveForm(snap: FormSnapshot): void {
+  try {
+    localStorage.setItem(FORM_KEY, JSON.stringify(snap));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadForm(): Partial<FormSnapshot> | null {
+  try {
+    const raw = localStorage.getItem(FORM_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data && typeof data === 'object') return data as Partial<FormSnapshot>;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, MapPin, Calendar, Search, Moon } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import type { ReverseLookupResult } from '@/lib/bazi';
 import { PROVINCES, findLongitude, findLatitude } from '@/lib/cities';
 import { listEngines, DEFAULT_ENGINE } from '@/lib/engine';
 import type { EngineId } from '@/lib/engine';
+import { loadForm, saveForm } from '@/lib/storage';
 
 type InputMode = 'solar' | 'lunar' | 'bazi';
 
@@ -36,45 +37,58 @@ const MODE_LABELS: Record<InputMode, { label: string; icon: React.ReactNode }> =
 export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const [mode, setMode] = useState<InputMode>('solar');
+  // 上次表单快照（刷新回填；清空浏览器缓存才回默认）——惰性读取一次
+  const [saved] = useState(loadForm);
+  const [mode, setMode] = useState<InputMode>((saved?.mode as InputMode) ?? 'solar');
 
   // 公历 / 农历 共用（string 类型以支持清空）— 默认浏览器当前时间
-  const [yearStr, setYearStr] = useState(String(now.getFullYear()));
-  const [monthStr, setMonthStr] = useState(String(now.getMonth() + 1));
-  const [dayStr, setDayStr] = useState(String(now.getDate()));
-  const [hourStr, setHourStr] = useState(String(now.getHours()));
-  const [minuteStr, setMinuteStr] = useState(String(now.getMinutes()));
-  const [isLeapMonth, setIsLeapMonth] = useState(false);
+  const [yearStr, setYearStr] = useState(saved?.yearStr ?? String(now.getFullYear()));
+  const [monthStr, setMonthStr] = useState(saved?.monthStr ?? String(now.getMonth() + 1));
+  const [dayStr, setDayStr] = useState(saved?.dayStr ?? String(now.getDate()));
+  const [hourStr, setHourStr] = useState(saved?.hourStr ?? String(now.getHours()));
+  const [minuteStr, setMinuteStr] = useState(saved?.minuteStr ?? String(now.getMinutes()));
+  const [isLeapMonth, setIsLeapMonth] = useState(saved?.isLeapMonth ?? false);
 
   // 共用
-  const [gender, setGender] = useState<0 | 1>(1);
-  const [sect, setSect] = useState<1 | 2>(1);
-  const [engineId, setEngineId] = useState<EngineId>(DEFAULT_ENGINE);
-  const [compareOn, setCompareOn] = useState(false);
-  const [useTrueSolar, setUseTrueSolar] = useState(true);
+  const [gender, setGender] = useState<0 | 1>(saved?.gender ?? 1);
+  const [sect, setSect] = useState<1 | 2>(saved?.sect ?? 1);
+  const [engineId, setEngineId] = useState<EngineId>((saved?.engine as EngineId) ?? DEFAULT_ENGINE);
+  const [compareOn, setCompareOn] = useState(saved?.compareOn ?? false);
+  const [useTrueSolar, setUseTrueSolar] = useState(saved?.useTrueSolar ?? true);
   // 出生地定位：城市下拉（国内）/ 手动经度（国外自由填写）
-  const [locMode, setLocMode] = useState<'city' | 'manual'>('city');
-  const [manualPlace, setManualPlace] = useState('');
-  const [manualLng, setManualLng] = useState('');
-  const [manualLat, setManualLat] = useState(''); // 出生地纬度（北纬正、南纬负），用于地利寒热
-  const [manualTz, setManualTz] = useState('8'); // 出生地时区 UTC 偏移（小时）
-  const [province, setProvince] = useState('北京');
-  const [cityName, setCityName] = useState('北京');
-  const [district, setDistrict] = useState(PROVINCES[0].cities[0].districts[0].name);
-  const [livingPlace, setLivingPlace] = useState('');
-  const [userNote, setUserNote] = useState('');
+  const [locMode, setLocMode] = useState<'city' | 'manual'>((saved?.locMode as 'city' | 'manual') ?? 'city');
+  const [manualPlace, setManualPlace] = useState(saved?.manualPlace ?? '');
+  const [manualLng, setManualLng] = useState(saved?.manualLng ?? '');
+  const [manualLat, setManualLat] = useState(saved?.manualLat ?? ''); // 出生地纬度（北纬正、南纬负），用于地利寒热
+  const [manualTz, setManualTz] = useState(saved?.manualTz ?? '8'); // 出生地时区 UTC 偏移（小时）
+  const [province, setProvince] = useState(saved?.province ?? '北京');
+  const [cityName, setCityName] = useState(saved?.cityName ?? '北京');
+  const [district, setDistrict] = useState(saved?.district ?? PROVINCES[0].cities[0].districts[0].name);
+  const [livingPlace, setLivingPlace] = useState(saved?.livingPlace ?? '');
+  const [userNote, setUserNote] = useState(saved?.userNote ?? '');
 
   // 八字反查 — 8 个独立天干地支
-  const [yearGan, setYearGan] = useState('');
-  const [yearZhi, setYearZhi] = useState('');
-  const [monthGan, setMonthGan] = useState('');
-  const [monthZhi, setMonthZhi] = useState('');
-  const [dayGan, setDayGan] = useState('');
-  const [dayZhi, setDayZhi] = useState('');
-  const [timeGan, setTimeGan] = useState('');
-  const [timeZhi, setTimeZhi] = useState('');
+  const [yearGan, setYearGan] = useState(saved?.yearGan ?? '');
+  const [yearZhi, setYearZhi] = useState(saved?.yearZhi ?? '');
+  const [monthGan, setMonthGan] = useState(saved?.monthGan ?? '');
+  const [monthZhi, setMonthZhi] = useState(saved?.monthZhi ?? '');
+  const [dayGan, setDayGan] = useState(saved?.dayGan ?? '');
+  const [dayZhi, setDayZhi] = useState(saved?.dayZhi ?? '');
+  const [timeGan, setTimeGan] = useState(saved?.timeGan ?? '');
+  const [timeZhi, setTimeZhi] = useState(saved?.timeZhi ?? '');
   const [lookupResults, setLookupResults] = useState<ReverseLookupResult[]>([]);
   const [lookupError, setLookupError] = useState('');
+
+  // 表单任一字段变化即持久化（瞬时态 lookupResults/lookupError 不存）
+  useEffect(() => {
+    saveForm({
+      mode, yearStr, monthStr, dayStr, hourStr, minuteStr, isLeapMonth,
+      gender, sect, engine: engineId, compareOn, useTrueSolar,
+      locMode, manualPlace, manualLng, manualLat, manualTz,
+      province, cityName, district, livingPlace, userNote,
+      yearGan, yearZhi, monthGan, monthZhi, dayGan, dayZhi, timeGan, timeZhi,
+    });
+  });
 
   // 解析出生地定位为 { city, longitude, utcOffset }；校验失败返回 null（已置错误提示）
   const resolveLocation = (): Pick<BaziInput, 'city' | 'longitude' | 'latitude' | 'utcOffset'> | null => {
