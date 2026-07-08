@@ -222,6 +222,29 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
       // 分维随整体运势轻微起伏
       for (const d of ['career', 'wealth', 'love'] as const) add(d, favYear * 0.15, '整体运势');
 
+      // ── 求财性质：同样「财旺」，主动得财 vs 被动破财，好坏迥异 ──
+      // 判别：身能否任财 + 财生向何方（食伤/正官=主动有对价；七杀攻身/比劫=被动无对价损失）
+      {
+        const active = new Set([gShen, zShen, hasDy ? dy.ganshen ?? '' : '', hasDy ? dy.zhishen ?? '' : ''].filter(Boolean));
+        const anyOf = (...ks: string[]) => ks.some((k) => active.has(k));
+        if (anyOf('财', '才')) {
+          const hasShiShang = anyOf('食', '伤');
+          const hasZhengGuan = active.has('官');
+          const hasQiSha = active.has('杀');
+          const hasBiJie = anyOf('比', '劫');
+          if (hasShiShang) add('wealth', 4, '食伤生财·主动求财得利');
+          if (hasQiSha && judge === '身弱') {
+            add('wealth', -7, '财生七杀攻身·因财惹祸(被动破财/官非)');
+            add('health', -3, '因财招灾·耗身'); add('total', -2, '因财招灾');
+          } else if (hasQiSha && judge === '身强') {
+            add('wealth', 3, '财滋七杀·身强能任(魄力生财)');
+          }
+          if (hasZhengGuan) add('wealth', judge === '身弱' ? -3 : 2, judge === '身弱' ? '财生官泄身·力不从心破耗' : '财生正官·正途得利');
+          if (hasBiJie) add('wealth', -5, '比劫夺财·破耗被夺(被动)');
+          if (judge === '身弱' && !hasShiShang && !hasBiJie && !hasQiSha && !hasZhengGuan) add('wealth', -2, '身弱财旺·富屋贫人担财乏力');
+        }
+      }
+
       // ── 支冲刑合害（含宫位）──
       let totalZhiEff = 0;
       for (const [zhi, label] of natalZhis) {
