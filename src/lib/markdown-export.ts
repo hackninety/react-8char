@@ -381,7 +381,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     const five = (s: { total: number; career: number; wealth: number; love: number; health: number }) =>
       `总${s.total}·事业${s.career}·财${s.wealth}·情${s.love}·健${s.health}`;
     push('## 人生K线（五维运势量化评分）', '');
-    push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}；性别${kline.gender}），逐年将大运基调、流年十神、宫位冲刑合害、神煞吉凶按维度量化为 0-100 分，分「总运/事业/财运/感情/健康」。简化模型仅供参考，AI 可引用因素但应以命理逻辑为准；**注意各维可背离（如总分高而财运低）**。财运分表达**净吉凶而非活动量**：区分主动得财（食伤生财/财生正官/身强任财）与被动破财（身弱财生七杀致官非、比劫夺财），故「赚得多却因财惹祸」之年财运为低分，因素栏会注明主动/被动。`, '');
+    push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}；性别${kline.gender}），逐年将大运基调、大运支冲刑合害本命（冲提纲/婚姻宫为十年主题）、流年十神、宫位冲刑合害、岁运互冲、伏吟、流年干合日干、神煞吉凶按维度量化为 0-100 分，分「总运/事业/财运/感情/健康」。简化模型仅供参考，AI 可引用因素但应以命理逻辑为准；**注意各维可背离（如总分高而财运低）**。财运分表达**净吉凶而非活动量**：区分主动得财（食伤生财/财生正官/身强任财）与被动破财（身弱财生七杀致官非、比劫夺财），故「赚得多却因财惹祸」之年财运为低分，因素栏会注明主动/被动。`, '');
     if (kline.dili.hasLocation) {
       push(`> 地利方位：${kline.dili.note}（已按此对各维评分做常数微调；地利属先天禀赋修正，非改命）。`, '');
     }

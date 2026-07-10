@@ -4,6 +4,9 @@
 // 评分模型（简化扶抑 + 十神类象 + 宫位 + 神煞）：
 //   · 总运：以日主强弱定喜忌，大运基调 + 流年干支十神(喜忌加权) + 支冲刑合害
 //           + 神煞吉凶 + 岁运并临/天克地冲。
+//   · 大运层（十年主题，作用于该运每一年）：大运支冲刑合害本命四支（冲提纲/冲婚姻宫
+//     为十年级事件）、大运伏吟日柱；流年层另计岁运支互冲合刑、流年伏吟日柱/年柱、
+//     流年干合日干（配偶星合身为姻缘引动）。
 //   · 事业：官杀(权位)/印(贵人学业)/食伤(才华) 类象加权；月柱=事业提纲，冲则动荡；
 //           贵人/将星神煞助力。
 //   · 财运：财才(财星)/食伤(生财) 加权；比劫劫财、劫煞破财扣分；禄神金舆助财。
@@ -28,6 +31,8 @@ const XING: Record<string, string[]> = {
   丑: ['戌', '未'], 戌: ['丑', '未'], 未: ['丑', '戌'],
   子: ['卯'], 卯: ['子'], 辰: ['辰'], 午: ['午'], 酉: ['酉'], 亥: ['亥'],
 };
+// 天干五合（对称）
+const WU_HE: Record<string, string> = { 甲: '己', 己: '甲', 乙: '庚', 庚: '乙', 丙: '辛', 辛: '丙', 丁: '壬', 壬: '丁', 戊: '癸', 癸: '戊' };
 
 const SHORT_FULL: Record<string, string> = {
   比: '比肩', 劫: '劫财', 食: '食神', 伤: '伤官',
@@ -178,11 +183,38 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
   });
   const diliKey: Record<KlineDim, keyof DiLiOffsets> = { total: 'total', career: 'career', wealth: 'wealth', love: 'love', health: 'health' };
 
+  const dayGZ = p.day.gan + dayZhi;
+  const yearGZ = p.year.gan + p.year.zhi;
+
   const byYear = new Map<number, KlineYearPoint>();
   for (const dy of dayunArr) {
     if (!dy.liunianArr?.length) continue;
     const hasDy = !!dy.ganZhi;
     const dyFav = hasDy ? (w[dy.ganshen ?? ''] ?? 0) + (w[dy.zhishen ?? ''] ?? 0) : 0;
+
+    // ── 大运支 × 本命四支：十年主题级事件（冲提纲/冲婚姻宫为大运级动荡），作用于该运每一年 ──
+    const dyZhi = hasDy && dy.ganZhi.length >= 2 ? dy.ganZhi[1] : '';
+    const decadeEff: [KlineDim, number, string][] = [];
+    if (dyZhi) {
+      for (const [zhi, label] of natalZhis) {
+        if (CHONG[dyZhi] === zhi) {
+          if (label === '月支') decadeEff.push(['total', -4, '大运冲月支(提纲)'], ['career', -5, '大运冲月支(提纲十年动荡)'], ['health', -2, '大运冲月支']);
+          else if (label === '日支') decadeEff.push(['total', -4, '大运冲日支'], ['love', -6, '大运冲日支(婚姻宫)'], ['health', -3, '大运冲日支']);
+          else decadeEff.push(['total', -2, `大运冲${label}`], ['health', -2, `大运冲${label}`]);
+        } else if (XING[dyZhi]?.includes(zhi)) {
+          decadeEff.push(['total', -2, `大运刑${label}`], ['health', -3, `大运刑${label}`]);
+          if (label === '日支') decadeEff.push(['love', -3, '大运刑婚姻宫']);
+          if (label === '月支') decadeEff.push(['career', -2, '大运刑月支']);
+        } else if (HAI[dyZhi] === zhi) {
+          decadeEff.push(['health', -2, `大运害${label}`]);
+          if (label === '日支') decadeEff.push(['love', -2, '大运害婚姻宫']);
+        } else if (LIU_HE[dyZhi] === zhi) {
+          if (label === '日支') decadeEff.push(['total', 2, '大运合日支'], ['love', 4, '大运合日支(婚姻宫)']);
+          else if (label === '月支') decadeEff.push(['total', 2, '大运合月支'], ['career', 3, '大运合月支(机遇)']);
+        }
+      }
+      if (dy.ganZhi === dayGZ) decadeEff.push(['total', -3, '大运伏吟日柱'], ['health', -3, '大运伏吟日柱']);
+    }
 
     for (const ln of dy.liunianArr) {
       if (!ln.ganZhi || ln.ganZhi.length < 2) continue;
@@ -270,6 +302,28 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
       }
       if (totalZhiEff !== 0) add('total', totalZhiEff, '支作用综合');
 
+      // ── 大运层十年主题效果 ──
+      for (const [d, v, label] of decadeEff) add(d, v, label);
+
+      // ── 岁运支互作 ──
+      if (dyZhi) {
+        if (CHONG[lnZhi] === dyZhi) { add('total', -3, '岁运相冲'); add('health', -2, '岁运相冲'); }
+        else if (XING[lnZhi]?.includes(dyZhi)) add('health', -2, '岁运相刑');
+        else if (LIU_HE[lnZhi] === dyZhi) add('total', 2, '岁运相合');
+      }
+
+      // ── 伏吟（干支全同主滞重反复）──
+      if (ln.ganZhi === dayGZ) { add('total', -4, '流年伏吟日柱'); add('health', -4, '流年伏吟日柱'); add('love', -2, '流年伏吟日柱'); }
+      else if (ln.ganZhi === yearGZ) { add('total', -3, '流年伏吟年柱'); add('health', -3, '流年伏吟年柱'); }
+
+      // ── 流年干合日干（合动日主；配偶星合身为姻缘引动）──
+      if (WU_HE[p.day.gan] === lnGan) {
+        const spouseShort = gender === '女' ? '官' : '财';
+        if (gShen === spouseShort) add('love', 5, '配偶星合日主(姻缘引动)');
+        else add('love', 2, '流年干合日干(牵动)');
+        add('total', 1, '流年干合日干');
+      }
+
       // ── 神煞 ──
       const ss = shenShaOf({ gan: lnGan, zhi: lnZhi });
       let ssTotal = 0;
@@ -325,7 +379,7 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
       const close = y.scores[key];
       const open = prevClose[key];
       y.delta[key] = close - open;
-      const vol = clamp(3 + y.factors[key].filter((f) => /冲|刑|害|并临|克/.test(f)).length * 2, 3, 14);
+      const vol = clamp(3 + y.factors[key].filter((f) => /冲|刑|害|并临|克|伏吟/.test(f)).length * 2, 3, 14);
       y.ohlc[key] = {
         open, close,
         high: clamp(Math.max(open, close) + vol * 0.6, 2, 98),
