@@ -100,6 +100,14 @@ export function formatPaipanSummary(chartId: string, data: any, chart: any, klin
     if (Array.isArray(gj.jiShen) && gj.jiShen.length) L.push(`- 忌神：${gj.jiShen.map((x: any) => `${x.shiShen}〔${x.role}〕${x.status}`).join('；')}`);
     L.push(`- 初判：${gj.verdict}${gj.siLingNote ? `；⚠ ${gj.siLingNote}` : ''}`);
   }
+  const ys = data.yongShen;
+  if (ys) {
+    L.push('', '## 用神三法合参');
+    for (const fa of [ys.fuYi, ys.tiaoHou, ys.tongGuan]) {
+      if (fa) L.push(`- ${fa.fa}：${fa.yongShen?.length ? fa.yongShen.join('、') : '不取'}——${fa.note}`);
+    }
+    L.push(`- **合参**：${ys.heCan}`);
+  }
   if (Array.isArray(data.patterns) && data.patterns.length) {
     L.push('', '## 十神组合线索（程序预检，吉凶须结合全局覆核）');
     data.patterns.forEach((x: any) => L.push(`- **${x.name}**［${x.hit}］：${x.note}`));

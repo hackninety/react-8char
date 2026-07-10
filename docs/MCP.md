@@ -55,6 +55,8 @@ claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 
 另有 **6 个 prompts**（`deep-dive-wealth/career/love/health/children/family`）：六大专项深挖清单的协议原语版，客户端可直接调用（参数 chartId）。`fanpai` 支持 sect 与 fromYear（突破 60 年限制）；`query_wuyunliuqi` 传 year 可查任意年运气年度格局。
 
+**3 个 resources**（静态参考数据，客户端按需挂载）：`bazi://reference/tiaohou`（调候用神全表 120 格）、`bazi://reference/xiangfa`（盲派象法表）、`bazi://reference/shensha`（神煞释义词典）。
+
 ## 设计要点
 
 - **stdio 传输**：stdout 只走 JSON-RPC。排盘引擎的耗时 `console.log` 会撕裂协议，入口（[`mcp/server.ts`](../mcp/server.ts)）先把 log/info/debug/warn 改道 stderr，再动态加载业务模块。

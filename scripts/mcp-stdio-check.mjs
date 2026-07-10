@@ -56,10 +56,15 @@ try {
   const promptCount = (pl.result?.prompts ?? []).length;
   if (promptCount < 6) throw new Error(`prompts/list 仅 ${promptCount} 个 prompt`);
 
-  // 免排盘的轻量调用，触发一次真实工具执行路径
+  const rl = await call('resources/list', {});
+  const resourceCount = (rl.result?.resources ?? []).length;
+  if (resourceCount < 3) throw new Error(`resources/list 仅 ${resourceCount} 个资源`);
+
+  // 免排盘的轻量调用，触发一次真实工具执行路径（原文段须已随启动预载）
   const qt = await call('tools/call', { name: 'query_tiaohou', arguments: { dayGan: '甲', monthZhi: '子' } });
   const qtText = (qt.result?.content ?? []).map((c) => c.text).join('');
   if (!qtText.includes('丁')) throw new Error('query_tiaohou 返回异常');
+  if (!qtText.includes('原文')) throw new Error('query_tiaohou 缺原文段（懒加载预载失效？）');
 
   // 触发一次排盘（引擎的耗时 console.log 必须已改道 stderr）
   const pp = await call('tools/call', {

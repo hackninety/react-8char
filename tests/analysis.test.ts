@@ -1,9 +1,12 @@
 // 分析模块回归测试：调候/司令/组合预检/神煞词典/地利/人生K线/流月/导出结构。
 // 期望值均经本轮开发中逐项手工核对（见 docs/Todo.md 2026-07 条目），冻结防回归。
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { calculateBazi, buildExportJSON, getLiuYueForYear } from '../src/lib/bazi';
 import type { BaziInput } from '../src/lib/bazi';
-import { getTiaoHouGods, analyzeTiaoHou } from '../src/lib/tiaohou';
+import { getTiaoHouGods, analyzeTiaoHou, preloadQiongTong } from '../src/lib/tiaohou';
+
+// 原文库为懒加载 chunk，涉 classic 字段的断言须先预载
+beforeAll(async () => { await preloadQiongTong(); });
 import { computeSiLing } from '../src/lib/siling';
 import { detectPatterns } from '../src/lib/patterns';
 import { lookupShenShaMeanings } from '../src/lib/shensha-dict';

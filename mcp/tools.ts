@@ -9,7 +9,9 @@ import type { BaziInput } from '../src/lib/bazi';
 import { buildExportJSON, getLiuYueForYear, getLiuRiForMonth, reverseLookupBazi, TIAN_GAN, DI_ZHI, JIA_ZI_60 } from '../src/lib/bazi';
 import { calculateChart, compareEngines } from '../src/lib/engine';
 import { buildLifeKline, type LifeKlineData } from '../src/lib/lifekline';
-import { getTiaoHouGods, getQiongTongText } from '../src/lib/tiaohou';
+import { getTiaoHouGods, getQiongTongText, preloadQiongTong } from '../src/lib/tiaohou';
+import { GAN_XIANG, ZHI_XIANG, SHISHEN_XIANG } from '../src/lib/xiangfa';
+import { SHENSHA_MEANINGS } from '../src/lib/shensha-dict';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from '../src/lib/wuyunliuqi';
 import { getCityByName, findLatitude } from '../src/lib/cities';
 import { analyzeHehun, buildHehunMarkdown } from '../src/lib/hehun';
@@ -345,6 +347,37 @@ export function createServer(): McpServer {
     }
   });
 
+  // ── 静态参考 resources（协议原语：客户端可按需挂载，无须塞进每次工具输出）──
+  const mdResource = (uri: string, text: string) => ({
+    contents: [{ uri, mimeType: 'text/markdown' as const, text }],
+  });
+  server.registerResource('tiaohou-table', 'bazi://reference/tiaohou', {
+    title: '调候用神全表',
+    description: '穷通宝鉴 120 格「日主×月支」调候用神速查表（主用在前）',
+    mimeType: 'text/markdown',
+  }, async (uri) => {
+    const ZHIS = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+    const rows = TIAN_GAN.map((g) =>
+      `- **${g}**：${ZHIS.map((z) => `${z}=${(getTiaoHouGods(g, z) ?? []).join('')}`).join(' ')}`,
+    );
+    return mdResource(uri.href, `# 穷通宝鉴调候用神全表\n\n> 主用在前；佐神次序各本或有异文。月支序：寅(正月)起。\n\n${rows.join('\n')}`);
+  });
+  server.registerResource('xiangfa-table', 'bazi://reference/xiangfa', {
+    title: '盲派象法参考表',
+    description: '十干本象 / 十二支本象 / 十神象义（通行类象简表，非引文）',
+    mimeType: 'text/markdown',
+  }, async (uri) => {
+    const sec = (t: string, o: Record<string, string>) => `## ${t}\n\n${Object.entries(o).map(([k, v]) => `- **${k}**：${v}`).join('\n')}`;
+    return mdResource(uri.href, `# 盲派象法参考表\n\n> 通行类象简表（描述性约定，各家或有出入）。\n\n${sec('十干本象', GAN_XIANG)}\n\n${sec('十二支本象', ZHI_XIANG)}\n\n${sec('十神象义', SHISHEN_XIANG)}`);
+  });
+  server.registerResource('shensha-dict', 'bazi://reference/shensha', {
+    title: '神煞释义词典',
+    description: '常用神煞一行义（吉凶+主事，三命通会/协纪辨方书通说）',
+    mimeType: 'text/markdown',
+  }, async (uri) =>
+    mdResource(uri.href, `# 神煞释义词典\n\n${Object.entries(SHENSHA_MEANINGS).map(([k, v]) => `- **${k}**：${v}`).join('\n')}`),
+  );
+
   // ── 专项深挖 prompts（与静态导出的深挖协议共用同一份清单）──
   for (const t of DEEP_DIVE_TOPICS) {
     server.registerPrompt(`deep-dive-${t.id}`, {
@@ -366,6 +399,7 @@ export function createServer(): McpServer {
 }
 
 export async function main() {
+  await preloadQiongTong(); // 原文库懒加载：启动即备好，query_tiaohou/paipan 的 classic 字段同步可用
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);

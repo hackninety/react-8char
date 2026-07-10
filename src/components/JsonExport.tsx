@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Download, Sparkles, Bot } from 'lucide-react';
@@ -8,6 +8,7 @@ import { buildExportJSON, generateFileName } from '@/lib/bazi';
 import { generateAIPrompt } from '@/lib/prompt-template';
 import { buildExportMarkdown, generateMarkdownFileName } from '@/lib/markdown-export';
 import { toToon } from '@/lib/toon';
+import { preloadQiongTong, isQiongTongLoaded } from '@/lib/tiaohou';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 interface JsonExportProps {
@@ -16,10 +17,19 @@ interface JsonExportProps {
 }
 
 export default function JsonExport({ input, result }: JsonExportProps) {
-  const exportData = useMemo(() => buildExportJSON(input, result), [input, result]);
+  // 穷通宝鉴原文库为懒加载 chunk：就绪后重建导出内容（classic 字段补齐）
+  const [qtReady, setQtReady] = useState(isQiongTongLoaded());
+  useEffect(() => {
+    let on = true;
+    void preloadQiongTong().then(() => { if (on && !qtReady) setQtReady(true); });
+    return () => { on = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const exportData = useMemo(() => buildExportJSON(input, result), [input, result, qtReady]);
   // 数据载荷用 TOON（JSON 数据模型的紧凑无损等价表示，约省 21% 字符、token 更省）
   const toonText = useMemo(() => toToon(exportData), [exportData]);
-  const markdown = useMemo(() => buildExportMarkdown(input, result), [input, result]);
+  const markdown = useMemo(() => buildExportMarkdown(input, result), [input, result, qtReady]);
 
   const downloadBlob = (content: string, mime: string, filename: string) => {
     const blob = new Blob([content], { type: mime });

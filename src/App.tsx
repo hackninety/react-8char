@@ -10,6 +10,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import ProfileBar from '@/components/ProfileBar';
 import HehunPanel from '@/components/HehunPanel';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
+import { preloadQiongTong } from '@/lib/tiaohou';
 import { saveParams, loadParams, saveForm, type ChartProfile } from '@/lib/storage';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
@@ -29,6 +30,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
   }, [dark]);
+
+  // 穷通宝鉴原文库（独立 chunk ~100KB）：首屏后台预载，导出时即已就绪
+  useEffect(() => {
+    void preloadQiongTong();
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');

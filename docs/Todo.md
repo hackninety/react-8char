@@ -113,6 +113,16 @@ preview 全流程验证：存两档案→选甲乙→生成清单→复制 Promp
 端到端（spawn 真实 bundle，断言 stdout 全为 JSON-RPC——InMemory 测试测不到顶层 console.log
 污染协议的风险）。测试 62→75 例。
 
+### ✅ 用神三法合参 + MCP resources + 穷通宝鉴懒加载（2026-07）
+**合参**：[`yongshen.ts`](../src/lib/yongshen.ts) 扶抑（judge 推导喜忌五行）/调候（穷通干转五行）/
+通关（两行相战≥22%时取引化五行）三法并列，交集标「多法共取」，调候主用神落在扶抑忌神时明示
+「相悖之经典权衡点」（北京测例即典型：身弱忌水但午月急需壬）。
+**Resources**：MCP 增 3 个静态参考资源（bazi://reference/tiaohou|xiangfa|shensha），协议原语，
+客户端按需挂载而非塞进每次工具输出。
+**懒加载**：穷通宝鉴 100KB 拆出首屏主包为独立 chunk（gzip 30KB）——tiaohou 改缓存式懒加载
+（preloadQiongTong 幂等），App 挂载即后台预载、JsonExport qtReady 就绪后重建导出、MCP main
+启动 await；stdio e2e 加「原文段预载」断言防回归。测试 75→77 例。
+
 ## 计划中
 
 ### 0.5 小型增强（择机）

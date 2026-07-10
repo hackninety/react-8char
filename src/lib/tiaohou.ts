@@ -7,7 +7,27 @@
 // 表源：《穷通宝鉴》（徐乐吾《造化元钥》整理本）通行调候用神简表。
 // 各刊本首位用神一致；佐神取舍与次序间有异文，本表取流传最广版本。首字为主用，余为佐。
 
-import { QIONG_TONG_TEXT, type QtbjEntry } from './data/qiongtongbaojian';
+import type { QtbjEntry } from './data/qiongtongbaojian';
+
+// ─── 穷通宝鉴原文库懒加载（约 100KB，已从首屏主包拆出为独立 chunk）─────
+// App 挂载即预载、MCP 启动时 await；未载入时 getQiongTongText 返回 null（classic 字段暂缺）。
+
+let QT_CACHE: Record<string, Record<string, QtbjEntry>> | null = null;
+let QT_PROMISE: Promise<void> | null = null;
+
+/** 预载原文库（幂等，可重复调用） */
+export function preloadQiongTong(): Promise<void> {
+  if (!QT_PROMISE) {
+    QT_PROMISE = import('./data/qiongtongbaojian').then((m) => {
+      QT_CACHE = m.QIONG_TONG_TEXT;
+    });
+  }
+  return QT_PROMISE;
+}
+
+export function isQiongTongLoaded(): boolean {
+  return QT_CACHE !== null;
+}
 
 type GZ = { gan: string; zhi: string; hideGanAttr?: { gan: string; qiLevel: string }[] };
 type PillarsLike = { year: GZ; month: GZ; day: GZ; time: GZ };
@@ -114,8 +134,9 @@ export function analyzeTiaoHou(pillars: PillarsLike | undefined): TiaoHouResult 
   };
 }
 
-/** 查本造《穷通宝鉴》原文段（维基文库公有领域文本；只取一条，token 成本近零） */
+/** 查本造《穷通宝鉴》原文段（维基文库公有领域文本；只取一条，token 成本近零）。
+ *  依赖懒加载缓存：未 preloadQiongTong 完成前返回 null。 */
 export function getQiongTongText(dayGan: string, monthZhi: string): (QtbjEntry & { source: string }) | null {
-  const e = QIONG_TONG_TEXT[dayGan]?.[monthZhi];
+  const e = QT_CACHE?.[dayGan]?.[monthZhi];
   return e ? { ...e, source: '维基文库《穷通宝鉴》' } : null;
 }

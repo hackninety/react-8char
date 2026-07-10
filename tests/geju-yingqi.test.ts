@@ -42,6 +42,19 @@ describe('格局自动判定（子平真诠机械取格）', () => {
     expect(g.basis).toContain('比肩当令');
   });
 
+  it('用神三法合参：北京盘为「调候主用壬(水)恰为身弱扶抑之忌」的经典相悖案例', async () => {
+    const { buildExportJSON } = await import('../src/lib/bazi');
+    const chart = calculateBazi(BEIJING);
+    const data: any = buildExportJSON(BEIJING, chart);
+    const ys = data.yongShen;
+    expect(ys.fuYi.note).toContain('身弱喜印比');
+    expect(ys.fuYi.yongShen).toContain('土(印)');
+    expect(ys.tiaoHou.yongShen[0]).toBe('壬(水)');
+    expect(ys.tongGuan.note).toContain('不取');
+    expect(ys.heCan).toContain('共取 土');
+    expect(ys.heCan).toContain('相悖');
+  });
+
   it('导出集成：buildExportJSON 含 geJu 与 yingQi 字段', async () => {
     const { buildExportJSON } = await import('../src/lib/bazi');
     const chart = calculateBazi(BEIJING);

@@ -109,7 +109,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   push(
     AI_ANALYST_ROLE,
     '',
-    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「应期引动预检」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
+    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「用神三法合参」「应期引动预检」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
   );
   if (data.aiNote) push('', `> **用户备注**：${data.aiNote}`);
   push('', '---', '');
@@ -281,6 +281,17 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push(`- **初判**：${gj.verdict}`);
     if (gj.siLingNote) push(`- ⚠ ${gj.siLingNote}`);
     push('', `> ${gj.source}`, '');
+  }
+
+  // ── 用神三法合参 ──
+  const ys = data.yongShen;
+  if (ys) {
+    push('## 用神三法合参', '');
+    for (const fa of [ys.fuYi, ys.tiaoHou, ys.tongGuan]) {
+      if (!fa) continue;
+      push(`- **${fa.fa}**：${fa.yongShen?.length ? fa.yongShen.join('、') : '不取'} —— ${fa.note}`);
+    }
+    push(`- **合参**：${ys.heCan}`, '');
   }
 
   // ── 应期引动预检 ──

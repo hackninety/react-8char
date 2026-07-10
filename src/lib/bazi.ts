@@ -11,6 +11,7 @@ import { computeSiLing } from './siling';
 import { detectPatterns } from './patterns';
 import { analyzeGeJu } from './geju';
 import { analyzeYingQi } from './yingqi';
+import { buildYongShenSanFa } from './yongshen';
 import { getDiShi } from './utils';
 import { collectShenShaNames, lookupShenShaMeanings } from './shensha-dict';
 import { buildXiangFaExport } from './xiangfa';
@@ -118,6 +119,13 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
   });
   const shenshaDict = lookupShenShaMeanings(collectShenShaNames((result as any).shensha));
   const geJu = analyzeGeJu(result.pillars as any, siLing?.gan);
+  const yongShen = buildYongShenSanFa({
+    dayGan: dayMasterGan,
+    judge: kline?.judge,
+    wuXingPower: result.wuXingPower as any,
+    tiaoHouGods: tiaoHou?.gods,
+    tiaoHouVerdict: tiaoHou?.verdict,
+  });
   // 应期引动预检：导出仅带近 16 年窗口的紧凑块（任意范围可经 MCP query_yingqi 查询）
   const yingQi = (['婚恋', '事业', '财运'] as const)
     .map((t) => {
@@ -186,6 +194,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     ...(tiaoHou ? { tiaoHou } : {}),
     ...(siLing ? { siLing } : {}),
     ...(geJu ? { geJu } : {}),
+    ...(yongShen ? { yongShen } : {}),
     ...(patterns.length ? { patterns } : {}),
     ...(yingQi.length
       ? { yingQiNote: '应期为传统引动规则的候选提示，非事件预言；仅展开近 16 年窗口，任意年份范围可经 MCP query_yingqi 查询', yingQi }

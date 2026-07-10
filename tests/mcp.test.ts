@@ -5,6 +5,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createServer } from '../mcp/tools';
+import { preloadQiongTong } from '../src/lib/tiaohou';
 
 let client: Client;
 let close: () => Promise<void>;
@@ -12,6 +13,7 @@ let close: () => Promise<void>;
 const textOf = (r: any): string => (r.content ?? []).map((c: any) => c.text).join('\n');
 
 beforeAll(async () => {
+  await preloadQiongTong(); // InMemory 路径不走 main()，原文库须手动预载
   const [ct, st] = InMemoryTransport.createLinkedPair();
   const server = createServer();
   client = new Client({ name: 'vitest', version: '0.0.0' });
@@ -41,6 +43,18 @@ describe('MCP server', () => {
     expect(t).toContain('bz-test');
     expect(t).toContain('财库');
     expect(t).toContain('置信度');
+  });
+
+  it('resources 清单：三个静态参考资源，可读且内容正确', async () => {
+    const { resources } = await client.listResources();
+    expect(resources.map((r) => r.uri).sort()).toEqual([
+      'bazi://reference/shensha', 'bazi://reference/tiaohou', 'bazi://reference/xiangfa',
+    ]);
+    const th: any = await client.readResource({ uri: 'bazi://reference/tiaohou' });
+    const text = th.contents.map((c: any) => c.text).join('');
+    expect(text).toContain('寅=丙癸'); // 甲寅=丙癸
+    const xf: any = await client.readResource({ uri: 'bazi://reference/xiangfa' });
+    expect(xf.contents[0].text).toContain('十神象义');
   });
 
   it('hehun：双盘对照返回互动清单与分析框架', async () => {
