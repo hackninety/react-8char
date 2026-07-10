@@ -152,4 +152,13 @@ describe('导出集成', () => {
     expect(data.geJu.classic.chapter).toBe('论偏官');
     expect(data.geJu.classic.lun.length).toBeGreaterThan(300);
   });
+
+  it('Markdown 含规划表/能量占比/子平真诠引用块三节', async () => {
+    const { buildExportMarkdown } = await import('../src/lib/markdown-export');
+    const md = buildExportMarkdown(GOLDEN, chart);
+    expect(md).toContain('### 十年规划表');
+    expect(md).toContain('### 五行能量三层占比');
+    expect(md).toContain('《子平真诠·论偏官》原文');
+    expect(md).toContain('高光年'); // 规划表表头
+  });
 });
