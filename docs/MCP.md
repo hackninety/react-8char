@@ -50,6 +50,7 @@ claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 | `query_tiaohou` | 穷通宝鉴调候用神快查（无需排盘） | dayGan + monthZhi |
 | `fanpai` | 四柱干支反查公历出生时间（近 60 年候选） | 四柱干支 |
 | `compare_engines` | mystilight × tyme4ts 双引擎对拍校验 | 公历生辰 |
+| `hehun` | 合婚双盘对照：宫星互动/互为十神/喜用互补/调候互济，吉平忌清单不打总分 | 双方生辰（a/b 两组） |
 
 ## 设计要点
 
