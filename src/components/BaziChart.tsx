@@ -5,6 +5,8 @@ import DaYunTimeline from './DaYunTimeline';
 import { MingPanCard, YuanHaiCard, MingLiCard, GanZhiRelCard, ShenShaCard } from './ShenShaList';
 import WuYunLiuQiCard from './WuYunLiuQiCard';
 import EngineCompareBadge from './EngineCompareBadge';
+import GejuPanel from './GejuPanel';
+import DecadePlanTable from './DecadePlanTable';
 import LifeKlineChart from './LifeKlineChart';
 import JsonExport from './JsonExport';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
@@ -94,8 +96,14 @@ export default function BaziChart({ input, result }: BaziChartProps) {
       {/* 五运六气（全宽） */}
       <WuYunLiuQiCard input={input} />
 
+      {/* 格局 · 古籍语料（取格+子平真诠原文+组合+当前运限格局） */}
+      <GejuPanel input={input} result={result} />
+
       {/* 大运流年 */}
       <DaYunTimeline result={result} />
+
+      {/* 十年规划表（一运一行总览） */}
+      <DecadePlanTable result={result} />
 
       {/* 人生K线（运势量化） */}
       <LifeKlineChart result={result} />

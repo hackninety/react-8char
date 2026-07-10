@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildLifeKline, buildMonthKline, KLINE_DIMS, type KlineDim } from '@/lib/lifekline';
+import WuxingRadar from './WuxingRadar';
 import type { BaziResult } from '@/lib/bazi';
 
 // 中式股票配色：红涨绿跌；金色为 5 年均线
@@ -276,6 +277,15 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
               </div>
             </div>
           </div>
+
+          {/* 五行能量多边形：原局/+大运/+流年 三层结构占比，随选中年联动 */}
+          <WuxingRadar
+            pillars={result.pillars}
+            judge={data.judge}
+            dayunGz={active.dayun || undefined}
+            liunianGz={active.ganZhi}
+            caption={`${active.year} ${active.ganZhi}${active.dayun ? ` · ${active.dayun}运` : ''} · 悬停K线联动`}
+          />
 
           <p className="mt-2 text-[10px] text-muted-foreground/70 leading-relaxed">
             五维评分为简化命理模型的确定性量化（喜忌 / 十神类象 / 宫位 / 冲刑合害 / 神煞），仅供参考娱乐；完整解读请交给 AI 分析。

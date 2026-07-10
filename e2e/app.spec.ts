@@ -28,12 +28,33 @@ test('排盘 → K线流月下钻 → TOON 下载（golden 命例干支断言，
   await expect(page.getByText('庚', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('· 日主')).toBeVisible();
 
+  // 格局面板：取格结论 + 子平真诠原文（懒加载 chunk）+ 当前运限格局行
+  const geju = page.getByTestId('geju-panel');
+  await expect(geju).toBeVisible();
+  await expect(geju.getByText('七杀格').first()).toBeVisible();
+  await expect(geju.getByText(/《子平真诠·论偏官》原文/)).toBeVisible({ timeout: 10_000 });
+  await geju.getByText(/《子平真诠·论偏官》原文/).click(); // 展开 details
+  await expect(geju.getByText(/公有领域/)).toBeVisible();
+  await expect(geju.getByTestId('yun-patterns')).toBeVisible();
+
+  // 十年规划表：行展开逐年明细（丙戌运 2027 起）
+  const dplan = page.getByTestId('decade-plan');
+  await expect(dplan).toBeVisible();
+  await dplan.getByTestId('dp-row-丙戌').click();
+  await expect(dplan.getByText('2027', { exact: false }).first()).toBeVisible();
+
   // 人生K线渲染 + 点击年蜡烛下钻流月
   const kline = page.locator('svg').filter({ has: page.locator('rect') }).first();
   await expect(kline).toBeVisible();
   await page.locator('svg rect[fill="transparent"]').nth(30).click();
   await expect(page.getByTestId('month-kline')).toBeVisible();
   await expect(page.getByText('流月K线')).toBeVisible();
+
+  // 五行能量多边形：三层图例随选中年出现
+  const radar = page.getByTestId('wuxing-radar');
+  await expect(radar).toBeVisible();
+  await expect(radar.getByText(/\+大运/).first()).toBeVisible();
+  await expect(radar.getByText(/\+流年/).first()).toBeVisible();
 
   // 导出 TOON 下载：文件名与内容
   const dlPromise = page.waitForEvent('download');
@@ -44,6 +65,8 @@ test('排盘 → K线流月下钻 → TOON 下载（golden 命例干支断言，
   expect(content).toContain('meta:');
   expect(content).toContain('庚午');
   expect(content).toContain('tiaoHou');
+  expect(content).toContain('decadePlan');
+  expect(content).toContain('wuxingEnergy');
 
   expect(pageErrors, `页面错误：\n${pageErrors.join('\n')}`).toHaveLength(0);
 });

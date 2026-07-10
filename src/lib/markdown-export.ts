@@ -195,6 +195,16 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   });
   push('', `**五行总值**：${total.toFixed(2)}`, '');
 
+  // ── 五行能量三层占比（原局/+当前大运/+今年流年，干支计点） ──
+  const we = data.wuxingEnergy;
+  if (we?.layers?.length) {
+    push('### 五行能量三层占比（岁运叠加）', '');
+    push(`> ${we.method}${we.fuYiLikes ? `；扶抑喜行：${we.fuYiLikes.join('、')}` : ''}`, '');
+    push(`| 层 | ${we.dims.map((d: string) => `${d}·${we.groupOf?.[d] ?? ''}`).join(' | ')} |`, `|${' --- |'.repeat(we.dims.length + 1)}`);
+    we.layers.forEach((l: (string | number)[]) => push(`| ${l[0]} | ${l.slice(1).map((v) => `${v}%`).join(' | ')} |`));
+    push('');
+  }
+
   // ── 命盘要素 ──
   push('## 命盘要素', '');
   const elem = (label: string, v?: string, ny?: string) => {
@@ -285,6 +295,13 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push(`- **初判**：${gj.verdict}`);
     if (gj.siLingNote) push(`- ⚠ ${gj.siLingNote}`);
     push('', `> ${gj.source}`, '');
+    // 本格《子平真诠》原文（论X + 取运）：分析成败救应时引用经文而非回忆
+    if (gj.classic?.lun) {
+      push(`### 《子平真诠·${gj.classic.chapter}》原文`, '');
+      push(...String(gj.classic.lun).split('\n').map((l: string) => `> ${l}`));
+      push('>', `> **${gj.classic.chapter}取运**：`, ...String(gj.classic.quYun ?? '').split('\n').map((l: string) => `> ${l}`));
+      push('');
+    }
   }
 
   // ── 用神三法合参 ──
@@ -400,6 +417,15 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   if (yun) push(`> ${yun.forward ? '顺排' : '逆排'} · 起运：${yun.startSolar}`, '');
   if (data.liuYueNote) push(`> ${data.liuYueNote}`, '');
 
+  // 当前岁运格局扫描（当前大运 × 今年流年的确定性命中）
+  const yp = data.yunPatterns;
+  if (yp?.hits?.length) {
+    push(`### 当前岁运格局扫描（大运${yp.dayun}${yp.liunian ? ` · ${yp.year ?? ''}流年${yp.liunian}` : ''}）`, '');
+    push(`> ${yp.note}`, '');
+    yp.hits.forEach((h: any) => push(`- 【${h.scope}·${h.kind}】**${h.name}**：${h.basis}——${h.meaning}`));
+    push('');
+  }
+
   push('### 大运一览', '');
   push('| # | 大运 | 起始年 | 天干十神 | 地支十神 | 日主长生 | 标注 |', '| --- | --- | --- | --- | --- | --- | --- |');
   dayunArr.filter((dy) => dy.ganZhi).forEach((dy, i) => {
@@ -407,6 +433,16 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push(`| ${i + 1} | ${td(dy.ganZhi)} | ${td(dy.startYear)} | ${td(dy.ganshen)} | ${td(dy.zhishen)} | ${td(dy.diShi)} | ${mark} |`);
   });
   push('');
+
+  // 十年规划表（一运一行：喜忌/K线均值/高光低谷/运限格局）
+  const dp = data.decadePlan;
+  if (dp?.rows?.length) {
+    push('### 十年规划表', '');
+    push(`> ${dp.note}`, '');
+    push(`| ${dp.dims.join(' | ')} |`, `|${' --- |'.repeat(dp.dims.length)}`);
+    dp.rows.forEach((r: any[]) => push(`| ${r.map((c) => td(c === '' ? '—' : c)).join(' | ')} |`));
+    push('');
+  }
 
   push('### 逐运流年（含流月）', '');
   dayunArr.forEach((dy) => {

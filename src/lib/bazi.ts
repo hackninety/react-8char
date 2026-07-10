@@ -10,6 +10,10 @@ import { analyzeTiaoHou } from './tiaohou';
 import { computeSiLing } from './siling';
 import { detectPatterns } from './patterns';
 import { analyzeGeJu } from './geju';
+import { getZipingClassic } from './zipingzhenquan';
+import { buildDecadePlan } from './decadeplan';
+import { detectYunPatterns } from './yunpatterns';
+import { buildWuxingEnergy } from './wuxing-energy';
 import { analyzeYingQi } from './yingqi';
 import { buildYongShenSanFa } from './yongshen';
 import { getDiShi } from './utils';
@@ -127,7 +131,10 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     wuXingPower: result.wuXingPower as Record<string, number>,
   });
   const shenshaDict = lookupShenShaMeanings(collectShenShaNames(ext.shensha));
-  const geJu = analyzeGeJu(result.pillars, siLing?.gan);
+  // 格局 + 本格《子平真诠》原文(懒加载库,未就绪时暂缺 classic 字段,同调候原文策略)
+  const geJuBase = analyzeGeJu(result.pillars, siLing?.gan);
+  const geJuClassic = geJuBase ? getZipingClassic(geJuBase.ge) : null;
+  const geJu = geJuBase ? { ...geJuBase, ...(geJuClassic ? { classic: geJuClassic } : {}) } : null;
   const yongShen = buildYongShenSanFa({
     dayGan: dayMasterGan,
     judge: kline?.judge,
@@ -135,6 +142,25 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     tiaoHouGods: tiaoHou?.gods,
     tiaoHouVerdict: tiaoHou?.verdict,
   });
+  // 十年规划表（一运一行：十神/长生/喜忌/K线均值/高光低谷/运限格局；复用上方 kline）
+  const decadePlan = buildDecadePlan(result, kline);
+  // 当前岁运格局扫描（当前大运 × 今年流年；任意大运的扫描见 decadePlan.rows）
+  const curDy = result.currentYun?.daYun?.ganZhi;
+  const curDyGz = Array.isArray(curDy) ? curDy.join('') : curDy || '';
+  const curLn = result.currentYun?.liuNian;
+  const curLnGz = curLn?.ganZhi ? (Array.isArray(curLn.ganZhi) ? curLn.ganZhi.join('') : curLn.ganZhi) : '';
+  const yunPatternHits = curDyGz
+    ? detectYunPatterns({ pillars: result.pillars, judge: kline?.judge, gender: result.gender, dayunGz: curDyGz, liunianGz: curLnGz || undefined })
+    : [];
+
+  // 五行能量三层占比（原局/+当前大运/+今年流年，干支计点法；任意年份可由 K线面板联动查看）
+  const wuxingEnergy = buildWuxingEnergy({
+    pillars: result.pillars,
+    judge: kline?.judge,
+    dayunGz: curDyGz || undefined,
+    liunianGz: curLnGz || undefined,
+  });
+
   // 应期引动预检：导出仅带近 16 年窗口的紧凑块（任意范围可经 MCP query_yingqi 查询）
   const yingQi = (['婚恋', '事业', '财运'] as const)
     .map((t) => {
@@ -191,6 +217,18 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     shenGong: result.shenGong,
     shenGongNaYin: result.shenGongNaYin,
     wuXingPower: result.wuXingPower,
+    // 五行能量三层占比（结构计点口径，区别于 wuXingPower 旺衰加权）
+    ...(wuxingEnergy
+      ? {
+          wuxingEnergy: {
+            method: wuxingEnergy.method,
+            groupOf: wuxingEnergy.groupOf,
+            ...(wuxingEnergy.likes ? { fuYiLikes: wuxingEnergy.likes } : {}),
+            dims: ['木', '火', '土', '金', '水'],
+            layers: wuxingEnergy.layers.map((l) => [l.label, ...['木', '火', '土', '金', '水'].map((w) => l.percent[w])]),
+          },
+        }
+      : {}),
     yun: result.yun,
     liuYueNote,
     dayunArr: enrichedDayunArr,
@@ -205,6 +243,36 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     ...(geJu ? { geJu } : {}),
     ...(yongShen ? { yongShen } : {}),
     ...(patterns.length ? { patterns } : {}),
+    ...(yunPatternHits.length
+      ? {
+          yunPatterns: {
+            note: '当前岁运格局扫描（确定性规则命中；轻重成败结合原局细辨）',
+            dayun: curDyGz,
+            ...(curLnGz ? { liunian: curLnGz, year: curLn?.year } : {}),
+            hits: yunPatternHits,
+          },
+        }
+      : {}),
+    ...(decadePlan
+      ? {
+          decadePlan: {
+            note: decadePlan.note,
+            dims: ['干支', '虚岁', '公历', '干支十神', '长生', '喜忌', '均值', '高光年', '低谷年', '运限格局'],
+            rows: decadePlan.rows.map((r) => [
+              r.ganZhi,
+              `${r.startAge}~${r.endAge}`,
+              `${r.startYear}~${r.endYear}`,
+              `${r.ganShen}/${r.zhiShen}`,
+              r.diShi,
+              r.favor,
+              r.avg ?? '',
+              r.best ? `${r.best.year}(${r.best.score})` : '',
+              r.worst ? `${r.worst.year}(${r.worst.score})` : '',
+              r.patterns.map((x) => x.name).join('；'),
+            ]),
+          },
+        }
+      : {}),
     ...(yingQi.length
       ? { yingQiNote: '应期为传统引动规则的候选提示，非事件预言；仅展开近 16 年窗口，任意年份范围可经 MCP query_yingqi 查询', yingQi }
       : {}),

@@ -4,6 +4,26 @@
 
 ## 已完成
 
+### ✅ 格局·古籍语料 + 岁运格局扫描 + 十年规划表 + 五行能量多边形（2026-07，参照 react-zwds 三件套）
+① **子平真诠八格原文**：[`scripts/fetch-zipingzhenquan.mjs`](../scripts/fetch-zipingzhenquan.mjs) 双源抓取
+（archive.org 公版书带章节标题为主源 × 殆知阁 daizhige 为校源，30 字滑窗覆盖率 ≥75% 方写入，绝不凭记忆默写），
+生成 [`src/lib/data/zipingzhenquan.ts`](../src/lib/data/zipingzhenquan.ts)（八格「论X+论X取运」，24KB 独立懒加载 chunk）；
+[`zipingzhenquan.ts`](../src/lib/zipingzhenquan.ts) 提供 preload/取格名→章节映射（七杀→偏官、正偏财→财、禄劫变通→建禄月劫），
+`geJu.classic` 随 JSON/MD 导出，MCP 增第 4 个资源 `bazi://reference/zipingzhenquan`。
+② **岁运格局扫描** [`yunpatterns.ts`](../src/lib/yunpatterns.ts)：大运/流年两 scope 的经典运限组合确定性命名检出
+（伏吟/天克地冲/冲提纲/冲婚姻宫/合日干/阳刃逢冲/三合三会成局/岁运并临/岁运交战/空亡入运/财库冲开/七杀攻身
+/伤官见官·枭神夺食·官杀混杂之运岁成象），口径与 K线计分层完全一致，输出 name+kind+basis+meaning 叙事层。
+③ **十年规划表** [`decadeplan.ts`](../src/lib/decadeplan.ts) + [`DecadePlanTable`](../src/components/DecadePlanTable.tsx)：
+一运一行（干支十神全称/十二长生/扶抑喜忌/K线总运均值/高光低谷年/该运格局 chips），行点击展开逐年明细；
+随 JSON（紧凑 rows）与 MD（表格）导出。④ **五行能量多边形** [`wuxing-energy.ts`](../src/lib/wuxing-energy.ts) +
+[`WuxingRadar`](../src/components/WuxingRadar.tsx)：干支计点法（干100/支藏干 60·30·10，藏干集合与引擎 hideGanAttr
+测试对拍锁定）算「原局/+大运/+流年」三层五行结构占比，嵌入人生K线卡片随悬停年联动，轴标五行·十神组、
+喜忌红绿着色；与引擎 wuXingPower（旺衰加权）口径互补。⑤ **格局面板** [`GejuPanel`](../src/components/GejuPanel.tsx)：
+取格结论+相神忌神+司令异说+本格原文（details 展开）+28 组合预检卡片+当前大运×今年流年运限格局。
+同批：干支关系表（冲合刑害/五合/三合三会/墓库/阳刃/生克）下沉 [`ganzhi.ts`](../src/lib/ganzhi.ts) 共享
+（lifekline/patterns/yingqi/yongshen 去重）。测试 90 例（新增 [`yun.test.ts`](../tests/yun.test.ts) 13 例，
+探针对拍后冻结），e2e 补格局面板/规划表/雷达断言。
+
 ### ✅ AI 推理数据锚定层 + 提示词协议升级（2026-07）
 围绕「AI 引用查表数据而非凭记忆回忆（幻觉源）」新增四个确定性模块并随 JSON/Markdown 导出：
 [`tiaohou.ts`](../src/lib/tiaohou.ts)（穷通宝鉴 120 条调候用神查表+原局透藏得否）、
