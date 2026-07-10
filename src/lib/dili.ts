@@ -3,7 +3,7 @@
 //
 // 原理：五行配方位气候（木东/火南/土中/金西/水北；南暖北寒东温西凉）。
 //   · 由日主强弱推各五行喜忌（身弱喜印比、身强喜财官食伤），调候再补：寒命喜火、燥热命喜水。
-//   · 由出生地纬度定寒热（南暖北寒）、经度定东西，得该地「助旺」的五行。
+//   · 由出生地纬度定寒热（取绝对值，南北半球对赤道对称）、经度定东西（东亚范围内适用），得该地「助旺」的五行。
 //   · 地助旺之五行若为喜用→有利，若为忌→不利。分维取各维主星五行：
 //     事业看官杀方、财运看财方、感情看配偶星方（男财女官）、健康/总运看喜用综合方。
 
@@ -73,8 +73,15 @@ export function computeDiLi(input: DiLiInput): DiLiResult {
   }
 
   // ── 出生地助旺的五行（纬度定寒热、经度定东西）──
-  const warmthProvided = clamp((33 - input.latitude) / 13, -1, 1); // 南(低纬)→暖旺火，北→寒旺水
-  const eastProvided = clamp((input.longitude - 108) / 12, -1, 1); // 东→旺木，西→旺金
+  // 寒热取纬度绝对值：南北半球对赤道对称，悉尼(-33.9°)与北纬 33.9° 同为温带，
+  // 不取绝对值会把南半球中高纬误判为酷热。
+  const southern = input.latitude < 0;
+  const warmthProvided = clamp((33 - Math.abs(input.latitude)) / 13, -1, 1); // 低纬→暖旺火，高纬→寒旺水
+  // 东西湿燥（东润旺木/西燥旺金）是中国大陆内的地理梯度概念，
+  // 远离东亚（约 70°E~140°E 之外）不适用，置零只保留寒热轴。
+  const eastProvided = input.longitude >= 70 && input.longitude <= 140
+    ? clamp((input.longitude - 108) / 12, -1, 1)
+    : 0;
   const locBoost: Record<WuXing, number> = {
     火: warmthProvided, 水: -warmthProvided, 木: eastProvided, 金: -eastProvided, 土: 0,
   };
@@ -103,7 +110,8 @@ export function computeDiLi(input: DiLiInput): DiLiResult {
   const preferDirs = [...new Set(preferEls.map((e) => DIR[e]).filter((d) => d !== '中'))].join('、') || '中和';
   const conclusion = aggScore > 1 ? '地利有助' : aggScore < -1 ? '地利欠佳（宜后天补方位/颜色/行业）' : '地利平平';
   const place = input.place ? `出生地${input.place}` : '出生地';
-  const note = `${place}${nsDir}${ewDir}；本命喜用偏${preferEls.map((e) => e).join('') || '中和'}（宜${preferDirs}方）→ ${conclusion}`;
+  const southNote = southern ? '；南半球出生：季节与月令倒置，凡涉月令调候之论请谨慎参考' : '';
+  const note = `${place}${nsDir}${ewDir}；本命喜用偏${preferEls.map((e) => e).join('') || '中和'}（宜${preferDirs}方）→ ${conclusion}${southNote}`;
 
   return { hasLocation: true, note, preferDirs, offsets };
 }
