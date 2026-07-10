@@ -56,7 +56,7 @@ export interface FormSnapshot {
   dayGan: string; dayZhi: string; timeGan: string; timeZhi: string;
 }
 
-export function saveForm(snap: FormSnapshot): void {
+export function saveForm(snap: FormSnapshot | Partial<FormSnapshot>): void {
   try {
     localStorage.setItem(FORM_KEY, JSON.stringify(snap));
   } catch {
@@ -74,4 +74,60 @@ export function loadForm(): Partial<FormSnapshot> | null {
     /* ignore */
   }
   return null;
+}
+
+// ─── 多命盘档案（命名保存的起盘参数 + 表单快照）────────
+// 与单槽持久化同哲学：只存参数、载入时重算；表单快照用于回填输入框。
+
+const PROFILES_KEY = 'react-8char:profiles:v1';
+const PROFILES_MAX = 50;
+
+export interface ChartProfile {
+  id: string;
+  /** 档案名（如人名） */
+  name: string;
+  /** ISO 时间 */
+  savedAt: string;
+  /** 起盘参数（据此重算命盘/合婚） */
+  input: BaziInput;
+  /** 表单快照（载入时回填输入框） */
+  form?: Partial<FormSnapshot>;
+}
+
+export function listProfiles(): ChartProfile[] {
+  try {
+    const raw = localStorage.getItem(PROFILES_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) return arr.filter((p) => p && typeof p === 'object' && p.id && p.input);
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
+function writeProfiles(list: ChartProfile[]): void {
+  try {
+    localStorage.setItem(PROFILES_KEY, JSON.stringify(list.slice(0, PROFILES_MAX)));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** 保存档案（同名覆盖，新档案排最前） */
+export function saveProfile(name: string, input: BaziInput, form?: Partial<FormSnapshot> | null): ChartProfile {
+  const profile: ChartProfile = {
+    id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    name: name.trim(),
+    savedAt: new Date().toISOString(),
+    input,
+    ...(form ? { form } : {}),
+  };
+  const rest = listProfiles().filter((p) => p.name !== profile.name);
+  writeProfiles([profile, ...rest]);
+  return profile;
+}
+
+export function deleteProfile(id: string): void {
+  writeProfiles(listProfiles().filter((p) => p.id !== id));
 }

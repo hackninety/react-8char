@@ -22,12 +22,28 @@ beforeAll(async () => {
 afterAll(async () => { await close(); });
 
 describe('MCP server', () => {
-  it('工具清单：9 个工具', async () => {
+  it('工具清单：10 个工具', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
-      'compare_engines', 'fanpai', 'get_kline', 'paipan',
+      'compare_engines', 'fanpai', 'get_kline', 'hehun', 'paipan',
       'query_liuri', 'query_liuyue', 'query_tiaohou', 'query_wuyunliuqi', 'query_year',
     ]);
+  });
+
+  it('hehun：双盘对照返回互动清单与分析框架', async () => {
+    const r: any = await client.callTool({
+      name: 'hehun',
+      arguments: {
+        a: { year: 1990, month: 6, day: 15, hour: 8, minute: 30, gender: '男', city: '北京' },
+        b: { year: 1985, month: 1, day: 20, hour: 23, minute: 30, gender: '女', city: '重庆' },
+        aName: '张三', bName: '李四',
+      },
+    });
+    const t = textOf(r);
+    expect(t).toContain('合婚对照');
+    expect(t).toContain('张三');
+    expect(t).toContain('互动清单');
+    expect(t).toContain('不构成婚姻决策依据');
   });
 
   let chartId = '';

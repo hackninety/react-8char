@@ -12,6 +12,7 @@ import { buildLifeKline, type LifeKlineData } from '../src/lib/lifekline';
 import { getTiaoHouGods, getQiongTongText } from '../src/lib/tiaohou';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from '../src/lib/wuyunliuqi';
 import { getCityByName, findLatitude } from '../src/lib/cities';
+import { analyzeHehun, buildHehunMarkdown } from '../src/lib/hehun';
 import { formatPaipanSummary, formatYearDetail, formatKlineOverview } from './format';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -107,7 +108,7 @@ export function createServer(): McpServer {
     {
       instructions: [
         '八字排盘 MCP：工具即数据源，按需查询，禁止凭记忆排盘或引用古籍。',
-        '流程：① paipan 得盘面摘要与 chartId；② 凭 chartId 调 query_year（单年详情）/ query_liuyue / query_liuri / get_kline / query_wuyunliuqi 深挖；③ 已知四柱找出生时间用 fanpai；快查调候表用 query_tiaohou；排盘存疑用 compare_engines 双引擎对拍。',
+        '流程：① paipan 得盘面摘要与 chartId；② 凭 chartId 调 query_year（单年详情）/ query_liuyue / query_liuri / get_kline / query_wuyunliuqi 深挖；③ 已知四柱找出生时间用 fanpai；快查调候表用 query_tiaohou；排盘存疑用 compare_engines 双引擎对拍；两人合婚用 hehun（直接传双方生辰）。',
         '纪律：四柱、大运、神煞、调候、司令均以工具返回为准；结论请附盘面论据并标注置信度；健康/财运分析不构成医疗/投资建议。',
       ].join('\n'),
     },
@@ -250,6 +251,33 @@ export function createServer(): McpServer {
     return text(`## 反查候选（${a.yearGZ} ${a.monthGZ} ${a.dayGZ} ${a.timeGZ}）\n\n` +
       list.map((r) => `- 公历 ${r.solar}（农历 ${r.lunar}）`).join('\n') +
       '\n\n> 选定候选后可用 paipan 排完整命盘。');
+  });
+
+  server.registerTool('hehun', {
+    title: '合婚双盘对照',
+    description: '两人生辰双盘对照：宫星互动（日支/年支合冲刑害）、互为十神与配偶星应象、喜用五行互补、调候互济、空亡参照，输出确定性互动清单（吉/平/忌，不打总分）与合婚分析框架。传统民俗参考，不构成婚姻决策依据。',
+    inputSchema: {
+      a: z.object(birthShape).describe('甲方生辰'),
+      b: z.object(birthShape).describe('乙方生辰'),
+      aName: z.string().default('甲方').describe('甲方称呼（可用人名）'),
+      bName: z.string().default('乙方').describe('乙方称呼'),
+    },
+  }, async (args: any) => {
+    try {
+      const ra = toBaziInput(args.a);
+      const rb = toBaziInput(args.b);
+      const [ca, cb] = await Promise.all([
+        calculateChart(ra.input, ra.input.engine ?? 'mystilight'),
+        calculateChart(rb.input, rb.input.engine ?? 'mystilight'),
+      ]);
+      const pa = { label: args.aName || '甲方', input: ra.input, chart: ca as any };
+      const pb = { label: args.bName || '乙方', input: rb.input, chart: cb as any };
+      const r = analyzeHehun(pa, pb);
+      const warns = [ra.warn, rb.warn].filter(Boolean).join('；');
+      return text((warns ? `⚠ ${warns}\n\n` : '') + buildHehunMarkdown(pa, pb, r));
+    } catch (e) {
+      return errText(`合婚对照失败：${e instanceof Error ? e.message : String(e)}`);
+    }
   });
 
   server.registerTool('compare_engines', {

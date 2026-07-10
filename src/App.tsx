@@ -7,8 +7,10 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import BaziForm from '@/components/BaziForm';
 import BaziChart from '@/components/BaziChart';
 import ThemeToggle from '@/components/ThemeToggle';
+import ProfileBar from '@/components/ProfileBar';
+import HehunPanel from '@/components/HehunPanel';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
-import { saveParams, loadParams } from '@/lib/storage';
+import { saveParams, loadParams, saveForm, type ChartProfile } from '@/lib/storage';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 export default function App() {
@@ -19,6 +21,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BaziResult | null>(null);
   const [input, setInput] = useState<BaziInput | null>(null);
+  // 载入档案时回填表单：写回快照后 key 重挂载（BaziForm 挂载时读 loadForm 回填，零侵入）
+  const [formEpoch, setFormEpoch] = useState(0);
+  // 档案列表变更信号（ProfileBar 增删后合婚面板重新读取）
+  const [profilesVersion, setProfilesVersion] = useState(0);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -75,6 +81,14 @@ export default function App() {
     if (params) handleSubmit(params, true);
   }, [handleSubmit]);
 
+  // 载入命盘档案：表单回填 + 直接重算
+  const handleLoadProfile = useCallback((p: ChartProfile) => {
+    if (p.form) saveForm(p.form);
+    setFormEpoch((e) => e + 1);
+    handleSubmit(p.input);
+    toast(`已载入档案「${p.name}」`, { icon: '📂' });
+  }, [handleSubmit]);
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background transition-colors duration-300">
@@ -109,7 +123,15 @@ export default function App() {
         {/* 主体内容 */}
         <main className="max-w-5xl mx-auto px-4 py-6 sm:py-10">
           <div className="space-y-8">
-            <BaziForm onSubmit={handleSubmit} loading={loading} />
+            <BaziForm key={formEpoch} onSubmit={handleSubmit} loading={loading} />
+
+            <ProfileBar
+              currentInput={input}
+              onLoad={handleLoadProfile}
+              onChanged={() => setProfilesVersion((v) => v + 1)}
+            />
+
+            <HehunPanel profilesVersion={profilesVersion} />
 
             {/* 不用 AnimatePresence mode="wait"：React 19 下退出动画会卡死、
                 结果面板永远等不到挂载（同 WuYunLiuQiCard 的已知问题），
