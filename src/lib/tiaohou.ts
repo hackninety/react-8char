@@ -45,6 +45,12 @@ export interface TiaoHouResult {
 
 const PILLAR_CN: Record<string, string> = { year: '年', month: '月', day: '日', time: '时' };
 
+/** 仅查表：日主×月支 → 用神序列（主用在前）；无需完整命盘（MCP 快查等场景用） */
+export function getTiaoHouGods(dayGan: string, monthZhi: string): string[] | null {
+  const s = TABLE[dayGan]?.[monthZhi];
+  return s ? s.split('') : null;
+}
+
 /** 查穷通宝鉴调候用神并判定原局得否（确定性，供 AI 引用而非回忆） */
 export function analyzeTiaoHou(pillars: PillarsLike | undefined): TiaoHouResult | null {
   const dayGan = pillars?.day?.gan;

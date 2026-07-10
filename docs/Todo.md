@@ -39,11 +39,15 @@ mystilight 另有福星/天厨/德秀/童子煞等本模块未纳入的类别）
 tyme 引擎走简化扶抑 fallback（实测两法对同一命例判定一致）。评分数据同步进入
 Markdown 导出（大运均分表 + 峰谷 TOP5 含因素）与 JSON 导出（紧凑 lifeKline 字段），供 AI 引用。
 
-## 计划中
+### ✅ MCP server 化（2026-07）
+排盘引擎暴露为 MCP stdio 工具（[`mcp/`](../mcp)，构建 `npm run mcp:build` → `dist-mcp/server.mjs` 自包含单文件）：
+`paipan`（紧凑摘要+chartId，进程内 LRU 缓存）/ `query_year`（单年详情含 K线逐项归因）/ `query_liuyue` /
+`query_liuri` / `get_kline` / `query_wuyunliuqi` / `query_tiaohou`（免排盘快查）/ `fanpai` / `compare_engines`。
+要点：入口先把 console.log 改道 stderr 再动态加载引擎（stdout 只准走 JSON-RPC，引擎耗时日志会撕协议）；
+server instructions 内嵌反幻觉纪律；仓库带项目级 `.mcp.json`。端到端 JSON-RPC 探针 14/14 PASS
+（含 fanpai 自洽：北京盘四柱反查命中原出生时间；stdout 纯净性断言）。文档 [docs/MCP.md](MCP.md)。
 
-### 0. MCP server 化（高杠杆，下一个大版本方向）
-把排盘引擎包成 MCP 工具（`paipan` / `query_liuyue` / `query_tiaohou` / `fromBaZi 反查` / `双引擎对拍`），
-让 AI 按需调用而非一次性吞静态导出——交互式工具调用对推理质量的提升通常大于更大的静态上下文。
+## 计划中
 
 ### 0.5 小型增强（择机）
 - **golden-case 回归测试**：vitest 固化名人命例 + 边界例（立春前后、早晚子时、真太阳时跨日、南半球），防引擎升级回归（现靠探针对拍人肉核）。

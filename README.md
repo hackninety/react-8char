@@ -33,8 +33,17 @@
 - **AI 分析协议** - 反幻觉纪律（引用查表数据而非凭记忆）、盘面事实清单先行、结论置信度分级、财官婚健子女六亲六大专项深挖清单
 - **多流派视角** - 盲派做功/调候穷通宝鉴/旺衰滴天髓/格局子平真诠四派协议内嵌导出，对话中随时切换重读
 - **AI Prompt** - 一键生成 AI 分析专用提示词（JSON / Markdown 两种格式）
+- **MCP Server** - 排盘引擎暴露为 MCP 工具（paipan/query_year/流月流日/调候快查/八字反查/双引擎对拍等 9 个），Claude 等 AI 按需查询盘面而非吞静态导出，见 [docs/MCP.md](docs/MCP.md)
 - **响应式** - 移动端适配
 - **暗色模式** - 支持明暗主题切换
+
+## MCP Server（AI 按需查询）
+
+```bash
+npm run mcp:build   # 产出 dist-mcp/server.mjs（stdio 传输，自包含）
+```
+
+仓库自带项目级 `.mcp.json`，本目录内的 Claude Code 直接可用；Claude Desktop 配置与工具目录详见 [docs/MCP.md](docs/MCP.md)。
 
 ## 开发
 
