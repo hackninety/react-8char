@@ -17,40 +17,15 @@
 //           桃花红鸾天喜助缘，孤辰寡宿减分。
 //   · 健康：以五行平衡（喜忌净值）为底，重罚冲日柱/刑害/羊刃灾煞/岁运并临/天克地冲。
 import type { BaziResult, BaziResultExtras } from './bazi';
-import { getGanWuXing, getZhiWuXing, ZHI_MAIN_GAN } from './utils';
+import { getGanWuXing, getZhiWuXing, ZHI_MAIN_GAN, SHI_SHEN_FULL } from './utils';
 import { createShenShaLookup } from './engine/tyme/shensha';
 import { computeDiLi, WARMTH_NEED, type DiLiResult, type DiLiOffsets } from './dili';
 // 直接从引擎扩展层取流月/十神（勿经 bazi.ts 转口，避免循环依赖）
 import { getLiuYueForYear } from './engine/mystilight/ext/liuyue';
 import { getShiShen } from './engine/mystilight/ext/shishen';
 
-// ─── 基础表 ────────────────────────────────────────────
-
-const SHENG: Record<string, string> = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
-const KE: Record<string, string> = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
-
-const CHONG: Record<string, string> = { 子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅', 卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳' };
-const LIU_HE: Record<string, string> = { 子: '丑', 丑: '子', 寅: '亥', 亥: '寅', 卯: '戌', 戌: '卯', 辰: '酉', 酉: '辰', 巳: '申', 申: '巳', 午: '未', 未: '午' };
-const HAI: Record<string, string> = { 子: '未', 未: '子', 丑: '午', 午: '丑', 寅: '巳', 巳: '寅', 卯: '辰', 辰: '卯', 申: '亥', 亥: '申', 酉: '戌', 戌: '酉' };
-const XING: Record<string, string[]> = {
-  寅: ['巳', '申'], 巳: ['寅', '申'], 申: ['寅', '巳'],
-  丑: ['戌', '未'], 戌: ['丑', '未'], 未: ['丑', '戌'],
-  子: ['卯'], 卯: ['子'], 辰: ['辰'], 午: ['午'], 酉: ['酉'], 亥: ['亥'],
-};
-// 天干五合（对称）
-const WU_HE: Record<string, string> = { 甲: '己', 己: '甲', 乙: '庚', 庚: '乙', 丙: '辛', 辛: '丙', 丁: '壬', 壬: '丁', 戊: '癸', 癸: '戊' };
-
-// 三合局 + 三会方（[拼图, 成局五行, 名称, 流年成局力度]；会方之力大于合局，故 9 > 8）
-const COMBOS: [string[], string, string, number][] = [
-  [['申', '子', '辰'], '水', '申子辰水局', 8],
-  [['亥', '卯', '未'], '木', '亥卯未木局', 8],
-  [['寅', '午', '戌'], '火', '寅午戌火局', 8],
-  [['巳', '酉', '丑'], '金', '巳酉丑金局', 8],
-  [['寅', '卯', '辰'], '木', '寅卯辰东方木会', 9],
-  [['巳', '午', '未'], '火', '巳午未南方火会', 9],
-  [['申', '酉', '戌'], '金', '申酉戌西方金会', 9],
-  [['亥', '子', '丑'], '水', '亥子丑北方水会', 9],
-];
+// ─── 基础表（干支关系定式下沉至 ganzhi.ts 共享）────────
+import { SHENG, KE, CHONG, LIU_HE, HAI, XING, WU_HE, COMBOS, completesPattern } from './ganzhi';
 
 // 成局五行相对日主的喜忌：取对应十神喜忌权重的均值（正=喜、负=忌）
 function elementFavor(el: string, dayWx: string, w: Record<string, number>): number {
@@ -66,20 +41,7 @@ function comboDim(el: string, dayWx: string): KlineDim {
   return KE[el] === dayWx || SHENG[el] === dayWx ? 'career' : 'wealth';
 }
 
-// added 是否为凑齐 pattern 的最后一块（base 已有其余两支、且 base 自身未含全套——
-// 本命自带全套属原局特征，由盘面地支关系呈现，不算运岁事件）
-function completesPattern(pattern: string[], base: Set<string>, added: string): boolean {
-  return (
-    pattern.includes(added) &&
-    pattern.every((z) => z === added || base.has(z)) &&
-    !pattern.every((z) => base.has(z))
-  );
-}
-
-const SHORT_FULL: Record<string, string> = {
-  比: '比肩', 劫: '劫财', 食: '食神', 伤: '伤官',
-  财: '正财', 才: '偏财', 官: '正官', 杀: '七杀', 印: '正印', 枭: '偏印',
-};
+const SHORT_FULL = SHI_SHEN_FULL;
 
 // 总运喜忌权重（身弱喜印比，身强喜财官食伤）
 const WEIGHT_WEAK: Record<string, number> = { 印: 1, 枭: 0.8, 比: 0.8, 劫: 0.5, 食: -0.5, 伤: -0.8, 财: -0.6, 才: -0.6, 官: -0.7, 杀: -1 };

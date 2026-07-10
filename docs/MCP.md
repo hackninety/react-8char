@@ -55,7 +55,7 @@ claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 
 另有 **6 个 prompts**（`deep-dive-wealth/career/love/health/children/family`）：六大专项深挖清单的协议原语版，客户端可直接调用（参数 chartId）。`fanpai` 支持 sect 与 fromYear（突破 60 年限制）；`query_wuyunliuqi` 传 year 可查任意年运气年度格局。
 
-**3 个 resources**（静态参考数据，客户端按需挂载）：`bazi://reference/tiaohou`（调候用神全表 120 格）、`bazi://reference/xiangfa`（盲派象法表）、`bazi://reference/shensha`（神煞释义词典）。
+**4 个 resources**（静态参考数据，客户端按需挂载）：`bazi://reference/tiaohou`（调候用神全表 120 格）、`bazi://reference/xiangfa`（盲派象法表）、`bazi://reference/shensha`（神煞释义词典）、`bazi://reference/zipingzhenquan`（《子平真诠》八格「论X+论X取运」全文，双源抓取交叉验证；paipan 的 geJu 命中何格即读该章）。
 
 ## 设计要点
 

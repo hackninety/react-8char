@@ -9,13 +9,9 @@ import { getShiShen } from './engine/mystilight/ext/shishen';
 import { getGanWuXing, ZHI_MAIN_GAN } from './utils';
 import { TIAN_GAN } from './engine/mystilight/ext/constants';
 
-const KE: Record<string, string> = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
-const CHONG: Record<string, string> = { 子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅', 卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳' };
-const LIU_HE: Record<string, string> = { 子: '丑', 丑: '子', 寅: '亥', 亥: '寅', 卯: '戌', 戌: '卯', 辰: '酉', 酉: '辰', 巳: '申', 申: '巳', 午: '未', 未: '午' };
+import { KE, CHONG, LIU_HE, WU_HE, KU_ZHI } from './ganzhi';
+
 const TRINE: Record<string, number> = { 申: 0, 子: 0, 辰: 0, 亥: 1, 卯: 1, 未: 1, 寅: 2, 午: 2, 戌: 2, 巳: 3, 酉: 3, 丑: 3 };
-const WU_HE: Record<string, string> = { 甲: '己', 己: '甲', 乙: '庚', 庚: '乙', 丙: '辛', 辛: '丙', 丁: '壬', 壬: '丁', 戊: '癸', 癸: '戊' };
-// 五行墓库（土库有火土/水土同宫之流派分歧，跳过不用）
-const KU_ZHI: Record<string, string> = { 木: '未', 火: '戌', 金: '丑', 水: '辰' };
 const FULL_SHORT: Record<string, string> = { 正财: '财', 偏财: '才', 正官: '官', 七杀: '杀' };
 
 export type YingQiTopic = '婚恋' | '事业' | '财运';

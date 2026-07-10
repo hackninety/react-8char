@@ -5,9 +5,8 @@
 // 此处确定性合参：各法结论并列、交集为「多法共取」、调候主用神落在扶抑忌神时明示相悖——
 // 取舍论述（寒暖失衡急则调候为先，平则扶抑为主）留给 AI。
 import { getGanWuXing } from './utils';
+import { SHENG, KE } from './ganzhi';
 
-const SHENG: Record<string, string> = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
-const KE: Record<string, string> = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
 const WX_ALL = ['木', '火', '土', '金', '水'];
 
 export interface YongShenFa {

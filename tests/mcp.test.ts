@@ -45,16 +45,21 @@ describe('MCP server', () => {
     expect(t).toContain('置信度');
   });
 
-  it('resources 清单：三个静态参考资源，可读且内容正确', async () => {
+  it('resources 清单：四个静态参考资源，可读且内容正确', async () => {
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
-      'bazi://reference/shensha', 'bazi://reference/tiaohou', 'bazi://reference/xiangfa',
+      'bazi://reference/shensha', 'bazi://reference/tiaohou', 'bazi://reference/xiangfa', 'bazi://reference/zipingzhenquan',
     ]);
     const th: any = await client.readResource({ uri: 'bazi://reference/tiaohou' });
     const text = th.contents.map((c: any) => c.text).join('');
     expect(text).toContain('寅=丙癸'); // 甲寅=丙癸
     const xf: any = await client.readResource({ uri: 'bazi://reference/xiangfa' });
     expect(xf.contents[0].text).toContain('十神象义');
+    // 子平真诠八格原文：八章俱在，读取自动懒加载
+    const zq: any = await client.readResource({ uri: 'bazi://reference/zipingzhenquan' });
+    expect(zq.contents[0].text).toContain('## 论偏官');
+    expect(zq.contents[0].text).toContain('### 论偏官取运');
+    expect(zq.contents[0].text).toContain('## 论建禄月劫');
   });
 
   it('hehun：双盘对照返回互动清单与分析框架', async () => {

@@ -10,6 +10,7 @@ import { buildExportJSON, getLiuYueForYear, getLiuRiForMonth, reverseLookupBazi,
 import { calculateChart, compareEngines } from '../src/lib/engine';
 import { buildLifeKline, type LifeKlineData } from '../src/lib/lifekline';
 import { getTiaoHouGods, getQiongTongText, preloadQiongTong } from '../src/lib/tiaohou';
+import { preloadZiping, getZipingAll } from '../src/lib/zipingzhenquan';
 import { GAN_XIANG, ZHI_XIANG, SHISHEN_XIANG } from '../src/lib/xiangfa';
 import { SHENSHA_MEANINGS } from '../src/lib/shensha-dict';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from '../src/lib/wuyunliuqi';
@@ -377,6 +378,18 @@ export function createServer(): McpServer {
   }, async (uri) =>
     mdResource(uri.href, `# 神煞释义词典\n\n${Object.entries(SHENSHA_MEANINGS).map(([k, v]) => `- **${k}**：${v}`).join('\n')}`),
   );
+  server.registerResource('zipingzhenquan', 'bazi://reference/zipingzhenquan', {
+    title: '子平真诠八格原文',
+    description: '沈孝瞻《子平真诠》八格「论X + 论X取运」全文（双源交叉验证抓取，公有领域）',
+    mimeType: 'text/markdown',
+  }, async (uri) => {
+    await preloadZiping();
+    const all = getZipingAll() ?? {};
+    const secs = Object.entries(all).map(
+      ([k, c]) => `## 论${k}\n\n${c.lun}\n\n### 论${k}取运\n\n${c.quYun}`,
+    );
+    return mdResource(uri.href, `# 《子平真诠》八格原文\n\n> 沈孝瞻（清乾隆）原著，公有领域。格局判定（paipan 的 geJu 字段）命中何格即读该章。\n\n${secs.join('\n\n')}`);
+  });
 
   // ── 专项深挖 prompts（与静态导出的深挖协议共用同一份清单）──
   for (const t of DEEP_DIVE_TOPICS) {
@@ -400,6 +413,7 @@ export function createServer(): McpServer {
 
 export async function main() {
   await preloadQiongTong(); // 原文库懒加载：启动即备好，query_tiaohou/paipan 的 classic 字段同步可用
+  await preloadZiping(); // 子平真诠八格原文同策略：paipan 的 geJu.classic 与静态资源同步可用
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);

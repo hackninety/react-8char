@@ -11,6 +11,7 @@ import ProfileBar from '@/components/ProfileBar';
 import HehunPanel from '@/components/HehunPanel';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
 import { preloadQiongTong } from '@/lib/tiaohou';
+import { preloadZiping } from '@/lib/zipingzhenquan';
 import { saveParams, loadParams, saveForm, type ChartProfile } from '@/lib/storage';
 import type { BaziResultX } from '@/lib/bazi';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
@@ -32,9 +33,10 @@ export default function App() {
     document.documentElement.classList.toggle('dark', dark);
   }, [dark]);
 
-  // 穷通宝鉴原文库（独立 chunk ~100KB）：首屏后台预载，导出时即已就绪
+  // 古籍原文库（穷通宝鉴 ~100KB / 子平真诠 ~24KB，各自独立 chunk）：首屏后台预载，导出时即已就绪
   useEffect(() => {
     void preloadQiongTong();
+    void preloadZiping();
   }, []);
 
   useEffect(() => {

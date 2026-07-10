@@ -68,6 +68,12 @@ export function getDiShi(gan: string, zhi: string): string {
   return CHANG_SHENG_ORDER[step];
 }
 
+/** 十神简称→全称（引擎大运/流年 ganshen 字段用简称） */
+export const SHI_SHEN_FULL: Record<string, string> = {
+  比: '比肩', 劫: '劫财', 食: '食神', 伤: '伤官',
+  财: '正财', 才: '偏财', 官: '正官', 杀: '七杀', 印: '正印', 枭: '偏印',
+};
+
 export const SHI_SHEN_COLORS: Record<string, string> = {
   '正财': 'bg-yellow-600/20 text-yellow-700 dark:text-yellow-300',
   '偏财': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',

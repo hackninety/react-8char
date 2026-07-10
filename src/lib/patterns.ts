@@ -6,6 +6,7 @@
 // 输出仅为「线索」：吉凶轻重须结合全局与运岁，由 AI 覆核论断。
 
 import { getGanWuXing } from './utils';
+import { SHENG, KE, YANG_REN } from './ganzhi';
 
 // 注意：mystilight 运行时 shiShenZhi 实为 string[]（全部藏干十神，本气在前），
 // 与 index.d.ts 声明的 string 不符（类似 shenQiang 的类型漂移），两种形状都兼容。
@@ -19,10 +20,6 @@ export interface PatternHit {
   /** 一句经典义（含条件性提示） */
   note: string;
 }
-
-const SHENG: Record<string, string> = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
-const KE: Record<string, string> = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
-const YANG_REN: Record<string, string> = { 甲: '卯', 丙: '午', 戊: '午', 庚: '酉', 壬: '子' };
 
 const KUI_GANG = ['庚辰', '庚戌', '壬辰', '戊戌'];
 const YIN_YANG_CHA_CUO = ['丙子', '丁丑', '戊寅', '辛卯', '壬辰', '癸巳', '丙午', '丁未', '戊申', '辛酉', '壬戌', '癸亥'];
