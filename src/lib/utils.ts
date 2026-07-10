@@ -68,6 +68,13 @@ export function getDiShi(gan: string, zhi: string): string {
   return CHANG_SHENG_ORDER[step];
 }
 
+/** 岁运格局吉凶 chip 样式（GejuPanel/DecadePlanTable/LifeKlineChart 共用） */
+export const YUN_KIND_CLS: Record<'吉' | '凶' | '注意', string> = {
+  吉: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+  凶: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
+  注意: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+};
+
 /** 十神简称→全称（引擎大运/流年 ganshen 字段用简称） */
 export const SHI_SHEN_FULL: Record<string, string> = {
   比: '比肩', 劫: '劫财', 食: '食神', 伤: '伤官',

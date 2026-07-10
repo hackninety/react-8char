@@ -71,7 +71,7 @@ export const KLINE_DIMS: { key: KlineDim; label: string }[] = [
 ];
 export type StrengthJudge = '身强' | '身弱' | '中和';
 
-interface OHLC { open: number; high: number; low: number; close: number }
+export interface OHLC { open: number; high: number; low: number; close: number }
 
 export interface KlineYearPoint {
   year: number;
@@ -101,6 +101,45 @@ export interface LifeKlineData {
   currentIndex: number;
   /** 地利方位加成（出生地对各维的常数修正） */
   dili: DiLiResult;
+}
+
+/** 大限（大运）级蜡烛：由该运各年 OHLC 聚合（同日K合成周K：首年开、末年收、区间极值） */
+export interface KlineDecadeCandle {
+  ganZhi: string;
+  startYear: number;
+  endYear: number;
+  startAge: number;
+  endAge: number;
+  ohlc: Record<KlineDim, OHLC>;
+  avg: Record<KlineDim, number>;
+}
+
+/** K线大限视图数据：一运一根蜡烛（童限无大运干支的年份不聚合） */
+export function aggregateDecadeKline(data: LifeKlineData): KlineDecadeCandle[] {
+  const out: KlineDecadeCandle[] = [];
+  for (const d of data.decades) {
+    const ys = data.years.filter((y) => y.dayun === d.ganZhi && y.year >= d.startYear && y.year <= d.endYear);
+    if (!ys.length) continue;
+    const ohlc = mkRec<OHLC>(() => ({ open: 0, high: 0, low: 0, close: 0 }));
+    for (const { key } of KLINE_DIMS) {
+      ohlc[key] = {
+        open: ys[0].ohlc[key].open,
+        close: ys[ys.length - 1].ohlc[key].close,
+        high: Math.max(...ys.map((y) => y.ohlc[key].high)),
+        low: Math.min(...ys.map((y) => y.ohlc[key].low)),
+      };
+    }
+    out.push({
+      ganZhi: d.ganZhi,
+      startYear: d.startYear,
+      endYear: d.endYear,
+      startAge: ys[0].age,
+      endAge: ys[ys.length - 1].age,
+      ohlc,
+      avg: d.avg,
+    });
+  }
+  return out;
 }
 
 // ─── 工具 ──────────────────────────────────────────────

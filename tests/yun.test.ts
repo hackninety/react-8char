@@ -2,7 +2,7 @@
 // 取值均先经探针对拍与手工推演核对后冻结(golden:1990-06-15 08:30 北京男 → 庚午 壬午 辛亥 壬辰,身弱)。
 import { describe, it, expect, beforeAll } from 'vitest';
 import { calculateBazi, buildExportJSON, type BaziInput, type BaziResult } from '../src/lib/bazi';
-import { buildLifeKline } from '../src/lib/lifekline';
+import { buildLifeKline, aggregateDecadeKline } from '../src/lib/lifekline';
 import { detectYunPatterns } from '../src/lib/yunpatterns';
 import { buildDecadePlan } from '../src/lib/decadeplan';
 import { buildWuxingEnergy, ZHI_CANG_POINTS } from '../src/lib/wuxing-energy';
@@ -58,6 +58,22 @@ describe('岁运格局扫描 detectYunPatterns', () => {
   it('甲申运:平运无格局命中(计分事件由K线层表达)', () => {
     const hits = detectYunPatterns({ pillars: chart.pillars, judge, gender: chart.gender, dayunGz: '甲申' });
     expect(hits).toHaveLength(0);
+  });
+});
+
+describe('K线大限聚合 aggregateDecadeKline', () => {
+  it('一运一蜡烛:开=该运首年开、收=末年收、高低=区间极值、均值与 decades 一致', () => {
+    const k = buildLifeKline(chart)!;
+    const dc = aggregateDecadeKline(k);
+    expect(dc.length).toBe(k.decades.length);
+    const c = dc.find((x) => x.ganZhi === '丙戌')!;
+    const ys = k.years.filter((y) => y.dayun === '丙戌' && y.year >= c.startYear && y.year <= c.endYear);
+    expect(c.ohlc.total.open).toBe(ys[0].ohlc.total.open);
+    expect(c.ohlc.total.close).toBe(ys[ys.length - 1].ohlc.total.close);
+    expect(c.ohlc.total.high).toBe(Math.max(...ys.map((y) => y.ohlc.total.high)));
+    expect(c.ohlc.total.low).toBe(Math.min(...ys.map((y) => y.ohlc.total.low)));
+    expect(c.avg).toEqual(k.decades.find((d) => d.ganZhi === '丙戌')!.avg);
+    expect(c.startAge).toBe(2027 - 1990 + 1); // 虚岁 38
   });
 });
 

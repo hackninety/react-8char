@@ -1,5 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { buildWuxingEnergy } from '@/lib/wuxing-energy';
+
+/** 范围档位:0=总局(仅原局) 1=大限(+大运) 2=流年(+流年);可用档位随传入干支而定 */
+const SCOPE_LABELS = ['总局', '大限', '流年'] as const;
 
 const UP = '#dc2626';
 const GOLD = '#d4af37';
@@ -22,18 +26,24 @@ interface WuxingRadarProps {
   caption?: string;
 }
 
-/** 能量多边形:宫位轴(事业/财帛/子女/兄弟/父母,婚姻随性别并入)× 原局/+大运/+流年 三层结构占比 */
+/** 能量多边形:宫位轴(事业/财帛/子女/兄弟/父母,婚姻随性别并入)× 总局/大限/流年 范围切换的层叠占比 */
 export default function WuxingRadar({ pillars, judge, gender, dayunGz, liunianGz, caption }: WuxingRadarProps) {
   const data = useMemo(
     () => buildWuxingEnergy({ pillars, judge, gender, dayunGz, liunianGz }),
     [pillars, judge, gender, dayunGz, liunianGz],
   );
+  // 范围档位(默认最深可用档;传入干支变化时自动收窄)
+  const [scopePick, setScopePick] = useState(2);
   if (!data) return null;
+
+  const maxScope = data.layers.length - 1;
+  const scope = Math.min(scopePick, maxScope);
+  const layers = data.layers.slice(0, scope + 1); // 总局=仅原局层
 
   const axes = data.palaces; // 宫位轴序固定,星与五行随日主变
   const n = axes.length;
   const likes = data.likes ? new Set(data.likes) : null;
-  const maxPct = Math.max(...data.layers.flatMap((l) => axes.map((a) => l.percent[a.wx] ?? 0)));
+  const maxPct = Math.max(...layers.flatMap((l) => axes.map((a) => l.percent[a.wx] ?? 0)));
   const scaleMax = Math.max(30, Math.ceil(maxPct / 10) * 10);
   const angle = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
   const pos = (i: number, r: number) => ({ x: CX + Math.cos(angle(i)) * r, y: CY + Math.sin(angle(i)) * r });
@@ -50,17 +60,34 @@ export default function WuxingRadar({ pillars, judge, gender, dayunGz, liunianGz
     { stroke: GOLD, strokeOpacity: 0.9, fill: GOLD, fillOpacity: 0.1, dash: undefined },
     { stroke: UP, strokeOpacity: 0.9, fill: UP, fillOpacity: 0.13, dash: undefined },
   ];
-  const finalLayer = data.layers[data.layers.length - 1];
+  const finalLayer = layers[layers.length - 1];
 
   return (
     <div data-testid="wuxing-radar" className="mt-2 rounded-lg border border-gold/15 bg-muted/20 p-2.5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <span className="text-xs font-bold">
+        <span className="text-xs font-bold flex items-center gap-2">
           能量多边形
-          {caption && <span className="ml-1.5 font-normal text-muted-foreground">{caption}</span>}
+          {/* 范围切换:总局(仅原局)/大限(+大运)/流年(+流年),档位随传入干支可用 */}
+          <span className="flex gap-0.5 rounded-md bg-muted/60 p-0.5" data-testid="radar-scope">
+            {SCOPE_LABELS.slice(0, maxScope + 1).map((lb, i) => (
+              <button
+                key={lb}
+                type="button"
+                onClick={() => setScopePick(i)}
+                className={cn(
+                  'px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer',
+                  scope === i ? 'bg-background text-crimson dark:text-gold shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {lb}
+              </button>
+            ))}
+          </span>
+          {caption && scope > 0 && <span className="font-normal text-muted-foreground">{caption}</span>}
+          {scope === 0 && <span className="font-normal text-muted-foreground">总命局(原局八字)</span>}
         </span>
         <span className="flex gap-2.5 text-[10px] text-muted-foreground">
-          {data.layers.map((l, k) => (
+          {layers.map((l, k) => (
             <span key={l.label} className="flex items-center gap-1">
               <i
                 className="inline-block w-3 border-t-2 not-italic"
@@ -99,8 +126,8 @@ export default function WuxingRadar({ pillars, judge, gender, dayunGz, liunianGz
           <text x={CX + 3} y={CY - R_MAX / 3 + 3} fontSize={7} fill="currentColor" opacity={0.4}>{Math.round(scaleMax / 3)}%</text>
           <text x={CX + 3} y={CY - R_MAX + 3} fontSize={7} fill="currentColor" opacity={0.4}>{scaleMax}%</text>
 
-          {/* 三层多边形 */}
-          {data.layers.map((l, k) => (
+          {/* 层多边形(按范围档切片) */}
+          {layers.map((l, k) => (
             <polygon
               key={l.label}
               points={polyOf(l.percent)}
@@ -146,7 +173,7 @@ export default function WuxingRadar({ pillars, judge, gender, dayunGz, liunianGz
               </tr>
             </thead>
             <tbody>
-              {data.layers.map((l) => (
+              {layers.map((l) => (
                 <tr key={l.label}>
                   <td className="pr-2">{l.label}</td>
                   {axes.map((a) => (

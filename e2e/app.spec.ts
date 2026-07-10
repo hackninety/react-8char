@@ -59,6 +59,26 @@ test('排盘 → K线流月下钻 → TOON 下载（golden 命例干支断言，
   await expect(radar.getByText(/\+大运/).first()).toBeVisible();
   await expect(radar.getByText(/\+流年/).first()).toBeVisible();
 
+  // 大限视图：一运一蜡烛 + 大限详情（十神/长生/运限格局）+ 雷达自动收窄到大限档（无流年层）
+  await page.getByTestId('kline-view').getByRole('button', { name: '大限' }).click();
+  await expect(page.getByTestId('decade-kline')).toBeVisible();
+  await expect(page.getByTestId('decade-detail')).toBeVisible();
+  await expect(page.getByTestId('decade-detail').getByText(/大运/).first()).toBeVisible();
+  await expect(page.getByTestId('decade-detail').getByText('运限格局:')).toBeVisible();
+  await expect(radar.getByText(/\+大运/).first()).toBeVisible();
+  await expect(radar.getByText(/\+流年/)).toHaveCount(0);
+
+  // 总局档：仅原局层（总命局能量）
+  await page.getByTestId('radar-scope').getByRole('button', { name: '总局' }).click();
+  await expect(radar.getByText('总命局(原局八字)')).toBeVisible();
+  await expect(radar.getByText(/\+大运/)).toHaveCount(0);
+
+  // 回到流年视图与流年档，后续流程不受影响
+  await page.getByTestId('radar-scope').getByRole('button', { name: '大限' }).click();
+  await page.getByTestId('kline-view').getByRole('button', { name: '流年' }).click();
+  await page.getByTestId('radar-scope').getByRole('button', { name: '流年' }).click();
+  await expect(radar.getByText(/\+流年/).first()).toBeVisible();
+
   // 导出 TOON 下载：文件名与内容
   const dlPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '导出 TOON 文件' }).click();

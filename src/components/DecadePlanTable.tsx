@@ -2,19 +2,12 @@ import { useMemo, useState, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarRange, ChevronDown, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, YUN_KIND_CLS as KIND_CLS } from '@/lib/utils';
 import { buildDecadePlan } from '@/lib/decadeplan';
-import type { YunPatternHit } from '@/lib/yunpatterns';
 import type { BaziResult } from '@/lib/bazi';
 
 const UP = '#dc2626';
 const DOWN = '#16a34a';
-
-const KIND_CLS: Record<YunPatternHit['kind'], string> = {
-  吉: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-  凶: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
-  注意: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-};
 
 /** 十年规划表:一运一行的人生总览,点行展开逐年明细 */
 export default function DecadePlanTable({ result }: { result: BaziResult }) {

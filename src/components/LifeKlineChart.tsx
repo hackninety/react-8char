@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { buildLifeKline, buildMonthKline, KLINE_DIMS, type KlineDim } from '@/lib/lifekline';
+import { buildLifeKline, buildMonthKline, aggregateDecadeKline, KLINE_DIMS, type KlineDim } from '@/lib/lifekline';
+import { buildDecadePlan } from '@/lib/decadeplan';
+import { YUN_KIND_CLS } from '@/lib/utils';
 import WuxingRadar from './WuxingRadar';
 import type { BaziResult } from '@/lib/bazi';
 
@@ -27,10 +29,17 @@ interface LifeKlineChartProps {
 export default function LifeKlineChart({ result }: LifeKlineChartProps) {
   const data = useMemo(() => buildLifeKline(result), [result]);
   const [dim, setDim] = useState<KlineDim>('total');
+  // 视图粒度：流年（逐年蜡烛）/ 大限（一运一根蜡烛，同日K合成周K）
+  const [view, setView] = useState<'流年' | '大限'>('流年');
   const [hover, setHover] = useState<number | null>(null);
-  // 流月下钻：点击年K线展开该年 12 个月子图
+  const [hoverD, setHoverD] = useState<number | null>(null);
+  // 流月下钻：点击年K线展开该年 12 个月子图（仅流年视图）
   const [expandedYear, setExpandedYear] = useState<number | null>(null);
   const [monthHover, setMonthHover] = useState<number | null>(null);
+
+  // 大限视图数据：大限蜡烛 + 规划表行（十神/长生/喜忌/高光低谷/运限格局，与十年规划表同源）
+  const decadeCandles = useMemo(() => (data ? aggregateDecadeKline(data) : []), [data]);
+  const dplan = useMemo(() => buildDecadePlan(result, data), [result, data]);
 
   const monthData = useMemo(() => {
     if (!data || expandedYear === null) return null;
@@ -71,6 +80,18 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
   const active = years[activeIdx];
   const dimLabel = KLINE_DIMS.find((d) => d.key === dim)!.label;
 
+  // 大限视图：悬停运 → 今年所在运 → 首运；详情行取规划表同源数据
+  const nowYear = data.currentIndex >= 0 ? years[data.currentIndex].year : null;
+  const curDecadeIdx = nowYear === null ? 0 : Math.max(0, decadeCandles.findIndex((c) => nowYear >= c.startYear && nowYear <= c.endYear));
+  const activeDIdx = hoverD ?? curDecadeIdx;
+  const activeD = decadeCandles[activeDIdx];
+  const activeDRow = activeD ? dplan?.rows.find((r) => r.ganZhi === activeD.ganZhi && r.startYear <= activeD.startYear + 1 && r.endYear >= activeD.endYear - 1) : undefined;
+
+  // 大限视图排版
+  const D_SLOT = 40;
+  const D_BODY = 18;
+  const svgWD = PAD_L + PAD_R + decadeCandles.length * D_SLOT;
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Card className="border-gold/20 glow-gold">
@@ -80,6 +101,25 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
               <Activity className="w-4 h-4" />
               人生K线
             </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+            {/* 视图粒度切换：流年 / 大限 */}
+            <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5" data-testid="kline-view">
+              {(['流年', '大限'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => { setView(v); setHover(null); setHoverD(null); setExpandedYear(null); }}
+                  className={cn(
+                    'px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                    view === v
+                      ? 'bg-background text-crimson dark:text-gold shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
             {/* 维度切换 */}
             <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
               {KLINE_DIMS.map((d) => (
@@ -98,18 +138,22 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
                 </button>
               ))}
             </div>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {data.judge}（{data.judgeSource}）· {data.preferenceNote} ·
             <span className="ml-1" style={{ color: UP }}>红涨</span>
             <span style={{ color: DOWN }}>绿跌</span>
-            <span className="ml-1" style={{ color: GOLD }}>金线=5年均线</span>
+            {view === '流年'
+              ? <span className="ml-1" style={{ color: GOLD }}>金线=5年均线</span>
+              : <span className="ml-1">一运一根蜡烛（该运首年开、末年收、区间极值）</span>}
           </p>
           {data.dili.hasLocation && (
             <p className="text-[11px] text-muted-foreground/80 mt-0.5">🧭 {data.dili.note}</p>
           )}
         </CardHeader>
         <CardContent>
+          {view === '流年' && (
           <div className="overflow-x-auto pb-1">
             <svg width={svgW} height={svgH} className="text-foreground select-none block">
               {/* 大运分段 */}
@@ -171,9 +215,55 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
               ))}
             </svg>
           </div>
+          )}
 
-          {/* 流月下钻子图（点击年K线展开） */}
-          {expandedYear !== null && monthData && (
+          {/* 大限视图：一运一根蜡烛（该运各年 OHLC 聚合，同日K合成周K） */}
+          {view === '大限' && (
+          <div className="overflow-x-auto pb-1" data-testid="decade-kline">
+            <svg width={svgWD} height={svgH} className="text-foreground select-none block">
+              {[20, 50, 80].map((v) => (
+                <g key={v}>
+                  <line x1={PAD_L} y1={yOf(v)} x2={svgWD - PAD_R} y2={yOf(v)} stroke="currentColor" strokeOpacity={v === 50 ? 0.18 : 0.08} strokeDasharray={v === 50 ? '3 3' : '2 4'} />
+                  <text x={PAD_L - 4} y={yOf(v) + 3} fontSize={8} textAnchor="end" fill="currentColor" opacity={0.5}>{v}</text>
+                </g>
+              ))}
+              {decadeCandles.map((c, i) => {
+                const o = c.ohlc[dim];
+                const up = o.close >= o.open;
+                const color = up ? UP : DOWN;
+                const cx = PAD_L + i * D_SLOT + D_SLOT / 2;
+                const bodyTop = yOf(Math.max(o.open, o.close));
+                const bodyH = Math.max(1, Math.abs(yOf(o.open) - yOf(o.close)));
+                return (
+                  <g key={c.ganZhi + c.startYear}>
+                    <line x1={cx} y1={yOf(o.high)} x2={cx} y2={yOf(o.low)} stroke={color} strokeWidth={1.2} />
+                    <rect x={cx - D_BODY / 2} y={bodyTop} width={D_BODY} height={bodyH} fill={color} stroke={color} strokeWidth={0.5}
+                      opacity={hoverD === null || hoverD === i ? 1 : 0.5} />
+                    <text x={cx} y={PAD_T - 7} fontSize={9} textAnchor="middle" fill="currentColor" opacity={activeDIdx === i ? 0.95 : 0.6}>{c.ganZhi}</text>
+                    <text x={cx} y={svgH - 8} fontSize={8} textAnchor="middle" fill="currentColor" opacity={0.5}>{c.startYear}</text>
+                    {i === curDecadeIdx && nowYear !== null && (
+                      <text x={cx} y={PAD_T + 8} fontSize={9} textAnchor="middle" fill={GOLD} fontWeight="bold">今</text>
+                    )}
+                    <rect x={PAD_L + i * D_SLOT} y={PAD_T} width={D_SLOT} height={CHART_H} fill="transparent"
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => setHoverD(i)} onMouseLeave={() => setHoverD(null)} />
+                  </g>
+                );
+              })}
+              {/* 选中运竖线 */}
+              {activeD && (
+                <line
+                  x1={PAD_L + activeDIdx * D_SLOT + D_SLOT / 2} y1={PAD_T - 2}
+                  x2={PAD_L + activeDIdx * D_SLOT + D_SLOT / 2} y2={PAD_T + CHART_H}
+                  stroke={GOLD} strokeWidth={1} strokeDasharray="4 3" strokeOpacity={0.5}
+                />
+              )}
+            </svg>
+          </div>
+          )}
+
+          {/* 流月下钻子图（点击年K线展开；仅流年视图） */}
+          {view === '流年' && expandedYear !== null && monthData && (
             <div key={`m-${expandedYear}`} className="mt-2 rounded-lg border border-gold/25 bg-muted/20 p-2.5" data-testid="month-kline">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold">
@@ -229,7 +319,8 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
             </div>
           )}
 
-          {/* 固定详情面板（在图表下方，永不遮挡K线；移动端可点选） */}
+          {/* 固定详情面板（在图表下方，永不遮挡K线；移动端可点选）——流年视图 */}
+          {view === '流年' && (
           <div className="mt-2 rounded-lg border border-gold/15 bg-muted/30 p-2.5">
             <div className="flex items-baseline justify-between gap-2 flex-wrap">
               <span className="text-sm font-bold">
@@ -277,15 +368,83 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
               </div>
             </div>
           </div>
+          )}
 
-          {/* 能量多边形：宫位轴 × 原局/+大运/+流年 三层结构占比，随选中年联动 */}
+          {/* 大限详情面板：干支十神/长生/喜忌 + 五维均值 + 高光低谷 + 该运运限格局（与十年规划表同源） */}
+          {view === '大限' && activeD && (
+          <div className="mt-2 rounded-lg border border-gold/15 bg-muted/30 p-2.5" data-testid="decade-detail">
+            <div className="flex items-baseline justify-between gap-2 flex-wrap">
+              <span className="text-sm font-bold">
+                {activeD.ganZhi} 大运
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                  {activeD.startAge}~{activeD.endAge}岁 · {activeD.startYear}~{activeD.endYear}
+                  {activeDRow ? ` · ${activeDRow.ganShen}/${activeDRow.zhiShen} · 长生:${activeDRow.diShi || '—'} · 喜忌:${activeDRow.favor}` : ''}
+                  {hoverD === null && activeDIdx === curDecadeIdx && nowYear !== null ? ' · 当前' : ''}
+                </span>
+              </span>
+              <span className="text-xs text-muted-foreground">悬停查看各运 · 逐年细节切回流年视图</span>
+            </div>
+
+            {/* 五维均值一览（当前维高亮；▲▼为该运首末年开收差） */}
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {KLINE_DIMS.map((d) => {
+                const av = activeD.avg[d.key];
+                const dl = activeD.ohlc[d.key].close - activeD.ohlc[d.key].open;
+                return (
+                  <button
+                    key={d.key}
+                    type="button"
+                    onClick={() => setDim(d.key)}
+                    className={cn(
+                      'flex items-center gap-1 rounded-md px-2 py-1 text-xs cursor-pointer border transition-colors',
+                      dim === d.key ? 'border-gold/50 bg-gold/10' : 'border-transparent bg-background/60 hover:bg-background',
+                    )}
+                  >
+                    <span className="text-muted-foreground">{d.label}均</span>
+                    <span className="font-bold tabular-nums" style={{ color: dl >= 0 ? UP : DOWN }}>{av}</span>
+                    <span className="text-[10px] tabular-nums" style={{ color: dl >= 0 ? UP : DOWN }}>
+                      {dl >= 0 ? '▲' : '▼'}{Math.abs(dl)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-1.5 border-t border-border/40 pt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+              {activeDRow?.best && (
+                <span>高光 <b className="tabular-nums" style={{ color: UP }}>{activeDRow.best.year} {activeDRow.best.ganZhi}（{activeDRow.best.score}）</b></span>
+              )}
+              {activeDRow?.worst && (
+                <span>低谷 <b className="tabular-nums" style={{ color: DOWN }}>{activeDRow.worst.year} {activeDRow.worst.ganZhi}（{activeDRow.worst.score}）</b></span>
+              )}
+              <span className="flex flex-wrap items-center gap-1">
+                <span className="text-muted-foreground">运限格局:</span>
+                {activeDRow?.patterns.length ? (
+                  activeDRow.patterns.map((pt, i) => (
+                    <i key={i} className={cn('not-italic rounded border px-1 py-px text-[10px]', YUN_KIND_CLS[pt.kind])} title={`${pt.basis}——${pt.meaning}`}>
+                      {pt.name}
+                    </i>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground/70">无显著命中</span>
+                )}
+              </span>
+            </div>
+          </div>
+          )}
+
+          {/* 能量多边形：宫位轴 × 总局/大限/流年 范围切换；随视图与选中对象联动 */}
           <WuxingRadar
             pillars={result.pillars}
             judge={data.judge}
             gender={result.gender}
-            dayunGz={active.dayun || undefined}
-            liunianGz={active.ganZhi}
-            caption={`${active.year} ${active.ganZhi}${active.dayun ? ` · ${active.dayun}运` : ''} · 悬停K线联动`}
+            dayunGz={view === '大限' ? activeD?.ganZhi : active.dayun || undefined}
+            liunianGz={view === '大限' ? undefined : active.ganZhi}
+            caption={
+              view === '大限'
+                ? activeD ? `${activeD.ganZhi}运 ${activeD.startYear}~${activeD.endYear} · 悬停K线联动` : ''
+                : `${active.year} ${active.ganZhi}${active.dayun ? ` · ${active.dayun}运` : ''} · 悬停K线联动`
+            }
           />
 
           <p className="mt-2 text-[10px] text-muted-foreground/70 leading-relaxed">

@@ -2,20 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, YUN_KIND_CLS as KIND_CLS } from '@/lib/utils';
 import { analyzeGeJu } from '@/lib/geju';
 import { computeSiLing } from '@/lib/siling';
 import { detectPatterns } from '@/lib/patterns';
-import { detectYunPatterns, type YunPatternHit } from '@/lib/yunpatterns';
+import { detectYunPatterns } from '@/lib/yunpatterns';
 import { buildLifeKline } from '@/lib/lifekline';
 import { preloadZiping, isZipingLoaded, getZipingClassic } from '@/lib/zipingzhenquan';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
-
-const KIND_CLS: Record<YunPatternHit['kind'], string> = {
-  吉: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-  凶: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
-  注意: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-};
 
 /** 格局 · 古籍语料:取格结论 + 相神忌神 + 子平真诠本格原文 + 组合预检 + 当前运限格局 */
 export default function GejuPanel({ input, result }: { input: BaziInput; result: BaziResult }) {
