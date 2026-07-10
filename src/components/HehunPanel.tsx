@@ -2,7 +2,7 @@
 // 选择器用原生 select（轻量且可自动化测试；base-ui Select 有已知自动化限制）。
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HeartHandshake, Copy, Sparkles, Download, FileText } from 'lucide-react';
+import { HeartHandshake, Sparkles, Download, Bot } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -154,10 +154,10 @@ export default function HehunPanel({ profilesVersion }: Props) {
             </ul>
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={copyPrompt} className="h-8 gap-1" data-testid="hehun-copy">
-                <Copy className="w-3.5 h-3.5" /> 复制合婚 AI Prompt
+                <Bot className="w-3.5 h-3.5" /> 复制合婚 AI Prompt
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={downloadMd} className="h-8 gap-1" data-testid="hehun-md">
-                <FileText className="w-3.5 h-3.5" /> 导出 MD
+                <Download className="w-3.5 h-3.5" /> 导出 MD
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={downloadToon} className="h-8 gap-1" data-testid="hehun-toon">
                 <Download className="w-3.5 h-3.5" /> 导出 TOON

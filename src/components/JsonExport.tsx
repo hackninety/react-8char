@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Download, Sparkles, Bot, FileText } from 'lucide-react';
+import { Download, Sparkles, Bot } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { buildExportJSON, generateFileName } from '@/lib/bazi';
@@ -104,7 +104,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               onClick={handleDownloadMarkdown}
               className="border-gold/30 hover:bg-gold/5 cursor-pointer"
             >
-              <FileText className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-2" />
               导出 Markdown 文件
             </Button>
           </div>
@@ -122,7 +122,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               onClick={handleCopyMarkdown}
               className="crimson-gradient text-white hover:opacity-90 cursor-pointer shadow-md shadow-red-900/20"
             >
-              <FileText className="w-4 h-4 mr-2" />
+              <Bot className="w-4 h-4 mr-2" />
               复制 AI 分析（Markdown）
             </Button>
           </div>
