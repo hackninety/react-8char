@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
@@ -13,5 +17,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["mcp", "src/lib", "src/lunar-javascript.d.ts"]
+  "include": [
+    "mcp",
+    "tests",
+    "src/lib",
+    "src/lunar-javascript.d.ts"
+  ]
 }

@@ -1,0 +1,25 @@
+# 回归测试 CI：护住 dependabot 引擎依赖升级（mystilight-8char / tyme4ts / lunar-javascript 每周一 PR）
+# 与日常提交——golden-case 固化四柱/起运/双引擎一致性/分析模块/MCP 行为，引擎回归即红。
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai # 排盘比较基准为北京时，钉死时区消除环境差异
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run mcp:check
+      - run: npm run mcp:build
+      - run: npm test

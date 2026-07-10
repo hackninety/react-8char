@@ -57,6 +57,9 @@ npm run dev
 # 构建生产版本
 npm run build
 
+# 回归测试（golden-case：四柱/起运/双引擎一致/分析模块/MCP）
+npm test
+
 # 预览生产构建
 npm run preview
 ```

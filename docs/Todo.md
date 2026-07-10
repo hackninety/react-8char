@@ -47,10 +47,20 @@ Markdown 导出（大运均分表 + 峰谷 TOP5 含因素）与 JSON 导出（�
 server instructions 内嵌反幻觉纪律；仓库带项目级 `.mcp.json`。端到端 JSON-RPC 探针 14/14 PASS
 （含 fanpai 自洽：北京盘四柱反查命中原出生时间；stdout 纯净性断言）。文档 [docs/MCP.md](MCP.md)。
 
+### ✅ golden-case 回归测试 + CI（2026-07）
+vitest（[`tests/`](../tests)，`npm test`，40 例秒级）三层固化：
+① [`golden.test.ts`](../tests/golden.test.ts) 命例四柱/起运 + **双引擎硬一致断言**（防引擎升级回归的核心屏障）
++ 边界例（立春前后年月柱换界、早晚子时 sect 语义锁定、真太阳时跨日 sect1 四柱不变仅起运变/sect2 日柱退一日）；
+② [`analysis.test.ts`](../tests/analysis.test.ts) 调候/司令（含交界提示与 UTC 换算）/组合预检/词典/地利（南半球/西经/国内）/K线（伏吟、干合、fallback 中和）/流月五虎遁/导出结构（流月窗口相对断言防跨年失效）；
+③ [`mcp.test.ts`](../tests/mcp.test.ts) SDK InMemoryTransport 免 spawn 全链路。
+期望值取自当前代码 + 双引擎对拍 + 手工复核（立春 2000-02-04 20:40 对天文数据、五虎遁/五鼠遁逐项核）后冻结。
+CI：[`.github/workflows/test.yml`](../.github/workflows/test.yml)（push/PR，TZ 钉 Asia/Shanghai），
+dependabot 每周引擎升级 PR 自动过测试。**测试中订正**：sect 语义实为 sect1 正统派=晚子时日柱算次日、
+sect2 传统派=算当天（MCP 工具描述原先写反，已修）。
+
 ## 计划中
 
 ### 0.5 小型增强（择机）
-- **golden-case 回归测试**：vitest 固化名人命例 + 边界例（立春前后、早晚子时、真太阳时跨日、南半球），防引擎升级回归（现靠探针对拍人肉核）。
 - **K线再补**：三合/三会成局（流年+大运+本命凑局）、调候维度入总运（寒命行火运加成，`dili.ts` 的 `WARMTH_NEED` 可复用）、空亡入运。
 - **书籍数字化二期**：穷通宝鉴分「日主×月支」原文段落库（只导出本造那一条，token 近零）、盲派干支象法/十神象义表。
 - **产品向**：多命盘档案管理（现 localStorage 单盘）、合婚双盘对照导出、流月 K 线下钻。

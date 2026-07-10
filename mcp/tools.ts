@@ -63,7 +63,7 @@ const birthShape = {
   hour: z.number().int().min(0).max(23).describe('出生时（当地标准时 0-23，勿自行换算真太阳时——引擎会按经度校正）'),
   minute: z.number().int().min(0).max(59).default(0).describe('出生分'),
   gender: z.enum(['男', '女']).describe('性别'),
-  sect: z.enum(['正统派', '传统派']).default('正统派').describe('晚子时口径：正统派=晚子时日柱算当天；传统派=算次日'),
+  sect: z.enum(['正统派', '传统派']).default('正统派').describe('晚子时口径：正统派=晚子时(23时后)日柱算次日；传统派=日柱算当天'),
   city: z.string().optional().describe('出生城市中文名（国内，如"北京""重庆"，用于真太阳时与地利）；与 longitude 二选一，都不给则不做真太阳时校正'),
   longitude: z.number().min(-180).max(180).optional().describe('出生地经度（国外或手动模式；东经正、西经负）'),
   latitude: z.number().min(-90).max(90).optional().describe('出生地纬度（北纬正、南纬负；地利寒热判断用）'),
