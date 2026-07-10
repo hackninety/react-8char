@@ -244,6 +244,35 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push('');
   }
 
+  // ── 调候用神（穷通宝鉴查表 + 原局得否，确定性数据供 AI 引用）──
+  const th = data.tiaoHou;
+  if (th) {
+    push('## 调候用神（穷通宝鉴）', '');
+    push(`- **查表**：${th.dayGan}日主生${th.monthZhi}月 → 调候用神 **${th.gods.join('、')}**（主用在前）`);
+    (th.detail ?? []).forEach((d: any) => push(`- **${d.gan}（${d.role}用）**：${d.status}`));
+    push(`- **结论**：${th.verdict}`);
+    push('', `> ${th.source}`, '');
+  }
+
+  // ── 人元司令分野 ──
+  const sl = data.siLing;
+  if (sl) {
+    push('## 人元司令分野', '');
+    push(`- ${sl.phase}；交${sl.jie}：${sl.jieTime}（北京时）`);
+    push(`- 司令${sl.gan}${sl.wuXing}为日主之**${sl.shiShen}**；${sl.sequence}`);
+    if (sl.note) push(`- ⚠ ${sl.note}`);
+    push('');
+  }
+
+  // ── 十神组合线索（程序预检）──
+  const pats = data.patterns;
+  if (Array.isArray(pats) && pats.length) {
+    push('## 十神组合线索（程序预检）', '');
+    push('> 以下为确定性规则检出的经典组合及其落点；吉凶轻重须结合全局与运岁覆核，非既成论断。', '');
+    pats.forEach((x: any) => push(`- **${x.name}**［${x.hit}］：${x.note}`));
+    push('');
+  }
+
   // ── 命理分析（喜用神/日时/三命通会，JSON 导出未含，此处补全）──
   const an: any = (result as any).analysis;
   const xiYong = Array.isArray(an?.XiYongShen) ? an.XiYongShen : [];
@@ -281,9 +310,17 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     }
   }
 
-  // ── 神煞（若引擎提供）──
+  // ── 神煞（若引擎提供）+ 释义（消除 AI 对冷门神煞的凭记忆编义）──
   const shLines = renderShensha(data.shensha);
-  if (shLines.length) push('## 神煞', '', ...shLines, '');
+  if (shLines.length) {
+    push('## 神煞', '', ...shLines, '');
+    const dict = data.shenshaDict;
+    if (dict && Object.keys(dict).length) {
+      push('### 神煞释义', '');
+      Object.entries(dict).forEach(([k, v]) => push(`- **${k}**：${v}`));
+      push('');
+    }
+  }
 
   // ── 五运六气（复用现有 Markdown，标题整体降一级并入本文）──
   const w = getWuYunLiuQi(input);

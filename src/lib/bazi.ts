@@ -8,6 +8,10 @@ import type { EightCharJSON } from './engine/mystilight/ext';
 import { getCityByName } from './cities';
 import { buildWuYunLiuQiExport } from './wuyunliuqi';
 import { buildLifeKline } from './lifekline';
+import { analyzeTiaoHou } from './tiaohou';
+import { computeSiLing } from './siling';
+import { detectPatterns } from './patterns';
+import { collectShenShaNames, lookupShenShaMeanings } from './shensha-dict';
 
 // ─── Re-export 引擎扩展 API 供组件使用 ─────────────────
 // 原 fork（mystilight-8char-v2）的 v2 能力已内置为应用内扩展层 engine/mystilight/ext，
@@ -122,6 +126,20 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     | { summary: string; items: unknown[]; a: { name: string }; b: { name: string } }
     | undefined;
 
+  // ── AI grounding 数据层：查表/规则预检，AI 引用而非回忆 ──
+  const kline = buildLifeKline(result);
+  const tiaoHou = analyzeTiaoHou(result.pillars as any);
+  const siLing = computeSiLing(
+    { year: input.year, month: input.month, day: input.day, hour: input.hour, minute: input.minute, utcOffset: input.utcOffset },
+    dayMasterGan,
+    result.pillars?.month?.zhi,
+  );
+  const patterns = detectPatterns(result.pillars as any, {
+    judge: kline?.judge,
+    wuXingPower: result.wuXingPower as any,
+  });
+  const shenshaDict = lookupShenShaMeanings(collectShenShaNames((result as any).shensha));
+
   return {
     meta: {
       tool: '八字排盘 (react-8char)',
@@ -170,11 +188,15 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     ganRelations: result.ganRelations,
     zhiRelations: result.zhiRelations,
     shensha: (result as any).shensha,
+    ...(Object.keys(shenshaDict).length ? { shenshaDict } : {}),
     yuanHaiZiping: result.yuanHaiZiping,
+    ...(tiaoHou ? { tiaoHou } : {}),
+    ...(siLing ? { siLing } : {}),
+    ...(patterns.length ? { patterns } : {}),
     wuYunLiuQi: buildWuYunLiuQiExport(input),
     // 人生K线五维量化评分（紧凑数组省 token，列见 dims 图例）
     ...(() => {
-      const k = buildLifeKline(result);
+      const k = kline;
       if (!k || k.years.length < 5) return {};
       return {
         lifeKline: {
