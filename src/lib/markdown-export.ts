@@ -300,6 +300,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
 
   push('## 大运流年', '');
   if (yun) push(`> ${yun.forward ? '顺排' : '逆排'} · 起运：${yun.startSolar}`, '');
+  if (data.liuYueNote) push(`> ${data.liuYueNote}`, '');
 
   push('### 大运一览', '');
   push('| # | 大运 | 起始年 | 天干十神 | 地支十神 | 标注 |', '| --- | --- | --- | --- | --- | --- |');

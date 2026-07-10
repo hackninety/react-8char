@@ -99,16 +99,23 @@ export function calculateBazi(input: BaziInput): BaziResult {
 export function buildExportJSON(input: BaziInput, result: BaziResult) {
   const dayMasterGan = result.pillars?.dayMasterGan || result.pillars?.day?.gan || '';
 
+  // 流月只展开当前年附近（AI 框架要求详析未来 3-5 年）；全量展开约 1700 条、
+  // 独占 13 万字符，与「压缩省 token」目标冲突。其余年份 AI 可按五虎遁自推（见 liuYueNote）。
+  const nowYear = new Date().getFullYear();
+  const lyFrom = nowYear - 1;
+  const lyTo = nowYear + 4;
   const enrichedDayunArr = result.dayunArr?.map((dy: any) => ({
     ...dy,
     liunianArr: dy.liunianArr?.map((ln: any) => {
       const lnGan = typeof ln.ganZhi === 'string' ? ln.ganZhi[0] : '';
+      if (!lnGan || ln.year < lyFrom || ln.year > lyTo) return { ...ln };
       return {
         ...ln,
-        liuYueArr: lnGan ? _getLiuYueForYear(lnGan, dayMasterGan) : [],
+        liuYueArr: _getLiuYueForYear(lnGan, dayMasterGan),
       };
     }),
   }));
+  const liuYueNote = `流月仅展开 ${lyFrom}~${lyTo} 年；其余年份可按五虎遁由流年干自推（甲己之年丙作首、乙庚之岁戊为头、丙辛必定寻庚起、丁壬壬位顺行流、戊癸甲寅好追求；自正月建寅顺行十二月）`;
 
   const engineMeta = (result as any).engine as { name?: string; school?: string } | undefined;
   const compareReport = (result as any)._compareReport as
@@ -157,6 +164,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     shenGongNaYin: result.shenGongNaYin,
     wuXingPower: result.wuXingPower,
     yun: result.yun,
+    liuYueNote,
     dayunArr: enrichedDayunArr,
     currentYun: result.currentYun,
     ganRelations: result.ganRelations,
