@@ -23,8 +23,8 @@ function relOf(day: WuXing, e: WuXing): Rel {
 const FAV_WEAK: Record<Rel, number> = { 比: 0.8, 印: 1, 食伤: -0.6, 财: -0.7, 官杀: -0.9 };
 const FAV_STRONG: Record<Rel, number> = { 比: -0.9, 印: -0.7, 食伤: 0.7, 财: 1, 官杀: 0.6 };
 
-// 月支 → 调候暖需（+需火暖 / −需水润）
-const WARMTH_NEED: Record<string, number> = {
+// 月支 → 调候暖需（+需火暖 / −需水润）。lifekline 的调候维度亦复用此表。
+export const WARMTH_NEED: Record<string, number> = {
   子: 1, 丑: 0.8, 亥: 0.8, 戌: 0.3, 酉: 0.2, 申: 0.2, 寅: 0.1, 卯: 0, 辰: -0.2, 巳: -0.8, 午: -1, 未: -0.8,
 };
 

@@ -144,6 +144,36 @@ describe('人生K线', () => {
     expect(y2026.ganZhi).toBe('丙午');
     expect(y2026.factors.total.some((f) => f.includes('流年干合日干'))).toBe(true);
   });
+  it('三合成局：北京盘 2008 戊子（大运申+本命辰+流年子）会齐申子辰水局；午月燥命同年得子水润燥', () => {
+    const k = buildLifeKline(calculateBazi(BEIJING))!;
+    const y = k.years.find((x) => x.year === 2008)!;
+    expect(y.dayun).toBe('甲申');
+    expect(y.factors.total.some((f) => f.includes('流年会齐申子辰水局(忌)'))).toBe(true);
+    expect(y.factors.total.some((f) => f.includes('润济燥局'))).toBe(true);
+  });
+  it('成局+空亡并发：北京盘 2034 甲寅（大运戌+本命午）会齐寅午戌火局，寅落日柱旬空无冲则虚耗', () => {
+    const k = buildLifeKline(calculateBazi(BEIJING))!;
+    const y = k.years.find((x) => x.year === 2034)!;
+    expect(y.factors.total.some((f) => f.includes('流年会齐寅午戌火局(忌)'))).toBe(true);
+    expect(y.factors.total.some((f) => f.includes('流年入空亡'))).toBe(true);
+  });
+  it('冲空反实：北京盘 2010 庚寅寅落空亡但冲大运申 → 不罚反实', () => {
+    const k = buildLifeKline(calculateBazi(BEIJING))!;
+    const y = k.years.find((x) => x.year === 2010)!;
+    expect(y.factors.total.some((f) => f.includes('冲空反实'))).toBe(true);
+    expect(y.factors.total.some((f) => f.includes('流年入空亡'))).toBe(false);
+  });
+  it('冲空反实（本命冲）：重庆盘 1997 丁丑，丑落空亡被本命未支冲解', () => {
+    const k = buildLifeKline(calculateBazi(CHONGQING))!;
+    const y = k.years.find((x) => x.year === 1997)!;
+    expect(y.factors.total.some((f) => f.includes('冲空反实'))).toBe(true);
+  });
+  it('三会成方（喜）：重庆盘 2062 壬午（大运巳+本命未）会齐巳午未南方火会，寒命火印为喜', () => {
+    const k = buildLifeKline(calculateBazi(CHONGQING))!;
+    const y = k.years.find((x) => x.year === 2062)!;
+    expect(y.dayun).toBe('己巳');
+    expect(y.factors.total.some((f) => f.includes('流年会齐巳午未南方火会(喜)'))).toBe(true);
+  });
 });
 
 describe('流月（五虎遁）与导出结构', () => {

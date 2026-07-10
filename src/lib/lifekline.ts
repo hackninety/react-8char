@@ -5,8 +5,11 @@
 //   · 总运：以日主强弱定喜忌，大运基调 + 流年干支十神(喜忌加权) + 支冲刑合害
 //           + 神煞吉凶 + 岁运并临/天克地冲。
 //   · 大运层（十年主题，作用于该运每一年）：大运支冲刑合害本命四支（冲提纲/冲婚姻宫
-//     为十年级事件）、大运伏吟日柱；流年层另计岁运支互冲合刑、流年伏吟日柱/年柱、
-//     流年干合日干（配偶星合身为姻缘引动）。
+//     为十年级事件）、大运伏吟日柱、大运支与本命凑齐三合/三会成局；流年层另计岁运支
+//     互冲合刑、流年伏吟日柱/年柱、流年干合日干（配偶星合身为姻缘引动）。
+//   · 成局/调候/空亡（流年层）：流年补齐三合局/三会方（按成局五行喜忌计分，会方力大于
+//     合局）、寒燥命遇火/水运岁的调候得济/受伤（复用 dili 月令暖需表）、流年入日柱旬空
+//     （虚耗；被本命/大运支冲则冲空反实不罚）。
 //   · 事业：官杀(权位)/印(贵人学业)/食伤(才华) 类象加权；月柱=事业提纲，冲则动荡；
 //           贵人/将星神煞助力。
 //   · 财运：财才(财星)/食伤(生财) 加权；比劫劫财、劫煞破财扣分；禄神金舆助财。
@@ -14,9 +17,9 @@
 //           桃花红鸾天喜助缘，孤辰寡宿减分。
 //   · 健康：以五行平衡（喜忌净值）为底，重罚冲日柱/刑害/羊刃灾煞/岁运并临/天克地冲。
 import type { BaziResult } from './bazi';
-import { getGanWuXing } from './utils';
+import { getGanWuXing, getZhiWuXing } from './utils';
 import { createShenShaLookup } from './engine/tyme/shensha';
-import { computeDiLi, type DiLiResult, type DiLiOffsets } from './dili';
+import { computeDiLi, WARMTH_NEED, type DiLiResult, type DiLiOffsets } from './dili';
 
 // ─── 基础表 ────────────────────────────────────────────
 
@@ -33,6 +36,42 @@ const XING: Record<string, string[]> = {
 };
 // 天干五合（对称）
 const WU_HE: Record<string, string> = { 甲: '己', 己: '甲', 乙: '庚', 庚: '乙', 丙: '辛', 辛: '丙', 丁: '壬', 壬: '丁', 戊: '癸', 癸: '戊' };
+
+// 三合局 + 三会方（[拼图, 成局五行, 名称, 流年成局力度]；会方之力大于合局，故 9 > 8）
+const COMBOS: [string[], string, string, number][] = [
+  [['申', '子', '辰'], '水', '申子辰水局', 8],
+  [['亥', '卯', '未'], '木', '亥卯未木局', 8],
+  [['寅', '午', '戌'], '火', '寅午戌火局', 8],
+  [['巳', '酉', '丑'], '金', '巳酉丑金局', 8],
+  [['寅', '卯', '辰'], '木', '寅卯辰东方木会', 9],
+  [['巳', '午', '未'], '火', '巳午未南方火会', 9],
+  [['申', '酉', '戌'], '金', '申酉戌西方金会', 9],
+  [['亥', '子', '丑'], '水', '亥子丑北方水会', 9],
+];
+
+// 成局五行相对日主的喜忌：取对应十神喜忌权重的均值（正=喜、负=忌）
+function elementFavor(el: string, dayWx: string, w: Record<string, number>): number {
+  if (el === dayWx) return ((w['比'] ?? 0) + (w['劫'] ?? 0)) / 2;
+  if (SHENG[el] === dayWx) return ((w['印'] ?? 0) + (w['枭'] ?? 0)) / 2;
+  if (SHENG[dayWx] === el) return ((w['食'] ?? 0) + (w['伤'] ?? 0)) / 2;
+  if (KE[dayWx] === el) return ((w['财'] ?? 0) + (w['才'] ?? 0)) / 2;
+  return ((w['官'] ?? 0) + (w['杀'] ?? 0)) / 2;
+}
+
+// 成局主要波及的分维：官杀局/印局→事业，财局/食伤局/比劫局→财运
+function comboDim(el: string, dayWx: string): KlineDim {
+  return KE[el] === dayWx || SHENG[el] === dayWx ? 'career' : 'wealth';
+}
+
+// added 是否为凑齐 pattern 的最后一块（base 已有其余两支、且 base 自身未含全套——
+// 本命自带全套属原局特征，由盘面地支关系呈现，不算运岁事件）
+function completesPattern(pattern: string[], base: Set<string>, added: string): boolean {
+  return (
+    pattern.includes(added) &&
+    pattern.every((z) => z === added || base.has(z)) &&
+    !pattern.every((z) => base.has(z))
+  );
+}
 
 const SHORT_FULL: Record<string, string> = {
   比: '比肩', 劫: '劫财', 食: '食神', 伤: '伤官',
@@ -165,6 +204,9 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
   const natalZhis: [string, string][] = [
     [p.year.zhi, '年支'], [monthZhi, '月支'], [dayZhi, '日支'], [p.time.zhi, '时支'],
   ];
+  const natalZhiSet = new Set(natalZhis.map(([z]) => z));
+  const warmthNeed = WARMTH_NEED[monthZhi] ?? 0;
+  const dayKong = p.day.xunKong || '';
   const shenShaOf = createShenShaLookup(
     { year: p.year, month: p.month, day: p.day, time: p.time },
     p.day.xunKong || '',
@@ -214,6 +256,15 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
         }
       }
       if (dy.ganZhi === dayGZ) decadeEff.push(['total', -3, '大运伏吟日柱'], ['health', -3, '大运伏吟日柱']);
+
+      // 大运支与本命凑齐三合/三会：十年成局主题（力度略低于流年成局）
+      for (const [pat, el, name, mag] of COMBOS) {
+        if (!completesPattern(pat, natalZhiSet, dyZhi)) continue;
+        const f = elementFavor(el, dayWx, w);
+        if (Math.abs(f) < 0.05) continue;
+        const tag = `大运会齐${name}(${f > 0 ? '喜' : '忌'})`;
+        decadeEff.push(['total', f * (mag - 1), tag], [comboDim(el, dayWx), f * (mag - 1) * 0.6, tag]);
+      }
     }
 
     for (const ln of dy.liunianArr) {
@@ -312,6 +363,50 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
         else if (LIU_HE[lnZhi] === dyZhi) add('total', 2, '岁运相合');
       }
 
+      // ── 三合/三会成局：流年支补齐（本命+大运）拼图的最后一块 ──
+      {
+        const base = dyZhi ? new Set([...natalZhiSet, dyZhi]) : natalZhiSet;
+        for (const [pat, el, name, mag] of COMBOS) {
+          if (!completesPattern(pat, base, lnZhi)) continue;
+          const f = elementFavor(el, dayWx, w);
+          if (Math.abs(f) < 0.05) continue;
+          const tag = `流年会齐${name}(${f > 0 ? '喜' : '忌'})`;
+          add('total', f * mag, tag);
+          add(comboDim(el, dayWx), f * mag * 0.6, tag);
+          add('health', f * mag * 0.4, tag);
+        }
+      }
+
+      // ── 调候：寒/燥命遇火/水运岁的得济与受伤（月令暖需复用 dili 表；气候中和之月不计）──
+      if (Math.abs(warmthNeed) >= 0.3) {
+        const warmthOf = (gz: string, scale: number) => {
+          if (!gz || gz.length < 2) return 0;
+          const gw = getGanWuXing(gz[0]);
+          const zw = getZhiWuXing(gz[1]);
+          return scale * ((gw === '火' ? 0.6 : gw === '水' ? -0.6 : 0) + (zw === '火' ? 1 : zw === '水' ? -1 : 0));
+        };
+        const delivered = warmthOf(hasDy ? dy.ganZhi : '', 0.7) + warmthOf(ln.ganZhi, 1);
+        const v = clamp(warmthNeed * delivered * 2, -6, 6);
+        if (Math.abs(v) >= 1) {
+          const tag = warmthNeed > 0
+            ? (delivered > 0 ? '运岁暖济寒局(调候得力)' : '运岁增寒(调候受伤)')
+            : (delivered < 0 ? '运岁润济燥局(调候得力)' : '运岁助燥(调候受伤)');
+          add('total', v, tag);
+          add('health', v * 0.7, tag);
+        }
+      }
+
+      // ── 空亡：流年支落日柱旬空主虚耗蹉跎；被本命/大运支冲则「冲空反实」不罚 ──
+      if (dayKong.includes(lnZhi)) {
+        const chongZhi = CHONG[lnZhi];
+        if (natalZhiSet.has(chongZhi) || (dyZhi && dyZhi === chongZhi)) {
+          add('total', 1, '流年落空亡逢冲(冲空反实)');
+        } else {
+          add('total', -3, '流年入空亡(虚耗蹉跎)');
+          add('health', -1, '流年入空亡');
+        }
+      }
+
       // ── 伏吟（干支全同主滞重反复）──
       if (ln.ganZhi === dayGZ) { add('total', -4, '流年伏吟日柱'); add('health', -4, '流年伏吟日柱'); add('love', -2, '流年伏吟日柱'); }
       else if (ln.ganZhi === yearGZ) { add('total', -3, '流年伏吟年柱'); add('health', -3, '流年伏吟年柱'); }
@@ -335,7 +430,7 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
         if (SS_LONELY.some((x) => name.startsWith(x))) { add('love', -4, name); }
         if (SS_HEALTH_BAD.some((x) => name.startsWith(x))) { ssTotal -= 2; add('health', -4, name); }
         if (name.startsWith('劫煞')) { ssTotal -= 1; add('wealth', -3, name); }
-        if (name.startsWith('空亡')) ssTotal -= 1;
+        // 空亡不再计入神煞综合——已由上方「空亡入运」显式计分（含冲空反实），避免双计
       }
       if (ssTotal !== 0) add('total', clamp(ssTotal, -6, 6), '神煞综合');
 
@@ -379,7 +474,7 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
       const close = y.scores[key];
       const open = prevClose[key];
       y.delta[key] = close - open;
-      const vol = clamp(3 + y.factors[key].filter((f) => /冲|刑|害|并临|克|伏吟/.test(f)).length * 2, 3, 14);
+      const vol = clamp(3 + y.factors[key].filter((f) => /冲|刑|害|并临|克|伏吟|会齐|空亡/.test(f)).length * 2, 3, 14);
       y.ohlc[key] = {
         open, close,
         high: clamp(Math.max(open, close) + vol * 0.6, 2, 98),
