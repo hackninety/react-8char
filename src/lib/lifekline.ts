@@ -110,25 +110,25 @@ function detectStrength(chart: BaziResult): { judge: StrengthJudge; source: stri
     if (judgeStr.includes('弱')) return { judge: '身弱', source: '渊海子平' };
     return { judge: '中和', source: '渊海子平' };
   }
+  // fallback 简化扶抑：帮扶（同我/生我）为正、克泄耗（克我/我克/我生）为负的净值。
+  // 月令本气 ±25 为最大权重，藏干按气级 ±12/6/3，年月时天干 ±7；|净值| ≤ 12 视为中和。
   const p = chart.pillars;
   const dayWx = getGanWuXing(p.day.gan);
+  const sign = (wx: string) => (!wx ? 0 : wx === dayWx || SHENG[wx] === dayWx ? 1 : -1);
   let score = 0;
   const monthMain = p.month.hideGanAttr?.[0]?.gan;
-  if (monthMain) {
-    const wx = getGanWuXing(monthMain);
-    if (wx === dayWx || SHENG[wx] === dayWx) score += 25;
-  }
+  if (monthMain) score += sign(getGanWuXing(monthMain)) * 25;
   const QI_SCORE: Record<string, number> = { 本气: 12, 中气: 6, 余气: 3 };
   for (const key of ['year', 'month', 'day', 'time'] as const) {
     for (const hg of p[key].hideGanAttr ?? []) {
-      if (getGanWuXing(hg.gan) === dayWx) score += QI_SCORE[hg.qiLevel] ?? 0;
+      score += sign(getGanWuXing(hg.gan)) * (QI_SCORE[hg.qiLevel] ?? 0);
     }
   }
   for (const key of ['year', 'month', 'time'] as const) {
-    const wx = getGanWuXing(p[key].gan);
-    if (wx === dayWx || SHENG[wx] === dayWx) score += 7;
+    score += sign(getGanWuXing(p[key].gan)) * 7;
   }
-  return { judge: score >= 40 ? '身强' : '身弱', source: '简化扶抑' };
+  const judge: StrengthJudge = score > 12 ? '身强' : score < -12 ? '身弱' : '中和';
+  return { judge, source: '简化扶抑' };
 }
 
 function weightsFor(judge: StrengthJudge): { w: Record<string, number>; note: string } {
