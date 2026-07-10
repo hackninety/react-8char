@@ -82,6 +82,9 @@ export function formatPaipanSummary(chartId: string, data: any, chart: any, klin
     L.push(`- ${th.dayGan}日主生${th.monthZhi}月 → **${th.gods.join('、')}**（主用在前）`);
     (th.detail ?? []).forEach((d: any) => L.push(`- ${d.gan}（${d.role}）：${d.status}`));
     L.push(`- 结论：${th.verdict}`);
+    if (th.classic) {
+      L.push(`- 原文（${th.classic.scope}，录自${th.classic.source}；引用以此为准）：${String(th.classic.text).replace(/\n+/g, ' ')}`);
+    }
   }
   const sl = data.siLing;
   if (sl) {

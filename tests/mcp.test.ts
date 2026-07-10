@@ -56,9 +56,12 @@ describe('MCP server', () => {
     expect(t).toContain('流月');
   });
 
-  it('query_tiaohou：免排盘快查', async () => {
+  it('query_tiaohou：免排盘快查，附《穷通宝鉴》原文段', async () => {
     const r: any = await client.callTool({ name: 'query_tiaohou', arguments: { dayGan: '甲', monthZhi: '子' } });
-    expect(textOf(r)).toContain('丁');
+    const t = textOf(r);
+    expect(t).toContain('丁');
+    expect(t).toContain('原文');
+    expect(t).toContain('十一月甲木');
   });
 
   it('fanpai 自洽：北京盘四柱反查命中原出生日期', async () => {

@@ -12,6 +12,7 @@ import { analyzeTiaoHou } from './tiaohou';
 import { computeSiLing } from './siling';
 import { detectPatterns } from './patterns';
 import { collectShenShaNames, lookupShenShaMeanings } from './shensha-dict';
+import { buildXiangFaExport } from './xiangfa';
 
 // ─── Re-export 引擎扩展 API 供组件使用 ─────────────────
 // 原 fork（mystilight-8char-v2）的 v2 能力已内置为应用内扩展层 engine/mystilight/ext，
@@ -193,6 +194,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     ...(tiaoHou ? { tiaoHou } : {}),
     ...(siLing ? { siLing } : {}),
     ...(patterns.length ? { patterns } : {}),
+    xiangFa: buildXiangFaExport(),
     wuYunLiuQi: buildWuYunLiuQiExport(input),
     // 人生K线五维量化评分（紧凑数组省 token，列见 dims 图例）
     ...(() => {

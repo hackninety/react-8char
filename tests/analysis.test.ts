@@ -30,6 +30,55 @@ describe('调候用神（穷通宝鉴查表）', () => {
     expect(th.detail[0].status).toContain('透于月干、时干');
     expect(th.verdict).toContain('调候得力');
   });
+  it('本造原文段：北京盘附「五月辛金」本月专段', () => {
+    const chart = calculateBazi(BEIJING);
+    const th = analyzeTiaoHou(chart.pillars as any)!;
+    expect(th.classic).toBeTruthy();
+    expect(th.classic!.scope).toBe('本月');
+    expect(th.classic!.text).toContain('五月辛金');
+    expect(th.classic!.text).toContain('壬己并用');
+  });
+});
+
+describe('穷通宝鉴原文库（维基文库抓取，120 格）', () => {
+  it('覆盖完整：10 干 × 12 支全有文本（≥30 字）且 scope 合法', async () => {
+    const { QIONG_TONG_TEXT } = await import('../src/lib/data/qiongtongbaojian');
+    const GANS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const ZHIS = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    let cells = 0;
+    for (const g of GANS) for (const z of ZHIS) {
+      const e = QIONG_TONG_TEXT[g]?.[z];
+      expect(e, `${g}${z} 缺失`).toBeTruthy();
+      expect(e!.text.length, `${g}${z} 文本过短`).toBeGreaterThanOrEqual(30);
+      expect(e!.scope).toMatch(/^(本月|合论|季论)/);
+      cells++;
+    }
+    expect(cells).toBe(120);
+  });
+  it('原文与调候用神表交叉互证：甲寅=丙癸、辛午=壬己、己丑=丙甲（两份独立数据吻合）', async () => {
+    const { QIONG_TONG_TEXT } = await import('../src/lib/data/qiongtongbaojian');
+    expect(QIONG_TONG_TEXT['甲']['寅'].text).toMatch(/丙癸|丙.*癸/);
+    expect(QIONG_TONG_TEXT['辛']['午'].text).toContain('壬己并用');
+    const jiChou = QIONG_TONG_TEXT['己']['丑'].text;
+    expect(jiChou).toContain('丙');
+    expect(jiChou).toContain('甲');
+    // 原书粒度如实标注：乙丑无专段
+    expect(QIONG_TONG_TEXT['乙']['丑'].scope).toContain('原书本月无专段');
+  });
+});
+
+describe('盲派象法参考表', () => {
+  it('十干/十二支/十神表完整且每条非空', async () => {
+    const { GAN_XIANG, ZHI_XIANG, SHISHEN_XIANG } = await import('../src/lib/xiangfa');
+    expect(Object.keys(GAN_XIANG)).toHaveLength(10);
+    expect(Object.keys(ZHI_XIANG)).toHaveLength(12);
+    expect(Object.keys(SHISHEN_XIANG)).toHaveLength(10);
+    for (const v of [...Object.values(GAN_XIANG), ...Object.values(ZHI_XIANG), ...Object.values(SHISHEN_XIANG)]) {
+      expect(String(v).length).toBeGreaterThan(10);
+    }
+    expect(ZHI_XIANG['子']).toContain('肾');
+    expect(SHISHEN_XIANG['正官']).toContain('夫');
+  });
 });
 
 describe('人元司令分野', () => {
@@ -207,5 +256,16 @@ describe('流月（五虎遁）与导出结构', () => {
     }
     expect(expanded).toBeGreaterThan(0);
     expect(expanded).toBeLessThanOrEqual(6);
+  });
+  it('导出集成：JSON 带 tiaoHou.classic 与 xiangFa，Markdown 带原文引用块与象法节', async () => {
+    const chart = calculateBazi(BEIJING);
+    const data: any = buildExportJSON(BEIJING, chart);
+    expect(data.tiaoHou?.classic?.text).toContain('五月辛金');
+    expect(data.xiangFa?.gan?.['甲']).toContain('栋梁');
+    const { buildExportMarkdown } = await import('../src/lib/markdown-export');
+    const md = buildExportMarkdown(BEIJING, chart);
+    expect(md).toContain('《穷通宝鉴》原文');
+    expect(md).toContain('盲派象法参考');
+    expect(md).toContain('壬己并用');
   });
 });

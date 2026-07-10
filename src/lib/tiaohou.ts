@@ -7,6 +7,8 @@
 // 表源：《穷通宝鉴》（徐乐吾《造化元钥》整理本）通行调候用神简表。
 // 各刊本首位用神一致；佐神取舍与次序间有异文，本表取流传最广版本。首字为主用，余为佐。
 
+import { QIONG_TONG_TEXT, type QtbjEntry } from './data/qiongtongbaojian';
+
 type GZ = { gan: string; zhi: string; hideGanAttr?: { gan: string; qiLevel: string }[] };
 type PillarsLike = { year: GZ; month: GZ; day: GZ; time: GZ };
 
@@ -41,6 +43,8 @@ export interface TiaoHouResult {
   /** 一句话结论 */
   verdict: string;
   source: string;
+  /** 本造对应的《穷通宝鉴》原文段（仅此一条随盘导出；含粒度标注） */
+  classic?: QtbjEntry & { source: string };
 }
 
 const PILLAR_CN: Record<string, string> = { year: '年', month: '月', day: '日', time: '时' };
@@ -103,5 +107,15 @@ export function analyzeTiaoHou(pillars: PillarsLike | undefined): TiaoHouResult 
     detail,
     verdict,
     source: '穷通宝鉴·通行调候简表（佐神次序各本或有异文）',
+    ...(() => {
+      const c = getQiongTongText(dayGan, monthZhi);
+      return c ? { classic: c } : {};
+    })(),
   };
+}
+
+/** 查本造《穷通宝鉴》原文段（维基文库公有领域文本；只取一条，token 成本近零） */
+export function getQiongTongText(dayGan: string, monthZhi: string): (QtbjEntry & { source: string }) | null {
+  const e = QIONG_TONG_TEXT[dayGan]?.[monthZhi];
+  return e ? { ...e, source: '维基文库《穷通宝鉴》' } : null;
 }

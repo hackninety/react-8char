@@ -9,7 +9,7 @@ import type { BaziInput } from '../src/lib/bazi';
 import { buildExportJSON, getLiuYueForYear, getLiuRiForMonth, reverseLookupBazi, TIAN_GAN, DI_ZHI, JIA_ZI_60 } from '../src/lib/bazi';
 import { calculateChart, compareEngines } from '../src/lib/engine';
 import { buildLifeKline, type LifeKlineData } from '../src/lib/lifekline';
-import { getTiaoHouGods } from '../src/lib/tiaohou';
+import { getTiaoHouGods, getQiongTongText } from '../src/lib/tiaohou';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from '../src/lib/wuyunliuqi';
 import { getCityByName, findLatitude } from '../src/lib/cities';
 import { formatPaipanSummary, formatYearDetail, formatKlineOverview } from './format';
@@ -225,7 +225,11 @@ export function createServer(): McpServer {
     if (!DI_ZHI.includes(a.monthZhi)) return errText(`错误：月支「${a.monthZhi}」须为十二地支之一`);
     const gods = getTiaoHouGods(a.dayGan, a.monthZhi);
     if (!gods) return errText('错误：查表失败');
-    return text(`${a.dayGan}日主生${a.monthZhi}月 → 调候用神：**${gods.join('、')}**（主用在前）\n\n> 源：穷通宝鉴·通行调候简表（佐神次序各本或有异文）。原局是否得此用神，请结合具体命盘透藏判断（paipan 结果含本造判定）。`);
+    const classic = getQiongTongText(a.dayGan, a.monthZhi);
+    const classicPart = classic
+      ? `\n\n## 原文（${classic.scope}，录自${classic.source}；引用以此为准，勿凭记忆补写）\n\n${classic.text}`
+      : '';
+    return text(`${a.dayGan}日主生${a.monthZhi}月 → 调候用神：**${gods.join('、')}**（主用在前）\n\n> 源：穷通宝鉴·通行调候简表（佐神次序各本或有异文）。原局是否得此用神，请结合具体命盘透藏判断（paipan 结果含本造判定）。${classicPart}`);
   });
 
   server.registerTool('fanpai', {

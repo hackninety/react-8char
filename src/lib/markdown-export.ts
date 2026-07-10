@@ -112,7 +112,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   push(
     AI_ANALYST_ROLE,
     '',
-    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」「人元司令分野」「十神组合线索」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
+    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
   );
   if (data.aiNote) push('', `> **用户备注**：${data.aiNote}`);
   push('', '---', '');
@@ -252,6 +252,11 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     (th.detail ?? []).forEach((d: any) => push(`- **${d.gan}（${d.role}用）**：${d.status}`));
     push(`- **结论**：${th.verdict}`);
     push('', `> ${th.source}`, '');
+    if (th.classic) {
+      push(`### 《穷通宝鉴》原文（${th.classic.scope}）`, '');
+      String(th.classic.text).split('\n').filter((l: string) => l.trim()).forEach((l: string) => push(`> ${l.trim()}`));
+      push('', `> —— 录自${th.classic.source}，供调候派分析引用；引用原文以此为准，勿凭记忆补写。`, '');
+    }
   }
 
   // ── 人元司令分野 ──
@@ -270,6 +275,20 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push('## 十神组合线索（程序预检）', '');
     push('> 以下为确定性规则检出的经典组合及其落点；吉凶轻重须结合全局与运岁覆核，非既成论断。', '');
     pats.forEach((x: any) => push(`- **${x.name}**［${x.hit}］：${x.note}`));
+    push('');
+  }
+
+  // ── 盲派象法参考（静态通行类象表，支撑「十神象×宫位象×干支本象」取象）──
+  const xf = data.xiangFa;
+  if (xf) {
+    push('## 盲派象法参考', '');
+    push(`> ${xf.note}`, '');
+    push('### 十干本象', '');
+    Object.entries(xf.gan ?? {}).forEach(([k, v]) => push(`- **${k}**：${v}`));
+    push('', '### 十二支本象', '');
+    Object.entries(xf.zhi ?? {}).forEach(([k, v]) => push(`- **${k}**：${v}`));
+    push('', '### 十神象义', '');
+    Object.entries(xf.shiShen ?? {}).forEach(([k, v]) => push(`- **${k}**：${v}`));
     push('');
   }
 

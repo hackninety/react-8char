@@ -167,7 +167,7 @@ export function generateAIPrompt(jsonData: Record<string, any>): string {
 
   return `${AI_ANALYST_ROLE}
 
-数据说明：JSON 中包含四柱、十神、五行力量、大运流年（流月仅展开近年，规则见 liuYueNote）、干支关系、神煞及释义（shenshaDict）、渊海子平分析、**调候用神查表与原局得否（tiaoHou）**、**人元司令分野（siLing）**、**十神组合预检（patterns）**、五运六气（中运、司天在泉、主客运、主客气、运气同化），以及人生K线量化评分（lifeKline，逐年 0-100 分，简化扶抑模型仅供参考）等完整信息，请充分利用所有字段；加粗字段为确定性查表/预检结果，引用它们而非凭记忆回忆。${userNote}
+数据说明：JSON 中包含四柱、十神、五行力量、大运流年（流月仅展开近年，规则见 liuYueNote）、干支关系、神煞及释义（shenshaDict）、渊海子平分析、**调候用神查表与原局得否（tiaoHou，其 classic 字段为本造对应的《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）**、**人元司令分野（siLing）**、**十神组合预检（patterns）**、**盲派象法参考表（xiangFa）**、五运六气（中运、司天在泉、主客运、主客气、运气同化），以及人生K线量化评分（lifeKline，逐年 0-100 分，简化扶抑模型仅供参考）等完整信息，请充分利用所有字段；加粗字段为确定性查表/预检结果，引用它们而非凭记忆回忆。${userNote}
 
 \`\`\`json
 ${jsonStr}
