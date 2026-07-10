@@ -1,9 +1,12 @@
-// 五行能量计点:干支计点法下的五行结构占比,分「原局 / 原局+大运 / 原局+大运+流年」三层叠加。
+// 能量计点:干支计点法下的五行结构占比,分「原局 / 原局+大运 / 原局+大运+流年」三层叠加,
+// 并按六亲星映射折到宫位轴(事业官禄/财帛/子女才华/兄弟同侪/父母学业,婚姻随性别并入财或官轴)——
+// 八字对应紫微十二宫的宫分类即十神六亲:官杀=事业官禄(女命兼夫星)、财才=财帛(男命兼妻星)、
+// 印枭=父母学业、食伤=子女才华(男命古法子女亦看官杀)、比劫=兄弟同侪。宫位轴序固定,星与五行随日主变。
 //
 // 方法(结构占比,非旺衰):每天干计 100 点入其五行;每地支按藏干气级分拆 100 点——
 // 单藏 100、双藏 70/30、三藏 60/30/10(本/中/余)。原局八字共 800 点,大运/流年各计一柱 200 点。
 // 与引擎 wuXingPower(含得令加成的旺衰值)口径不同:此处回答「岁运叠加后盘面结构怎么变形」,
-// 供五行能量多边形(雷达)与导出引用;喜忌标注用扶抑口径(likeElements)。
+// 供能量多边形(雷达)与导出引用;喜忌标注用扶抑口径(likeElements)。
 // 藏干集合与次序同引擎 hideGanAttr(测试对拍锁定),权重为通行计点约定。
 import { getGanWuXing } from './utils';
 import { SHENG, KE } from './ganzhi';
@@ -39,12 +42,25 @@ export interface WuxingEnergyLayer {
   percent: Record<string, number>;
 }
 
+export interface WuxingPalaceAxis {
+  /** 宫位标签,如「事业官禄」「财帛·婚姻」(婚姻随性别并入财/官轴) */
+  label: string;
+  /** 对应十神组:官杀/财才/印枭/食伤/比劫 */
+  group: string;
+  /** 该组对应的五行(随日主变) */
+  wx: string;
+}
+
 export interface WuxingEnergyData {
   method: string;
   dayGan: string;
   dayWx: string;
   /** 各五行相对日主的十神组:木→比劫 之类 */
   groupOf: Record<string, string>;
+  /** 宫位轴(固定序:事业官禄/财帛/子女才华/兄弟同侪/父母学业;婚姻按性别并入) */
+  palaces: WuxingPalaceAxis[];
+  /** 宫位映射备注(婚姻取星/男命子女古法) */
+  palaceNote: string;
   /** 扶抑口径喜行(身强弱未判/中和时缺省) */
   likes?: string[];
   layers: WuxingEnergyLayer[];
@@ -74,6 +90,8 @@ function toLayer(label: string, acc: Record<string, number>): WuxingEnergyLayer 
 export interface WuxingEnergyInput {
   pillars: PillarsLike | undefined;
   judge?: string;
+  /** 性别(婚姻轴取配偶星用:男财女官;缺省不并入婚姻) */
+  gender?: string;
   /** 大运干支(缺省则只有原局层) */
   dayunGz?: string;
   /** 流年干支(缺省则无流年层) */
@@ -92,6 +110,23 @@ export function buildWuxingEnergy(input: WuxingEnergyInput): WuxingEnergyData | 
     groupOf[w] =
       w === dayWx ? '比劫' : SHENG[w] === dayWx ? '印枭' : SHENG[dayWx] === w ? '食伤' : KE[dayWx] === w ? '财才' : '官杀';
   }
+  const wxOfGroup: Record<string, string> = {};
+  for (const w of WX_ALL) wxOfGroup[groupOf[w]] = w;
+
+  // 宫位轴(固定序,星与五行随日主变);婚姻按性别并入配偶星轴
+  const marryGroup = input.gender === '女' ? '官杀' : input.gender === '男' ? '财才' : '';
+  const palaces: WuxingPalaceAxis[] = [
+    { label: '事业官禄', group: '官杀' },
+    { label: '财帛', group: '财才' },
+    { label: '子女才华', group: '食伤' },
+    { label: '兄弟同侪', group: '比劫' },
+    { label: '父母学业', group: '印枭' },
+  ].map((p) => ({
+    label: p.group === marryGroup ? `${p.label}·婚姻` : p.label,
+    group: p.group,
+    wx: wxOfGroup[p.group],
+  }));
+  const palaceNote = `宫位为六亲星映射:婚姻取配偶星(男财女官${marryGroup ? `,本造并入${palaces.find((p) => p.group === marryGroup)!.label}轴` : ',性别未知未并入'});男命古法子女亦看官杀;命主自身即日主${dayGan}(${dayWx})`;
 
   const acc: Record<string, number> = {};
   for (const k of ['year', 'month', 'day', 'time'] as const) pillarPoints(p[k], acc);
@@ -114,6 +149,8 @@ export function buildWuxingEnergy(input: WuxingEnergyInput): WuxingEnergyData | 
     dayGan,
     dayWx,
     groupOf,
+    palaces,
+    palaceNote,
     ...(likes ? { likes: [...likes] } : {}),
     layers,
   };

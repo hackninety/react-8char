@@ -50,9 +50,12 @@ test('排盘 → K线流月下钻 → TOON 下载（golden 命例干支断言，
   await expect(page.getByTestId('month-kline')).toBeVisible();
   await expect(page.getByText('流月K线')).toBeVisible();
 
-  // 五行能量多边形：三层图例随选中年出现
+  // 能量多边形：宫位轴（golden 男命婚姻并入财帛轴）+ 三层图例随选中年出现
   const radar = page.getByTestId('wuxing-radar');
   await expect(radar).toBeVisible();
+  await expect(radar.getByText('能量多边形').first()).toBeVisible();
+  await expect(radar.getByText('财帛·婚姻').first()).toBeVisible();
+  await expect(radar.getByText('事业官禄').first()).toBeVisible();
   await expect(radar.getByText(/\+大运/).first()).toBeVisible();
   await expect(radar.getByText(/\+流年/).first()).toBeVisible();
 

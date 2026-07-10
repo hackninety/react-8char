@@ -102,6 +102,16 @@ describe('五行能量计点 buildWuxingEnergy', () => {
     expect(we.likes).toEqual(expect.arrayContaining(['土', '金'])); // 身弱喜印比之行
   });
 
+  it('宫位轴:六亲星映射,男命婚姻并入财帛轴、女命并入事业轴', () => {
+    const male = buildWuxingEnergy({ pillars: chart.pillars, judge, gender: '男' })!;
+    expect(male.palaces.map((p) => p.label)).toEqual(['事业官禄', '财帛·婚姻', '子女才华', '兄弟同侪', '父母学业']);
+    // 辛日主:官杀=火、财才=木、食伤=水、比劫=金、印枭=土
+    expect(male.palaces.map((p) => p.wx)).toEqual(['火', '木', '水', '金', '土']);
+    const female = buildWuxingEnergy({ pillars: chart.pillars, judge, gender: '女' })!;
+    expect(female.palaces.map((p) => p.label)).toEqual(['事业官禄·婚姻', '财帛', '子女才华', '兄弟同侪', '父母学业']);
+    expect(female.palaceNote).toContain('男财女官');
+  });
+
   it('岁运叠加:+大运1000点、+流年1200点,各层占比和≈100', () => {
     const we = buildWuxingEnergy({ pillars: chart.pillars, judge, dayunGz: '丙戌', liunianGz: '丙午' })!;
     expect(we.layers.map((l) => l.label)).toEqual(['原局', '+大运丙戌', '+流年丙午']);
@@ -147,6 +157,7 @@ describe('导出集成', () => {
     expect(data.decadePlan.dims).toContain('运限格局');
     expect(data.wuxingEnergy.layers[0][0]).toBe('原局');
     expect(data.wuxingEnergy.fuYiLikes).toBeDefined();
+    expect(data.wuxingEnergy.gongWei.map((g: string[]) => g[0])).toContain('财帛·婚姻'); // golden 男命
     // golden 为七杀格 → 附论偏官原文
     expect(data.geJu.ge).toBe('七杀格');
     expect(data.geJu.classic.chapter).toBe('论偏官');
@@ -157,7 +168,8 @@ describe('导出集成', () => {
     const { buildExportMarkdown } = await import('../src/lib/markdown-export');
     const md = buildExportMarkdown(GOLDEN, chart);
     expect(md).toContain('### 十年规划表');
-    expect(md).toContain('### 五行能量三层占比');
+    expect(md).toContain('### 能量多边形');
+    expect(md).toContain('宫位轴');
     expect(md).toContain('《子平真诠·论偏官》原文');
     expect(md).toContain('高光年'); // 规划表表头
   });

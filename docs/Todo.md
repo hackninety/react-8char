@@ -15,10 +15,11 @@
 /伤官见官·枭神夺食·官杀混杂之运岁成象），口径与 K线计分层完全一致，输出 name+kind+basis+meaning 叙事层。
 ③ **十年规划表** [`decadeplan.ts`](../src/lib/decadeplan.ts) + [`DecadePlanTable`](../src/components/DecadePlanTable.tsx)：
 一运一行（干支十神全称/十二长生/扶抑喜忌/K线总运均值/高光低谷年/该运格局 chips），行点击展开逐年明细；
-随 JSON（紧凑 rows）与 MD（表格）导出。④ **五行能量多边形** [`wuxing-energy.ts`](../src/lib/wuxing-energy.ts) +
+随 JSON（紧凑 rows）与 MD（表格）导出。④ **能量多边形** [`wuxing-energy.ts`](../src/lib/wuxing-energy.ts) +
 [`WuxingRadar`](../src/components/WuxingRadar.tsx)：干支计点法（干100/支藏干 60·30·10，藏干集合与引擎 hideGanAttr
-测试对拍锁定）算「原局/+大运/+流年」三层五行结构占比，嵌入人生K线卡片随悬停年联动，轴标五行·十神组、
-喜忌红绿着色；与引擎 wuXingPower（旺衰加权）口径互补。⑤ **格局面板** [`GejuPanel`](../src/components/GejuPanel.tsx)：
+测试对拍锁定）算「原局/+大运/+流年」三层结构占比，轴为**宫位**（事业官禄/财帛/子女才华/兄弟同侪/父母学业——
+六亲星映射即八字版紫微宫分类，宫位轴序固定、星与五行随日主变，婚姻按性别并入配偶星轴，男命古法子女亦看官杀已注明），
+嵌入人生K线卡片随悬停年联动，喜忌红绿着色；与引擎 wuXingPower（旺衰加权）口径互补。⑤ **格局面板** [`GejuPanel`](../src/components/GejuPanel.tsx)：
 取格结论+相神忌神+司令异说+本格原文（details 展开）+28 组合预检卡片+当前大运×今年流年运限格局。
 同批：干支关系表（冲合刑害/五合/三合三会/墓库/阳刃/生克）下沉 [`ganzhi.ts`](../src/lib/ganzhi.ts) 共享
 （lifekline/patterns/yingqi/yongshen 去重）。测试 90 例（新增 [`yun.test.ts`](../tests/yun.test.ts) 13 例，

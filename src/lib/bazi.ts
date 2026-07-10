@@ -153,10 +153,11 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     ? detectYunPatterns({ pillars: result.pillars, judge: kline?.judge, gender: result.gender, dayunGz: curDyGz, liunianGz: curLnGz || undefined })
     : [];
 
-  // 五行能量三层占比（原局/+当前大运/+今年流年，干支计点法；任意年份可由 K线面板联动查看）
+  // 能量多边形三层占比（宫位轴×原局/+当前大运/+今年流年，干支计点法；任意年份可由 K线面板联动查看）
   const wuxingEnergy = buildWuxingEnergy({
     pillars: result.pillars,
     judge: kline?.judge,
+    gender: result.gender,
     dayunGz: curDyGz || undefined,
     liunianGz: curLnGz || undefined,
   });
@@ -217,12 +218,15 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     shenGong: result.shenGong,
     shenGongNaYin: result.shenGongNaYin,
     wuXingPower: result.wuXingPower,
-    // 五行能量三层占比（结构计点口径，区别于 wuXingPower 旺衰加权）
+    // 能量多边形三层占比（宫位轴=六亲星映射；结构计点口径，区别于 wuXingPower 旺衰加权）
     ...(wuxingEnergy
       ? {
           wuxingEnergy: {
             method: wuxingEnergy.method,
             groupOf: wuxingEnergy.groupOf,
+            // 宫位轴:[宫位, 十神组, 五行]（婚姻已按性别并入配偶星轴）
+            gongWei: wuxingEnergy.palaces.map((p) => [p.label, p.group, p.wx]),
+            gongWeiNote: wuxingEnergy.palaceNote,
             ...(wuxingEnergy.likes ? { fuYiLikes: wuxingEnergy.likes } : {}),
             dims: ['木', '火', '土', '金', '水'],
             layers: wuxingEnergy.layers.map((l) => [l.label, ...['木', '火', '土', '金', '水'].map((w) => l.percent[w])]),

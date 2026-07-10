@@ -278,10 +278,11 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
             </div>
           </div>
 
-          {/* 五行能量多边形：原局/+大运/+流年 三层结构占比，随选中年联动 */}
+          {/* 能量多边形：宫位轴 × 原局/+大运/+流年 三层结构占比，随选中年联动 */}
           <WuxingRadar
             pillars={result.pillars}
             judge={data.judge}
+            gender={result.gender}
             dayunGz={active.dayun || undefined}
             liunianGz={active.ganZhi}
             caption={`${active.year} ${active.ganZhi}${active.dayun ? ` · ${active.dayun}运` : ''} · 悬停K线联动`}

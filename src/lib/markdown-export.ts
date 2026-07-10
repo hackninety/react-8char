@@ -195,11 +195,14 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   });
   push('', `**五行总值**：${total.toFixed(2)}`, '');
 
-  // ── 五行能量三层占比（原局/+当前大运/+今年流年，干支计点） ──
+  // ── 能量多边形三层占比（宫位轴×原局/+当前大运/+今年流年，干支计点） ──
   const we = data.wuxingEnergy;
   if (we?.layers?.length) {
-    push('### 五行能量三层占比（岁运叠加）', '');
+    push('### 能量多边形（宫位三层占比·岁运叠加）', '');
     push(`> ${we.method}${we.fuYiLikes ? `；扶抑喜行：${we.fuYiLikes.join('、')}` : ''}`, '');
+    if (Array.isArray(we.gongWei)) {
+      push(`> 宫位轴（六亲星映射）：${we.gongWei.map((g: string[]) => `${g[0]}=${g[1]}(${g[2]})`).join('、')}；${we.gongWeiNote ?? ''}`, '');
+    }
     push(`| 层 | ${we.dims.map((d: string) => `${d}·${we.groupOf?.[d] ?? ''}`).join(' | ')} |`, `|${' --- |'.repeat(we.dims.length + 1)}`);
     we.layers.forEach((l: (string | number)[]) => push(`| ${l[0]} | ${l.slice(1).map((v) => `${v}%`).join(' | ')} |`));
     push('');
