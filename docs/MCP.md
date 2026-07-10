@@ -49,8 +49,11 @@ claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 | `query_wuyunliuqi` | 出生年五运六气（中运/司天在泉/主客运气/运气同化/所值运步气步） | chartId |
 | `query_tiaohou` | 穷通宝鉴调候用神快查（无需排盘） | dayGan + monthZhi |
 | `fanpai` | 四柱干支反查公历出生时间（近 60 年候选） | 四柱干支 |
+| `query_yingqi` | 应期引动候选：婚恋/事业/财运的候选年份（星透干/星合日主/宫逢合冲/财库冲开等确定性预检，非事件预言） | chartId + topic (+年份范围) |
 | `compare_engines` | mystilight × tyme4ts 双引擎对拍校验 | 公历生辰 |
 | `hehun` | 合婚双盘对照：宫星互动/互为十神/喜用互补/调候互济，吉平忌清单不打总分 | 双方生辰（a/b 两组） |
+
+另有 **6 个 prompts**（`deep-dive-wealth/career/love/health/children/family`）：六大专项深挖清单的协议原语版，客户端可直接调用（参数 chartId）。`fanpai` 支持 sect 与 fromYear（突破 60 年限制）；`query_wuyunliuqi` 传 year 可查任意年运气年度格局。
 
 ## 设计要点
 

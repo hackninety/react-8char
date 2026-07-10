@@ -22,12 +22,25 @@ beforeAll(async () => {
 afterAll(async () => { await close(); });
 
 describe('MCP server', () => {
-  it('工具清单：10 个工具', async () => {
+  it('工具清单：11 个工具', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'compare_engines', 'fanpai', 'get_kline', 'hehun', 'paipan',
-      'query_liuri', 'query_liuyue', 'query_tiaohou', 'query_wuyunliuqi', 'query_year',
+      'query_liuri', 'query_liuyue', 'query_tiaohou', 'query_wuyunliuqi', 'query_year', 'query_yingqi',
     ]);
+  });
+
+  it('prompts 清单：六大专项深挖，getPrompt 返回清单文本', async () => {
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name).sort()).toEqual([
+      'deep-dive-career', 'deep-dive-children', 'deep-dive-family',
+      'deep-dive-health', 'deep-dive-love', 'deep-dive-wealth',
+    ]);
+    const p: any = await client.getPrompt({ name: 'deep-dive-wealth', arguments: { chartId: 'bz-test' } });
+    const t = p.messages.map((m: any) => m.content.text).join('');
+    expect(t).toContain('bz-test');
+    expect(t).toContain('财库');
+    expect(t).toContain('置信度');
   });
 
   it('hehun：双盘对照返回互动清单与分析框架', async () => {
@@ -60,8 +73,18 @@ describe('MCP server', () => {
     expect(t).toContain('8:30'); // 原始输入回显（校正后为 8:15，只出现在真太阳时说明行）
     expect(t).toContain('调候用神');
     expect(t).toContain('人元司令');
+    expect(t).toContain('格局判定');
+    expect(t).toContain('七杀格');
     expect(t).toContain('十神组合线索');
     expect(t).toContain('大运一览');
+  });
+
+  it('query_yingqi：婚恋应期候选含 2034 甲寅（财星透干+合动婚姻宫）', async () => {
+    const r: any = await client.callTool({ name: 'query_yingqi', arguments: { chartId, topic: '婚恋', fromYear: 2026, toYear: 2040 } });
+    const t = textOf(r);
+    expect(t).toContain('应期候选');
+    expect(t).toContain('2034 甲寅');
+    expect(t).toContain('非事件预言');
   });
 
   it('query_year：单年详情含 K线归因与流月', async () => {

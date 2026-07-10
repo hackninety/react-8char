@@ -109,7 +109,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   push(
     AI_ANALYST_ROLE,
     '',
-    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
+    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「应期引动预检」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
   );
   if (data.aiNote) push('', `> **用户备注**：${data.aiNote}`);
   push('', '---', '');
@@ -266,6 +266,36 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push('');
   }
 
+  // ── 格局判定（子平真诠机械取格）──
+  const gj = data.geJu;
+  if (gj) {
+    push('## 格局判定（子平真诠）', '');
+    push(`- **格局**：${gj.ge}（${gj.type}）`);
+    push(`- **取格**：${gj.basis}`);
+    if (Array.isArray(gj.xiangShen) && gj.xiangShen.length) {
+      push(`- **相神候选**：${gj.xiangShen.map((x: any) => `${x.shiShen}〔${x.role}〕—${x.status}`).join('；')}`);
+    }
+    if (Array.isArray(gj.jiShen) && gj.jiShen.length) {
+      push(`- **忌神**：${gj.jiShen.map((x: any) => `${x.shiShen}〔${x.role}〕—${x.status}`).join('；')}`);
+    }
+    push(`- **初判**：${gj.verdict}`);
+    if (gj.siLingNote) push(`- ⚠ ${gj.siLingNote}`);
+    push('', `> ${gj.source}`, '');
+  }
+
+  // ── 应期引动预检 ──
+  const yq = data.yingQi;
+  if (Array.isArray(yq) && yq.length) {
+    push('## 应期引动预检', '');
+    push(`> ${data.yingQiNote ?? '应期为传统引动规则的候选提示，非事件预言'}`, '');
+    for (const t of yq) {
+      push(`### ${t.topic}（星：${t.star}${t.palace ? `；宫：${t.palace}` : ''}）`, '');
+      push('| 年 | 干支 | 强度 | 线索 |', '| --- | --- | --- | --- |');
+      (t.hits ?? []).forEach((h: any[]) => push(`| ${h[0]} | ${h[1]} | ${h[2]} | ${td(h[3])} |`));
+      push('');
+    }
+  }
+
   // ── 十神组合线索（程序预检）──
   const pats = data.patterns;
   if (Array.isArray(pats) && pats.length) {
@@ -356,10 +386,10 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   if (data.liuYueNote) push(`> ${data.liuYueNote}`, '');
 
   push('### 大运一览', '');
-  push('| # | 大运 | 起始年 | 天干十神 | 地支十神 | 标注 |', '| --- | --- | --- | --- | --- | --- |');
+  push('| # | 大运 | 起始年 | 天干十神 | 地支十神 | 日主长生 | 标注 |', '| --- | --- | --- | --- | --- | --- | --- |');
   dayunArr.filter((dy) => dy.ganZhi).forEach((dy, i) => {
     const mark = dy.ganZhi === curDaYunGz ? '当前' : '';
-    push(`| ${i + 1} | ${td(dy.ganZhi)} | ${td(dy.startYear)} | ${td(dy.ganshen)} | ${td(dy.zhishen)} | ${mark} |`);
+    push(`| ${i + 1} | ${td(dy.ganZhi)} | ${td(dy.startYear)} | ${td(dy.ganshen)} | ${td(dy.zhishen)} | ${td(dy.diShi)} | ${mark} |`);
   });
   push('');
 
@@ -373,10 +403,10 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
       push('');
       return;
     }
-    push('| 流年 | 干支 | 天干十神 | 地支十神 | 标注 |', '| --- | --- | --- | --- | --- |');
+    push('| 流年 | 干支 | 天干十神 | 地支十神 | 日主长生 | 标注 |', '| --- | --- | --- | --- | --- | --- |');
     lns.forEach((ln) => {
       const mk = String(ln.year) === String(curLnYear) ? '今年' : '';
-      push(`| ${td(ln.year)} | ${td(ln.ganZhi)} | ${td(ln.ganshen)} | ${td(ln.zhishen)} | ${mk} |`);
+      push(`| ${td(ln.year)} | ${td(ln.ganZhi)} | ${td(ln.ganshen)} | ${td(ln.zhishen)} | ${td(ln.diShi)} | ${mk} |`);
     });
     push('');
 

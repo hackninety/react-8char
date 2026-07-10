@@ -17,7 +17,7 @@
 //           桃花红鸾天喜助缘，孤辰寡宿减分。
 //   · 健康：以五行平衡（喜忌净值）为底，重罚冲日柱/刑害/羊刃灾煞/岁运并临/天克地冲。
 import type { BaziResult } from './bazi';
-import { getGanWuXing, getZhiWuXing } from './utils';
+import { getGanWuXing, getZhiWuXing, ZHI_MAIN_GAN } from './utils';
 import { createShenShaLookup } from './engine/tyme/shensha';
 import { computeDiLi, WARMTH_NEED, type DiLiResult, type DiLiOffsets } from './dili';
 // 直接从引擎扩展层取流月/十神（勿经 bazi.ts 转口，避免循环依赖）
@@ -515,11 +515,6 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
 const FULL_SHORT: Record<string, string> = Object.fromEntries(
   Object.entries(SHORT_FULL).map(([s, f]) => [f, s]),
 );
-// 地支本气干（月支十神用）
-const ZHI_MAIN: Record<string, string> = {
-  子: '癸', 丑: '己', 寅: '甲', 卯: '乙', 辰: '戊', 巳: '丙',
-  午: '丁', 未: '己', 申: '庚', 酉: '辛', 戌: '戊', 亥: '壬',
-};
 
 export interface KlineMonthPoint {
   monthIndex: number;
@@ -586,7 +581,7 @@ export function buildMonthKline(
     };
 
     const gShort = FULL_SHORT[m.shiShen] ?? m.shiShen;
-    const zGan = ZHI_MAIN[m.zhi] ?? '';
+    const zGan = ZHI_MAIN_GAN[m.zhi] ?? '';
     const zShort = zGan ? FULL_SHORT[getShiShen(dayGan, zGan)] ?? '' : '';
 
     // 十神喜忌（总运）+ 分维类象

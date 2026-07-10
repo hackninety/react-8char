@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "mcp:check": "tsc -p tsconfig.mcp.json",
     "mcp:build": "esbuild mcp/server.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist-mcp/server.mjs --log-level=warning",
-    "test": "vitest run"
+    "test": "vitest run",
+    "mcp:e2e": "node scripts/mcp-stdio-check.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

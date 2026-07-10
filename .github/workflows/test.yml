@@ -22,4 +22,6 @@ jobs:
       - run: npm run build
       - run: npm run mcp:check
       - run: npm run mcp:build
+      # stdio 层 e2e：断言 stdout 全为 JSON-RPC（InMemory 测试测不到顶层 console.log 污染协议）
+      - run: npm run mcp:e2e
       - run: npm test

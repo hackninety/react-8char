@@ -13,6 +13,8 @@ import { getTiaoHouGods, getQiongTongText } from '../src/lib/tiaohou';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from '../src/lib/wuyunliuqi';
 import { getCityByName, findLatitude } from '../src/lib/cities';
 import { analyzeHehun, buildHehunMarkdown } from '../src/lib/hehun';
+import { analyzeYingQi } from '../src/lib/yingqi';
+import { DEEP_DIVE_TOPICS } from '../src/lib/prompt-template';
 import { formatPaipanSummary, formatYearDetail, formatKlineOverview } from './format';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -108,7 +110,7 @@ export function createServer(): McpServer {
     {
       instructions: [
         '八字排盘 MCP：工具即数据源，按需查询，禁止凭记忆排盘或引用古籍。',
-        '流程：① paipan 得盘面摘要与 chartId；② 凭 chartId 调 query_year（单年详情）/ query_liuyue / query_liuri / get_kline / query_wuyunliuqi 深挖；③ 已知四柱找出生时间用 fanpai；快查调候表用 query_tiaohou；排盘存疑用 compare_engines 双引擎对拍；两人合婚用 hehun（直接传双方生辰）。',
+        '流程：① paipan 得盘面摘要与 chartId；② 凭 chartId 调 query_year（单年详情）/ query_yingqi（婚恋/事业/财运应期候选）/ query_liuyue / query_liuri / get_kline / query_wuyunliuqi（可查任意年运气）深挖；③ 已知四柱找出生时间用 fanpai；快查调候表用 query_tiaohou；排盘存疑用 compare_engines 双引擎对拍；两人合婚用 hehun（直接传双方生辰）。专项深挖有现成 prompts（deep-dive-*）。',
         '纪律：四柱、大运、神煞、调候、司令均以工具返回为准；结论请附盘面论据并标注置信度；健康/财运分析不构成医疗/投资建议。',
       ].join('\n'),
     },
@@ -204,14 +206,50 @@ export function createServer(): McpServer {
 
   server.registerTool('query_wuyunliuqi', {
     title: '查五运六气',
-    description: '按 chartId 返回出生年五运六气（中运/司天在泉/主客运/主客气/运气同化，及出生所值运步气步），用于先天体质禀赋分析。',
-    inputSchema: { chartId: z.string() },
+    description: '按 chartId 返回出生年五运六气（中运/司天在泉/主客运/主客气/运气同化，及出生所值运步气步），用于先天体质禀赋分析。传 year 可查任意公历年的运气年度格局（如「今年运气对体质的影响」）。',
+    inputSchema: {
+      chartId: z.string(),
+      year: z.number().int().min(1900).max(2200).optional().describe('查任意公历年的运气年度格局（缺省=出生年，含出生定位）'),
+    },
   }, async (a: any) => {
     const c = needChart(a.chartId);
     if (typeof c === 'string') return errText(c);
+    if (a.year) {
+      const w = getWuYunLiuQi({ year: a.year, month: 6, day: 1 });
+      if (!w) return errText('错误：五运六气数据不可得');
+      return text(`> 以下为 ${a.year} 年运气**年度格局**（按年中 6 月 1 日取步，「出生/所值」定位部分不适用，请只用年度格局信息）。\n\n${buildWuYunLiuQiMarkdown(w)}`);
+    }
     const w = getWuYunLiuQi({ year: c.input.year, month: c.input.month, day: c.input.day, hour: c.input.hour, minute: c.input.minute });
     if (!w) return errText('错误：五运六气数据不可得');
     return text(buildWuYunLiuQiMarkdown(w));
+  });
+
+  server.registerTool('query_yingqi', {
+    title: '查应期引动候选',
+    description: '按 chartId 扫描某主题（婚恋/事业/财运）的候选应期年份：星透干/星合日主/星临太岁/宫逢合冲/财库冲开/星运放大等传统引动规则的确定性预检。回答「哪年结婚/发财/升职」类问题时先用此工具取候选，再结合大运喜忌细断真假应期。',
+    inputSchema: {
+      chartId: z.string(),
+      topic: z.enum(['婚恋', '事业', '财运']).describe('应期主题'),
+      fromYear: z.number().int().min(1900).max(2200).optional().describe('起始年（缺省=今年）'),
+      toYear: z.number().int().min(1900).max(2200).optional().describe('截止年（缺省=今年+15）'),
+    },
+  }, async (a: any) => {
+    const c = needChart(a.chartId);
+    if (typeof c === 'string') return errText(c);
+    const nowYear = new Date().getFullYear();
+    const from = a.fromYear ?? nowYear;
+    const to = a.toYear ?? nowYear + 15;
+    const r = analyzeYingQi(c.chart, a.topic, { from, to });
+    if (!r) return errText('错误：应期分析不可得');
+    const L = [
+      `# ${a.topic}应期候选（${from}~${to}）`,
+      `- 目标星：${r.starDesc}${r.palaceDesc ? `；宫位：${r.palaceDesc}` : ''}`,
+      `> ${r.note}`,
+      '',
+    ];
+    if (!r.hits.length) L.push('该范围内无强度 ≥2 的引动候选年（可扩大年份范围再查）。');
+    else r.hits.forEach((h) => L.push(`- **${h.year} ${h.ganZhi}**（${h.age}岁·${h.dayun}运）强度${h.strength}：${h.reasons.join('；')}`));
+    return text(L.join('\n'));
   });
 
   server.registerTool('query_tiaohou', {
@@ -235,22 +273,29 @@ export function createServer(): McpServer {
 
   server.registerTool('fanpai', {
     title: '八字反查出生时间',
-    description: '已知四柱干支反查公历出生时间（近 60 年内的全部候选）。',
+    description: '已知四柱干支反查公历出生时间。缺省搜近 60 年，传 fromYear 可回溯更早（如 1920）；sect 为早晚子时口径（影响晚子时命例的匹配）。',
     inputSchema: {
       yearGZ: z.string().describe('年柱干支，如"庚午"'),
       monthGZ: z.string().describe('月柱干支'),
       dayGZ: z.string().describe('日柱干支'),
       timeGZ: z.string().describe('时柱干支'),
+      sect: z.enum(['正统派', '传统派']).default('正统派').describe('晚子时口径：正统派=晚子时日柱算次日；传统派=算当天'),
+      fromYear: z.number().int().min(1900).max(2200).optional().describe('搜索起始年（缺省=当前年-60）'),
+      toYear: z.number().int().min(1900).max(2200).optional().describe('搜索截止年（缺省=当前年）'),
     },
   }, async (a: any) => {
     for (const [k, v] of Object.entries({ 年柱: a.yearGZ, 月柱: a.monthGZ, 日柱: a.dayGZ, 时柱: a.timeGZ })) {
       if (!JIA_ZI_60.includes(v as string)) return errText(`错误：${k}「${v}」不是有效六十甲子干支`);
     }
-    const list = reverseLookupBazi(a.yearGZ, a.monthGZ, a.dayGZ, a.timeGZ);
-    if (!list.length) return text('近 60 年内无匹配的公历时间（干支组合可能不成立或超出范围）。');
-    return text(`## 反查候选（${a.yearGZ} ${a.monthGZ} ${a.dayGZ} ${a.timeGZ}）\n\n` +
+    const list = reverseLookupBazi(a.yearGZ, a.monthGZ, a.dayGZ, a.timeGZ, {
+      sect: SECT_MAP[a.sect ?? '正统派'],
+      fromYear: a.fromYear,
+      toYear: a.toYear,
+    });
+    if (!list.length) return text('该范围内无匹配的公历时间（干支组合可能不成立，或需调整 fromYear/toYear/sect）。');
+    return text(`## 反查候选（${a.yearGZ} ${a.monthGZ} ${a.dayGZ} ${a.timeGZ} · ${a.sect ?? '正统派'}）\n\n` +
       list.map((r) => `- 公历 ${r.solar}（农历 ${r.lunar}）`).join('\n') +
-      '\n\n> 选定候选后可用 paipan 排完整命盘。');
+      '\n\n> 选定候选后可用 paipan 排完整命盘（注意 sect 保持一致）。');
   });
 
   server.registerTool('hehun', {
@@ -299,6 +344,23 @@ export function createServer(): McpServer {
       return errText(`对拍失败：${e instanceof Error ? e.message : String(e)}`);
     }
   });
+
+  // ── 专项深挖 prompts（与静态导出的深挖协议共用同一份清单）──
+  for (const t of DEEP_DIVE_TOPICS) {
+    server.registerPrompt(`deep-dive-${t.id}`, {
+      title: t.name,
+      description: `${t.name}专项分析清单（需先 paipan 获取 chartId）`,
+      argsSchema: { chartId: z.string().describe('paipan 返回的 chartId') },
+    }, ({ chartId }: { chartId: string }) => ({
+      messages: [{
+        role: 'user' as const,
+        content: {
+          type: 'text' as const,
+          text: `请对命盘（chartId=${chartId}）做〔${t.name}〕专项分析，按以下清单逐条展开（每条给论据与结论）：\n\n${t.checklist}\n\n先用 query_year / get_kline / query_yingqi 等工具按需取数；结论标注置信度（高/中/低）；健康/财运结论不构成医疗/投资建议。`,
+        },
+      }],
+    }));
+  }
 
   return server;
 }

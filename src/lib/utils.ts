@@ -43,6 +43,31 @@ export function getZhiWuXing(zhi: string): string {
   return DI_ZHI_WU_XING[zhi] || '';
 }
 
+// 地支本气干（原 lifekline/mcp-format 各有一份，统一于此）
+export const ZHI_MAIN_GAN: Record<string, string> = {
+  子: '癸', 丑: '己', 寅: '甲', 卯: '乙', 辰: '戊', 巳: '丙',
+  午: '丁', 未: '己', 申: '庚', 酉: '辛', 戌: '戊', 亥: '壬',
+};
+
+// ─── 十二长生（地势）：阳干顺行、阴干逆行 ─────────────────
+const DI_ZHI_ORDER = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+const CHANG_SHENG_ORDER = ['长生', '沐浴', '冠带', '临官', '帝旺', '衰', '病', '死', '墓', '绝', '胎', '养'];
+const CHANG_SHENG_START: Record<string, string> = {
+  甲: '亥', 丙: '寅', 戊: '寅', 庚: '巳', 壬: '申',
+  乙: '午', 丁: '酉', 己: '酉', 辛: '子', 癸: '卯',
+};
+const YANG_GAN = new Set(['甲', '丙', '戊', '庚', '壬']);
+
+/** 某天干在某地支的十二长生阶段（如 甲@亥=长生、辛@酉=临官）；入参非法返回空串 */
+export function getDiShi(gan: string, zhi: string): string {
+  const start = CHANG_SHENG_START[gan];
+  const zi = DI_ZHI_ORDER.indexOf(zhi);
+  if (!start || zi < 0) return '';
+  const si = DI_ZHI_ORDER.indexOf(start);
+  const step = YANG_GAN.has(gan) ? (zi - si + 12) % 12 : (si - zi + 12) % 12;
+  return CHANG_SHENG_ORDER[step];
+}
+
 export const SHI_SHEN_COLORS: Record<string, string> = {
   '正财': 'bg-yellow-600/20 text-yellow-700 dark:text-yellow-300',
   '偏财': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',

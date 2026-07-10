@@ -109,17 +109,28 @@ export interface ReverseLookupResult {
 }
 
 /**
- * 八字反查公历日期（最近60年）
+ * 八字反查公历日期。
+ * @param opts.sect 早晚子时口径（1=正统派：晚子时日柱算次日；2=传统派：算当天）。缺省 1，
+ *   与应用排盘默认一致——旧实现隐用上游默认 sect=2，晚子时命例反查与正查口径不一致，已修。
+ * @param opts.fromYear 搜索起始年（透传上游 baseYear），缺省 toYear-60；可突破旧「最近60年」硬限
+ * @param opts.toYear 搜索截止年，缺省当前年
  */
-export function reverseLookupBazi(yearGZ: string, monthGZ: string, dayGZ: string, timeGZ: string): ReverseLookupResult[] {
+export function reverseLookupBazi(
+  yearGZ: string,
+  monthGZ: string,
+  dayGZ: string,
+  timeGZ: string,
+  opts?: { sect?: 1 | 2; fromYear?: number; toYear?: number },
+): ReverseLookupResult[] {
   if (!fromBaZi) throw new Error('fromBaZi 方法加载失败');
 
-  const candidates = fromBaZi(yearGZ, monthGZ, dayGZ, timeGZ);
-  const currentYear = new Date().getFullYear();
-  const minYear = currentYear - 60;
+  const sect = opts?.sect ?? 1;
+  const toYear = opts?.toYear ?? new Date().getFullYear();
+  const fromYear = opts?.fromYear ?? toYear - 60;
+  const candidates = fromBaZi(yearGZ, monthGZ, dayGZ, timeGZ, sect, Math.min(fromYear, toYear));
 
   return candidates
-    .filter((c) => c.year >= minYear && c.year <= currentYear)
+    .filter((c) => c.year >= fromYear && c.year <= toYear)
     .map((c) => {
       let lunarStr = '';
       if (Lunar) {

@@ -198,7 +198,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     const dayGZ = dayGan + dayZhi;
     const timeGZ = timeGan + timeZhi;
     try {
-      const results = reverseLookupBazi(yearGZ, monthGZ, dayGZ, timeGZ);
+      // 反查口径跟随表单当前分派选择（早晚子时日柱归属影响反查结果）
+      const results = reverseLookupBazi(yearGZ, monthGZ, dayGZ, timeGZ, { sect });
       if (results.length === 0) {
         setLookupError('近60年内未找到匹配的日期，请检查四柱是否正确');
       } else {

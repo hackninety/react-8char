@@ -9,6 +9,9 @@ import { buildLifeKline } from './lifekline';
 import { analyzeTiaoHou } from './tiaohou';
 import { computeSiLing } from './siling';
 import { detectPatterns } from './patterns';
+import { analyzeGeJu } from './geju';
+import { analyzeYingQi } from './yingqi';
+import { getDiShi } from './utils';
 import { collectShenShaNames, lookupShenShaMeanings } from './shensha-dict';
 import { buildXiangFaExport } from './xiangfa';
 
@@ -79,11 +82,17 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
   const lyTo = nowYear + 4;
   const enrichedDayunArr = result.dayunArr?.map((dy: any) => ({
     ...dy,
+    // 日主在大运/流年支的十二长生（如甲行酉运=胎），供 AI 论气数起落
+    ...(typeof dy.ganZhi === 'string' && dy.ganZhi.length >= 2 ? { diShi: getDiShi(dayMasterGan, dy.ganZhi[1]) } : {}),
     liunianArr: dy.liunianArr?.map((ln: any) => {
       const lnGan = typeof ln.ganZhi === 'string' ? ln.ganZhi[0] : '';
-      if (!lnGan || ln.year < lyFrom || ln.year > lyTo) return { ...ln };
-      return {
+      const base = {
         ...ln,
+        ...(typeof ln.ganZhi === 'string' && ln.ganZhi.length >= 2 ? { diShi: getDiShi(dayMasterGan, ln.ganZhi[1]) } : {}),
+      };
+      if (!lnGan || ln.year < lyFrom || ln.year > lyTo) return base;
+      return {
+        ...base,
         liuYueArr: _getLiuYueForYear(lnGan, dayMasterGan),
       };
     }),
@@ -108,6 +117,21 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     wuXingPower: result.wuXingPower as any,
   });
   const shenshaDict = lookupShenShaMeanings(collectShenShaNames((result as any).shensha));
+  const geJu = analyzeGeJu(result.pillars as any, siLing?.gan);
+  // 应期引动预检：导出仅带近 16 年窗口的紧凑块（任意范围可经 MCP query_yingqi 查询）
+  const yingQi = (['婚恋', '事业', '财运'] as const)
+    .map((t) => {
+      const r = analyzeYingQi(result, t, { from: nowYear - 1, to: nowYear + 15 });
+      if (!r?.hits.length) return null;
+      return {
+        topic: t,
+        star: r.starDesc,
+        ...(r.palaceDesc ? { palace: r.palaceDesc } : {}),
+        dims: ['年', '干支', '强度', '线索'],
+        hits: r.hits.slice(0, 8).map((h) => [h.year, h.ganZhi, h.strength, h.reasons.join('；')]),
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
 
   return {
     meta: {
@@ -161,7 +185,11 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     yuanHaiZiping: result.yuanHaiZiping,
     ...(tiaoHou ? { tiaoHou } : {}),
     ...(siLing ? { siLing } : {}),
+    ...(geJu ? { geJu } : {}),
     ...(patterns.length ? { patterns } : {}),
+    ...(yingQi.length
+      ? { yingQiNote: '应期为传统引动规则的候选提示，非事件预言；仅展开近 16 年窗口，任意年份范围可经 MCP query_yingqi 查询', yingQi }
+      : {}),
     xiangFa: buildXiangFaExport(),
     wuYunLiuQi: buildWuYunLiuQiExport(input),
     // 人生K线五维量化评分（紧凑数组省 token，列见 dims 图例）

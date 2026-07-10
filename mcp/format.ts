@@ -92,6 +92,14 @@ export function formatPaipanSummary(chartId: string, data: any, chart: any, klin
     L.push('', '## 人元司令');
     L.push(`- ${sl.phase}；司令${sl.gan}为日主之**${sl.shiShen}**；${sl.sequence}${sl.note ? `；⚠ ${sl.note}` : ''}`);
   }
+  const gj = data.geJu;
+  if (gj) {
+    L.push('', '## 格局判定（子平真诠机械取格）');
+    L.push(`- **${gj.ge}**（${gj.type}）——${gj.basis}`);
+    if (Array.isArray(gj.xiangShen) && gj.xiangShen.length) L.push(`- 相神候选：${gj.xiangShen.map((x: any) => `${x.shiShen}〔${x.role}〕${x.status}`).join('；')}`);
+    if (Array.isArray(gj.jiShen) && gj.jiShen.length) L.push(`- 忌神：${gj.jiShen.map((x: any) => `${x.shiShen}〔${x.role}〕${x.status}`).join('；')}`);
+    L.push(`- 初判：${gj.verdict}${gj.siLingNote ? `；⚠ ${gj.siLingNote}` : ''}`);
+  }
   if (Array.isArray(data.patterns) && data.patterns.length) {
     L.push('', '## 十神组合线索（程序预检，吉凶须结合全局覆核）');
     data.patterns.forEach((x: any) => L.push(`- **${x.name}**［${x.hit}］：${x.note}`));
@@ -134,9 +142,9 @@ export function formatPaipanSummary(chartId: string, data: any, chart: any, klin
   const curDy = cy.daYun?.ganZhi ? (Array.isArray(cy.daYun.ganZhi) ? cy.daYun.ganZhi.join('') : cy.daYun.ganZhi) : '';
   if (dayunArr.length) {
     L.push('', '## 大运一览', '', `> ${data.yun?.forward ? '顺排' : '逆排'} · 起运 ${data.yun?.startSolar ?? ''}`, '');
-    L.push('| 大运 | 起始年 | 干神 | 支神 | |', '|---|---|---|---|---|');
+    L.push('| 大运 | 起始年 | 干神 | 支神 | 日主长生 | |', '|---|---|---|---|---|---|');
     dayunArr.filter((d) => d.ganZhi).forEach((d) => {
-      L.push(`| ${d.ganZhi} | ${d.startYear} | ${d.ganshen ?? ''} | ${d.zhishen ?? ''} | ${d.ganZhi === curDy ? '←当前' : ''} |`);
+      L.push(`| ${d.ganZhi} | ${d.startYear} | ${d.ganshen ?? ''} | ${d.zhishen ?? ''} | ${d.diShi ?? ''} | ${d.ganZhi === curDy ? '←当前' : ''} |`);
     });
     if (cy.liuNian?.year) L.push('', `**当前流年**：${cy.liuNian.year} ${Array.isArray(cy.liuNian.ganZhi) ? cy.liuNian.ganZhi.join('') : cy.liuNian.ganZhi}`);
   }
@@ -152,7 +160,7 @@ export function formatPaipanSummary(chartId: string, data: any, chart: any, klin
     L.push(`- 低谷年：${sorted.slice(-3).reverse().map((y) => `${y.year}${y.ganZhi}(${y.scores.total})`).join(' ')}`);
   }
 
-  L.push('', '---', `后续：\`query_year\`(chartId+年份)查单年详情；\`query_liuyue\`/\`query_liuri\`查流月流日；\`get_kline\`查五维评分全貌；\`query_wuyunliuqi\`查五运六气。`);
+  L.push('', '---', `后续：\`query_year\`(chartId+年份)查单年详情；\`query_yingqi\`查婚恋/事业/财运应期候选；\`query_liuyue\`/\`query_liuri\`查流月流日；\`get_kline\`查五维评分全貌；\`query_wuyunliuqi\`查五运六气。`);
   return L.join('\n');
 }
 
@@ -178,7 +186,7 @@ export function formatYearDetail(data: any, kline: LifeKlineData | null, year: n
   L.push(`- 所处大运：${dy.ganZhi ? `**${dy.ganZhi}**（${dy.startYear}年起，干${dy.ganshen ?? '—'}/支${dy.zhishen ?? '—'}）` : '起运前'}`);
   const hide = (ZHI_HIDE[lnZhi] ?? '').split('').filter(Boolean)
     .map((g) => `${g}(${getShiShen(dayGan, g)})`).join(' ');
-  L.push(`- 流年十神：干${lnGan}=${getShiShen(dayGan, lnGan) || ln.ganshen || '—'}；支${lnZhi}藏 ${hide}`);
+  L.push(`- 流年十神：干${lnGan}=${getShiShen(dayGan, lnGan) || ln.ganshen || '—'}；支${lnZhi}藏 ${hide}${ln.diShi ? `；日主于${lnZhi}为「${ln.diShi}」` : ''}`);
 
   // 流年神煞（按本命定盘查）
   const P = data.pillars;

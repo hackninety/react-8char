@@ -98,6 +98,21 @@ preview 全流程验证：存两档案→选甲乙→生成清单→复制 Promp
 实测导出省 21% 字符）。JsonExport 面板 JSON 全面换 TOON（.toon 文件/复制/AI Prompt ```toon 围栏+一行语法提示）；
 合婚面板新增 导出 MD / 导出 TOON（[`buildHehunExportData`](../src/lib/hehun.ts) 结构化数据）。
 
+### ✅ AI 推理二期：格局判定 + 应期预检 + 运岁长生 + MCP prompts（2026-07）
+**格局**：[`geju.ts`](../src/lib/geju.ts) 子平真诠机械取格（本气透干 > 中余气透 > 本气直取；
+比劫当令走禄刃另论/变通取用），吉凶顺逆标注 + 相神/忌神候选的原局透藏扫描 + 一句话初判
+（成败细辨留给 AI）+ 人元司令分野取格异说注。
+**应期**：[`yingqi.ts`](../src/lib/yingqi.ts) 婚恋/事业/财运的候选引动年预检（星透干/星合日主/
+星临太岁/宫逢合冲/财库冲开/星运放大，强度=线索计数≥2 入选），MCP 工具 `query_yingqi` 任意范围，
+导出带近 16 年窗口——直接回答「哪年结婚/发财/升职」类问题的锚定数据，明示「候选提示非事件预言」。
+**长生**：utils `getDiShi`（阳顺阴逆），大运/流年导出补 diShi 字段（与 mystilight 本命地势
+交叉验证全等）。**MCP**：六大专项深挖清单映射为 prompts 原语（deep-dive-*，与静态导出共用
+同一份清单）；query_wuyunliuqi 支持任意年年度格局。
+**修复**：fanpai 反查原隐用上游 sect=2（传统派）与应用默认正统派不一致——sect 现随表单/参数
+透传；fromYear 透传上游 baseYear 突破「最近 60 年」硬限。**CI**：新增 `mcp:e2e` stdio 纯净性
+端到端（spawn 真实 bundle，断言 stdout 全为 JSON-RPC——InMemory 测试测不到顶层 console.log
+污染协议的风险）。测试 62→75 例。
+
 ## 计划中
 
 ### 0.5 小型增强（择机）
