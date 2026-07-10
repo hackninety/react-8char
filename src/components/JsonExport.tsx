@@ -26,9 +26,12 @@ export default function JsonExport({ input, result }: JsonExportProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // qtReady 是「原文库懒加载就绪」信号：就绪后重建以补齐 classic 字段
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const exportData = useMemo(() => buildExportJSON(input, result), [input, result, qtReady]);
   // 数据载荷用 TOON（JSON 数据模型的紧凑无损等价表示，约省 21% 字符、token 更省）
   const toonText = useMemo(() => toToon(exportData), [exportData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const markdown = useMemo(() => buildExportMarkdown(input, result), [input, result, qtReady]);
 
   const downloadBlob = (content: string, mime: string, filename: string) => {

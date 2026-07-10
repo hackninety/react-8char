@@ -182,7 +182,7 @@ export function analyzeHehun(pa: Party, pb: Party): HehunResult {
 
   // ── ⑧ 婚恋相关日柱形态（各自盘）──
   for (const [p, per] of [[pa, A], [pb, B]] as const) {
-    const pats = detectPatterns(p.chart.pillars as any).filter((x) => /孤鸾|阴阳差错|魁罡/.test(x.name));
+    const pats = detectPatterns(p.chart.pillars).filter((x) => /孤鸾|阴阳差错|魁罡/.test(x.name));
     for (const x of pats) push('日柱形态', `${per.label}：${x.name}（${x.hit}）`, x.note, '平');
   }
 
@@ -195,7 +195,7 @@ export function analyzeHehun(pa: Party, pb: Party): HehunResult {
 
 export function buildHehunExportData(pa: Party, pb: Party, r: HehunResult) {
   const person = (p: Party, per: HehunPerson) => {
-    const an: any = (p.chart as any).analysis;
+    const an: BaziResult['analysis'] | undefined = p.chart.analysis;
     return {
       name: per.label,
       gender: per.gender,
@@ -244,8 +244,8 @@ export function buildHehunMarkdown(pa: Party, pb: Party, r: HehunResult): string
     push(`- 公历 ${p.input.year}-${p.input.month}-${p.input.day} ${p.input.hour}:${String(p.input.minute).padStart(2, '0')}${p.input.city ? ` · ${p.input.city}` : ''}`);
     push(`- 四柱：**${per.pillarText}**（日主${per.dayGan}${getGanWuXing(per.dayGan)}，${per.judge}）`);
     const P = p.chart.pillars;
-    push(`- 十神：年${P.year.shiShenGan}/月${P.month.shiShenGan}/时${P.time.shiShenGan}；支本气 ${(['year', 'month', 'day', 'time'] as const).map((k) => { const v = (P[k] as any).shiShenZhi; return Array.isArray(v) ? v[0] : v; }).join('/')}`);
-    const an: any = (p.chart as any).analysis;
+    push(`- 十神：年${P.year.shiShenGan}/月${P.month.shiShenGan}/时${P.time.shiShenGan}；支本气 ${(['year', 'month', 'day', 'time'] as const).map((k) => { const v = P[k].shiShenZhi as string | string[]; return Array.isArray(v) ? v[0] : v; }).join('/')}`);
+    const an: BaziResult['analysis'] | undefined = p.chart.analysis;
     if (Array.isArray(an?.XiYongShen) && an.XiYongShen.length) push(`- 喜用神（引擎）：${an.XiYongShen.join('、')}`);
     push('');
   };

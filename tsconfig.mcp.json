@@ -20,6 +20,8 @@
   "include": [
     "mcp",
     "tests",
+    "e2e",
+    "playwright.config.ts",
     "src/lib",
     "src/lunar-javascript.d.ts"
   ]

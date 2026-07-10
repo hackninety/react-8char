@@ -167,8 +167,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         solarDay = solar.day;
         solarHour = solar.hour;
         solarMinute = solar.minute;
-      } catch (err: any) {
-        setLookupError(`农历转换失败：${err?.message || '日期无效'}`);
+      } catch (err) {
+        setLookupError(`农历转换失败：${err instanceof Error ? err.message : '日期无效'}`);
         return;
       }
     }
@@ -205,8 +205,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       } else {
         setLookupResults(results);
       }
-    } catch (err: any) {
-      setLookupError(`反查失败：${err?.message || '未知错误'}`);
+    } catch (err) {
+      setLookupError(`反查失败：${err instanceof Error ? err.message : '未知错误'}`);
     }
   };
 

@@ -12,6 +12,7 @@ import HehunPanel from '@/components/HehunPanel';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
 import { preloadQiongTong } from '@/lib/tiaohou';
 import { saveParams, loadParams, saveForm, type ChartProfile } from '@/lib/storage';
+import type { BaziResultX } from '@/lib/bazi';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 export default function App() {
@@ -65,15 +66,15 @@ export default function App() {
             try {
               const rep = await compareEngines(formInput);
               setResult((prev) =>
-                prev ? ({ ...(prev as any), _compareReport: rep } as BaziResult) : prev,
+                prev ? (({ ...prev, _compareReport: rep } as BaziResultX) as BaziResult) : prev,
               );
             } catch (cmpErr) {
               console.error('双引擎对拍失败', cmpErr);
             }
           }
-        } catch (err: any) {
+        } catch (err) {
           console.error(err);
-          toast.error(`排盘失败：${err?.message || '未知错误'}`);
+          toast.error(`排盘失败：${err instanceof Error ? err.message : '未知错误'}`);
         } finally {
           setLoading(false);
         }

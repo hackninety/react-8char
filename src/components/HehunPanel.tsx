@@ -25,6 +25,8 @@ const POLARITY_STYLE: Record<HehunPolarity, string> = {
 };
 
 export default function HehunPanel({ profilesVersion }: Props) {
+  // profilesVersion 是显式的「档案已变更」信号，并非 memo 的数据依赖
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => listProfiles(), [profilesVersion]);
   const [aId, setAId] = useState('');
   const [bId, setBId] = useState('');
@@ -62,9 +64,9 @@ export default function HehunPanel({ profilesVersion }: Props) {
       setToon(toToon(buildHehunExportData(partyA, partyB, r)));
       setFileBase(`合婚_${pa.name}_${pb.name}`);
       toast.success('合婚对照已生成', { icon: '💞' });
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      toast.error(`合婚对照失败：${e?.message || '未知错误'}`);
+      toast.error(`合婚对照失败：${e instanceof Error ? e.message : '未知错误'}`);
     } finally {
       setBusy(false);
     }

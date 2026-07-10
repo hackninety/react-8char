@@ -172,7 +172,7 @@ ${AI_DEEP_DIVE_PROTOCOL}
 
 ${AI_SCHOOL_SWITCH_PROTOCOL}`;
 
-export function generateAIPrompt(jsonData: Record<string, any>): string {
+export function generateAIPrompt(jsonData: Record<string, unknown>): string {
   const toonStr = toToon(jsonData);
 
   const aiNote = jsonData.aiNote as string | undefined;

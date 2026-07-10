@@ -52,6 +52,16 @@ export interface BaziInput {
 
 export type BaziResult = EightCharJSON;
 
+/** 应用侧私挂在引擎结果上的附加字段（集中声明，替代散落的 as any） */
+export interface BaziResultExtras {
+  _solarTimeInfo?: Record<string, unknown>;
+  _compareReport?: { summary: string; items: unknown[]; a: { name: string }; b: { name: string } };
+  engine?: { id?: string; name?: string; school?: string };
+  /** 神煞（形状见 shensha-dict：{nian,yue,ri,shi,current}；tyme 引擎由适配层补齐） */
+  shensha?: unknown;
+}
+export type BaziResultX = BaziResult & BaziResultExtras;
+
 // ─── 排盘主函数 ──────────────────────────────────────
 
 export function calculateBazi(input: BaziInput): BaziResult {
@@ -66,7 +76,7 @@ export function calculateBazi(input: BaziInput): BaziResult {
     sect: input.sect,
   });
 
-  (result as any)._solarTimeInfo = solarTimeInfo;
+  (result as BaziResultX)._solarTimeInfo = solarTimeInfo;
 
   return result;
 }
@@ -74,6 +84,7 @@ export function calculateBazi(input: BaziInput): BaziResult {
 // ─── 导出 JSON ────────────────────────────────────────
 
 export function buildExportJSON(input: BaziInput, result: BaziResult) {
+  const ext = result as BaziResultX;
   const dayMasterGan = result.pillars?.dayMasterGan || result.pillars?.day?.gan || '';
 
   // 流月只展开当前年附近（AI 框架要求详析未来 3-5 年）；全量展开约 1700 条、
@@ -81,11 +92,11 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
   const nowYear = new Date().getFullYear();
   const lyFrom = nowYear - 1;
   const lyTo = nowYear + 4;
-  const enrichedDayunArr = result.dayunArr?.map((dy: any) => ({
+  const enrichedDayunArr = result.dayunArr?.map((dy) => ({
     ...dy,
     // 日主在大运/流年支的十二长生（如甲行酉运=胎），供 AI 论气数起落
     ...(typeof dy.ganZhi === 'string' && dy.ganZhi.length >= 2 ? { diShi: getDiShi(dayMasterGan, dy.ganZhi[1]) } : {}),
-    liunianArr: dy.liunianArr?.map((ln: any) => {
+    liunianArr: dy.liunianArr?.map((ln) => {
       const lnGan = typeof ln.ganZhi === 'string' ? ln.ganZhi[0] : '';
       const base = {
         ...ln,
@@ -100,29 +111,27 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
   }));
   const liuYueNote = `流月仅展开 ${lyFrom}~${lyTo} 年；其余年份可按五虎遁由流年干自推（甲己之年丙作首、乙庚之岁戊为头、丙辛必定寻庚起、丁壬壬位顺行流、戊癸甲寅好追求；自正月建寅顺行十二月）`;
 
-  const engineMeta = (result as any).engine as { name?: string; school?: string } | undefined;
-  const compareReport = (result as any)._compareReport as
-    | { summary: string; items: unknown[]; a: { name: string }; b: { name: string } }
-    | undefined;
+  const engineMeta = ext.engine;
+  const compareReport = ext._compareReport;
 
   // ── AI grounding 数据层：查表/规则预检，AI 引用而非回忆 ──
   const kline = buildLifeKline(result);
-  const tiaoHou = analyzeTiaoHou(result.pillars as any);
+  const tiaoHou = analyzeTiaoHou(result.pillars);
   const siLing = computeSiLing(
     { year: input.year, month: input.month, day: input.day, hour: input.hour, minute: input.minute, utcOffset: input.utcOffset },
     dayMasterGan,
     result.pillars?.month?.zhi,
   );
-  const patterns = detectPatterns(result.pillars as any, {
+  const patterns = detectPatterns(result.pillars, {
     judge: kline?.judge,
-    wuXingPower: result.wuXingPower as any,
+    wuXingPower: result.wuXingPower as Record<string, number>,
   });
-  const shenshaDict = lookupShenShaMeanings(collectShenShaNames((result as any).shensha));
-  const geJu = analyzeGeJu(result.pillars as any, siLing?.gan);
+  const shenshaDict = lookupShenShaMeanings(collectShenShaNames(ext.shensha));
+  const geJu = analyzeGeJu(result.pillars, siLing?.gan);
   const yongShen = buildYongShenSanFa({
     dayGan: dayMasterGan,
     judge: kline?.judge,
-    wuXingPower: result.wuXingPower as any,
+    wuXingPower: result.wuXingPower as Record<string, number>,
     tiaoHouGods: tiaoHou?.gods,
     tiaoHouVerdict: tiaoHou?.verdict,
   });
@@ -171,7 +180,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
       if (input.userNote) notes.push(input.userNote);
       return notes.length ? { aiNote: notes.join('；') } : {};
     })(),
-    solarTimeInfo: (result as any)._solarTimeInfo,
+    solarTimeInfo: ext._solarTimeInfo,
     pillars: result.pillars,
     taiYuan: result.taiYuan,
     taiYuanNaYin: result.taiYuanNaYin,
@@ -188,7 +197,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     currentYun: result.currentYun,
     ganRelations: result.ganRelations,
     zhiRelations: result.zhiRelations,
-    shensha: (result as any).shensha,
+    shensha: ext.shensha,
     ...(Object.keys(shenshaDict).length ? { shenshaDict } : {}),
     yuanHaiZiping: result.yuanHaiZiping,
     ...(tiaoHou ? { tiaoHou } : {}),

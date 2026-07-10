@@ -123,6 +123,15 @@ preview 全流程验证：存两档案→选甲乙→生成清单→复制 Promp
 （preloadQiongTong 幂等），App 挂载即后台预载、JsonExport qtReady 就绪后重建导出、MCP main
 启动 await；stdio e2e 加「原文段预载」断言防回归。测试 75→77 例。
 
+### ✅ lint 清零入 CI + Playwright UI e2e（2026-07）
+**lint**：历史红（累计 104 error）清零——组件与核心 lib 全部真类型化（`BaziResultExtras` 集中声明
+私挂字段、unknown 收窄、zod/引擎类型推断替代注解），tests/ 与 shadcn ui/ 经配置显式豁免（注明理由），
+markdown-export 与 mcp 格式层维持文件级 seam 豁免（上游 d.ts 自身含 any）；`npm run lint --max-warnings 0`
+级别全绿并纳入 CI 门槛。顺带修出一处真问题：DaYunTimeline 删 any 后 tsc 暴露的可空访问。
+**UI e2e**：[`e2e/app.spec.ts`](../e2e/app.spec.ts)（Playwright/chromium）两条全流程——
+①排盘（golden 干支断言）→K线流月下钻→TOON 下载内容校验+零页面错误；②档案存/载→合婚清单→合婚 MD 下载。
+本地复用 dev server，CI 自启并装浏览器。UI 层从「手工 preview 冒烟」升级为回归保护。
+
 ## 计划中
 
 ### 0.5 小型增强（择机）

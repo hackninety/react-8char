@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'dist-mcp']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -19,5 +19,15 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+  },
+  {
+    // 测试断言动态 JSON-RPC 结果与导出数据，any 为惯用法（无类型安全损失）
+    files: ['tests/**/*.ts', 'e2e/**/*.ts'],
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+  },
+  {
+    // shadcn 生成组件同时导出 variants，为其惯例
+    files: ['src/components/ui/**'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 ])

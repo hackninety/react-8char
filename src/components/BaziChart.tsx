@@ -20,8 +20,9 @@ const PILLAR_KEYS = ['year', 'month', 'day', 'time'] as const;
 
 export default function BaziChart({ input, result }: BaziChartProps) {
   const { pillars, wuXingPower, gender } = result;
-  const engineMeta = (result as any).engine as EngineMeta | undefined;
-  const compareReport = (result as any)._compareReport as CompareReport | undefined;
+  const ext = result as BaziResult & import('@/lib/bazi').BaziResultExtras;
+  const engineMeta = ext.engine as EngineMeta | undefined;
+  const compareReport = ext._compareReport as CompareReport | undefined;
 
   return (
     <motion.div

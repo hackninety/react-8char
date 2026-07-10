@@ -90,7 +90,7 @@ export default function PillarCard({ pillar, label, isDayMaster, index }: Pillar
           <div className="space-y-1 pt-1">
             <div className="text-[10px] text-center text-muted-foreground tracking-wider">藏干</div>
             <div className="space-y-0.5">
-              {pillar.hideGanAttr.map((h: any, i: number) => (
+              {pillar.hideGanAttr.map((h, i) => (
                 <div key={i} className="flex items-center justify-between text-[11px] px-1">
                   <span className="text-muted-foreground">{h.qiLevel}</span>
                   <span className={cn('font-medium', WU_XING_COLORS[h.wuXing]?.text)}>

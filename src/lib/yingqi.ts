@@ -82,10 +82,7 @@ export function analyzeYingQi(
   const kuZhi = topic === '财运' ? KU_ZHI[caiWx] : undefined;
   const natalZhis = new Set([p.year.zhi, p.month.zhi, p.day.zhi, p.time.zhi]);
 
-  const dayunArr = (chart as any).dayunArr as {
-    ganZhi: string; ganshen?: string; zhishen?: string;
-    liunianArr?: { year: number; ganZhi: string }[];
-  }[] | undefined;
+  const dayunArr = chart.dayunArr;
   if (!dayunArr?.length) return null;
 
   const from = range?.from ?? -Infinity;

@@ -67,6 +67,12 @@ npm run build
 # 回归测试（golden-case：四柱/起运/双引擎一致/分析模块/MCP）
 npm test
 
+# UI e2e（Playwright：排盘/档案/合婚/流月下钻/导出下载）
+npm run e2e
+
+# Lint（0 error 0 warning，CI 门槛）
+npm run lint
+
 # 预览生产构建
 npm run preview
 ```

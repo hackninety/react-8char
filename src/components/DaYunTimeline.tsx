@@ -20,7 +20,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
     : null;
   const currentLiuNianYear = currentYun?.liuNian?.year;
 
-  const initialDyIdx = dayunArr?.findIndex((dy: any) => dy.ganZhi === currentDaYunGanZhi) ?? -1;
+  const initialDyIdx = dayunArr?.findIndex((dy) => dy.ganZhi === currentDaYunGanZhi) ?? -1;
   const [selectedDaYun, setSelectedDaYun] = useState<number | null>(initialDyIdx >= 0 ? initialDyIdx : null);
   const [selectedLiuNian, setSelectedLiuNian] = useState<number | null>(null);
   const [selectedLiuYue, setSelectedLiuYue] = useState<number | null>(null);
@@ -28,7 +28,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
 
   const activeDaYun = selectedDaYun !== null ? dayunArr?.[selectedDaYun] : null;
   const activeLiuNian = selectedLiuNian !== null && activeDaYun?.liunianArr
-    ? (activeDaYun.liunianArr as any[])[selectedLiuNian]
+    ? activeDaYun.liunianArr[selectedLiuNian]
     : null;
 
   const activeLnGan = activeLiuNian && typeof activeLiuNian.ganZhi === 'string'
@@ -71,7 +71,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
         <div>
           <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">大运</div>
           <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
-            {dayunArr?.map((dy: any, dyIdx: number) => {
+            {dayunArr?.map((dy, dyIdx) => {
               const isCurrent = dy.ganZhi === currentDaYunGanZhi;
               const isSelected = selectedDaYun === dyIdx;
               if (!dy.ganZhi) return null;
@@ -118,7 +118,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
                 流年（{activeDaYun.ganZhi}运）
               </div>
               <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
-                {(activeDaYun.liunianArr as any[]).map((ln: any, lnIdx: number) => {
+                {activeDaYun.liunianArr.map((ln, lnIdx) => {
                   const isLnCurrent = String(ln.year) === String(currentLiuNianYear);
                   const isLnSelected = selectedLiuNian === lnIdx;
                   const lnGan = typeof ln.ganZhi === 'string' ? ln.ganZhi[0] : '';
@@ -160,7 +160,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
 
         {/* 第三行：流月 */}
         <AnimatePresence mode="wait">
-          {activeLnGan && liuYueArr.length > 0 && (
+          {activeLiuNian && activeLnGan && liuYueArr.length > 0 && (
             <motion.div key={`ly-${selectedDaYun}-${selectedLiuNian}`}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -168,7 +168,7 @@ export default function DaYunTimeline({ result }: DaYunTimelineProps) {
                 流月（{activeLiuNian.ganZhi} · {activeLiuNian.year}年）
               </div>
               <div className="flex gap-2 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
-                {liuYueArr.map((ly: any, lyIdx: number) => {
+                {liuYueArr.map((ly, lyIdx) => {
                   const isLySelected = selectedLiuYue === lyIdx;
                   return (
                     <button key={ly.monthIndex} type="button"

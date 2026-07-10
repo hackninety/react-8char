@@ -16,20 +16,26 @@ function InfoRow({ label, value }: { label: string; value: string | number | und
   );
 }
 
-function extractScoreJudge(v: any): string {
+function extractScoreJudge(v: unknown): string {
   if (v == null) return '';
   if (typeof v === 'number') return v.toFixed(2);
   if (typeof v === 'string') return v;
-  if (typeof v === 'object' && v.score != null) {
-    const s = typeof v.score === 'number' ? v.score.toFixed(2) : String(v.score);
-    return v.judge ? `${s}（${v.judge}）` : s;
+  if (typeof v === 'object') {
+    const o = v as { score?: unknown; judge?: unknown };
+    if (o.score != null) {
+      const s = typeof o.score === 'number' ? o.score.toFixed(2) : String(o.score);
+      return o.judge ? `${s}（${String(o.judge)}）` : s;
+    }
   }
   return '';
 }
 
-function formatRelation(rel: any): string {
+function formatRelation(rel: unknown): string {
   if (typeof rel === 'string') return rel;
-  if (rel && typeof rel === 'object' && rel.desc) return rel.desc;
+  if (rel && typeof rel === 'object') {
+    const desc = (rel as { desc?: unknown }).desc;
+    if (desc) return String(desc);
+  }
   return JSON.stringify(rel);
 }
 
@@ -76,7 +82,8 @@ export function MingPanCard({ result }: { result: BaziResult }) {
 // ─── 渊海子平 ──────────────────────────────────────────
 
 export function YuanHaiCard({ result }: { result: BaziResult }) {
-  const yhzp = result.yuanHaiZiping as any;
+  // 上游类型仅列 4 字段，运行时另有 yinyang（类型漂移，精确宽化）
+  const yhzp = result.yuanHaiZiping as (BaziResult['yuanHaiZiping'] & { yinyang?: unknown }) | undefined;
   if (!yhzp) return null;
 
   return (
@@ -268,16 +275,21 @@ function ShenShaBadge({ name }: { name: string }) {
   );
 }
 
+// 引擎神煞输出形状（位置键见 shensha-dict 权威映射）
+type ShenShaShape = Record<string, string[] | undefined> & { current?: Record<string, string[] | undefined> };
+
 export function ShenShaCard({ result }: { result: BaziResult }) {
-  const sh = (result as any).shensha;
-  if (!sh || typeof sh !== 'object') return null;
+  const raw = (result as BaziResult & import('@/lib/bazi').BaziResultExtras).shensha;
+  if (!raw || typeof raw !== 'object') return null;
+  const sh = raw as ShenShaShape;
 
   const rows = SHENSHA_POS_LABELS
-    .map(([key, label]) => ({ label, items: (sh[key] as string[]) || [] }))
+    .map(([key, label]) => ({ label, items: sh[key] ?? [] }))
     .filter((r) => Array.isArray(r.items) && r.items.length > 0);
-  const cur = sh.current && typeof sh.current === 'object'
+  const shCur = sh.current;
+  const cur = shCur && typeof shCur === 'object'
     ? SHENSHA_CUR_LABELS
-        .map(([key, label]) => ({ label, items: (sh.current[key] as string[]) || [] }))
+        .map(([key, label]) => ({ label, items: shCur[key] ?? [] }))
         .filter((r) => Array.isArray(r.items) && r.items.length > 0)
     : [];
 
@@ -339,7 +351,7 @@ export function GanZhiRelCard({ result }: { result: BaziResult }) {
           <div className="space-y-1.5">
             <h4 className="text-sm font-semibold">天干关系</h4>
             <div className="flex flex-wrap gap-1.5">
-              {ganRelations.map((rel: any, i: number) => (
+              {ganRelations.map((rel, i) => (
                 <Badge key={i} variant="outline" className="text-[11px] border-gold/20 bg-amber-500/5">
                   {rel.from && rel.to && (
                     <span className="text-muted-foreground mr-1">
@@ -356,7 +368,7 @@ export function GanZhiRelCard({ result }: { result: BaziResult }) {
           <div className="space-y-1.5">
             <h4 className="text-sm font-semibold">地支关系</h4>
             <div className="flex flex-wrap gap-1.5">
-              {zhiRelations.map((rel: any, i: number) => (
+              {zhiRelations.map((rel, i) => (
                 <Badge key={i} variant="outline" className="text-[11px] border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-300">
                   {rel.from && rel.to && (
                     <span className="text-muted-foreground mr-1">

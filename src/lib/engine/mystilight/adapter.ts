@@ -13,7 +13,7 @@ export const engine: BaziEngine = {
     const r = calculateBazi(input);
     return {
       ...r,
-      shensha: (r as any).shensha,
+      shensha: (r as { shensha?: unknown }).shensha,
       engine: { id: descriptor.id, name: descriptor.name, school: descriptor.school },
     };
   },

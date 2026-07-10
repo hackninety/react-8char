@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any --
+   引擎 JSON seam 渲染层：上游 d.ts 本身以 any 暴露 yueLing/taiSui 等字段，且两引擎运行时
+   形状有漂移（如 shiShenZhi 实为数组，见 docs/Todo 技术债记录）。本层为纯 Markdown 渲染、
+   由导出断言（77+ 例）保障；新增非 seam 模块勿沿用此豁免。 */
 // 完整命盘 → Markdown（喂 AI 分析用）。
 // 相比压缩 JSON，Markdown 结构清晰、字段带中文标签，且额外补充了 JSON 导出未含的
 // 「命理分析（喜用神/日时/三命通会）」，便于 AI 更细致地解读。

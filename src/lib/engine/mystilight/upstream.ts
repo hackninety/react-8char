@@ -13,7 +13,8 @@ interface UpstreamApi {
     yearGZ: string, monthGZ: string, dayGZ: string, timeGZ: string,
     sect?: 1 | 2, baseYear?: number,
   ) => SolarCandidate[];
-  /** 上游内联的 lunar-javascript Lunar 类（未类型化） */
+  /** 上游内联的 lunar-javascript Lunar 类（第三方未类型化命名导出，维持 any） */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Lunar: any;
 }
 

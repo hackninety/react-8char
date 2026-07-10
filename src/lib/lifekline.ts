@@ -16,7 +16,7 @@
 //   · 感情：按性别取配偶星（男财女官）；日支=婚姻宫，冲则动荡、合则姻缘；
 //           桃花红鸾天喜助缘，孤辰寡宿减分。
 //   · 健康：以五行平衡（喜忌净值）为底，重罚冲日柱/刑害/羊刃灾煞/岁运并临/天克地冲。
-import type { BaziResult } from './bazi';
+import type { BaziResult, BaziResultExtras } from './bazi';
 import { getGanWuXing, getZhiWuXing, ZHI_MAIN_GAN } from './utils';
 import { createShenShaLookup } from './engine/tyme/shensha';
 import { computeDiLi, WARMTH_NEED, type DiLiResult, type DiLiOffsets } from './dili';
@@ -150,7 +150,8 @@ const mkRec = <T,>(v: () => T): Record<KlineDim, T> => ({ total: v(), career: v(
 // ─── 身强身弱 ──────────────────────────────────────────
 
 function detectStrength(chart: BaziResult): { judge: StrengthJudge; source: string } {
-  const sq = (chart as any).yuanHaiZiping?.shenQiang;
+  // 上游 d.ts 声明 shenQiang 为 number，运行时实为 { score, judge } 对象（类型漂移，精确收窄）
+  const sq = chart.yuanHaiZiping?.shenQiang as number | { judge?: unknown } | undefined;
   const judgeStr: unknown = sq && typeof sq === 'object' ? sq.judge : undefined;
   if (typeof judgeStr === 'string' && judgeStr) {
     if (judgeStr.includes('强')) return { judge: '身强', source: '渊海子平' };
@@ -189,10 +190,7 @@ function weightsFor(judge: StrengthJudge): { w: Record<string, number>; note: st
 // ─── 主计算 ────────────────────────────────────────────
 
 export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
-  const dayunArr = (chart as any).dayunArr as {
-    startYear: number; ganZhi: string; ganshen?: string; zhishen?: string;
-    liunianArr?: { year: number; ganZhi: string; ganshen?: string; zhishen?: string }[];
-  }[] | undefined;
+  const dayunArr = chart.dayunArr;
   const p = chart.pillars;
   if (!dayunArr?.length || !p?.day) return null;
 
@@ -216,7 +214,9 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
   );
 
   // 地利方位（出生地对各维的常数加成）
-  const st = (chart as any)._solarTimeInfo;
+  const st = (chart as BaziResult & BaziResultExtras)._solarTimeInfo as
+    | { latitude?: number; longitude?: number; city?: string }
+    | undefined;
   const dili = computeDiLi({
     dayWuXing: dayWx,
     judge,
@@ -544,9 +544,7 @@ export function buildMonthKline(
   const { w } = weightsFor(judge);
 
   // 定位该年所处大运与流年干支
-  const dayunArr = (chart as any).dayunArr as {
-    ganZhi: string; liunianArr?: { year: number; ganZhi: string }[];
-  }[] | undefined;
+  const dayunArr = chart.dayunArr;
   let lnGZ = '';
   let dyGZ = '';
   for (const dy of dayunArr ?? []) {
