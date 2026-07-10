@@ -9,8 +9,7 @@ import type { Pillar, CurrentYun, DayunArrItem } from '../mystilight/upstream';
 import { getEngineDescriptor } from '../registry';
 import { getShiShen } from '../mystilight/ext/shishen';
 import { computeTymeShenSha } from './shensha';
-import { applyTrueSolarTime, getTrueSolarOffset } from '../mystilight/ext/utils';
-import { getCityByName } from '../../cities';
+import { resolveTrueSolarInput } from '../solar';
 import { getGanWuXing, getZhiWuXing } from '../../utils';
 import { applySect } from './sects';
 
@@ -59,36 +58,10 @@ function pillarOf(sc: SixtyCycle, dayStem: HeavenStem, value: number): Pillar {
   };
 }
 
-/** 与 mystilight 相同的真太阳时预处理（保持两引擎输入口径一致） */
-function resolveInput(input: BaziInput) {
-  let { year, month, day, hour, minute } = input;
-  let solarTimeInfo: Record<string, unknown> = { applied: false };
-  let lng = input.longitude;
-  if (lng === undefined && input.city) lng = getCityByName(input.city)?.longitude;
-  if (lng !== undefined) {
-    const utcOffset = input.utcOffset ?? 8;
-    const tzMeridian = utcOffset * 15;
-    const off = getTrueSolarOffset(year, month, day, lng, tzMeridian);
-    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng, tzMeridian);
-    ({ year, month, day, hour, minute } = adjusted);
-    solarTimeInfo = {
-      applied: true,
-      city: input.city,
-      longitude: lng,
-      latitude: input.latitude,
-      utcOffset,
-      offsetMinutes: off.total,
-      longitudeMinutes: off.longitudeMinutes,
-      eotMinutes: off.eotMinutes,
-      adjustedTime: adjusted,
-    };
-  }
-  return { year, month, day, hour, minute, solarTimeInfo };
-}
-
 function calculate(input: BaziInput): UnifiedBaziChart {
   applySect(input.sect);
-  const { year, month, day, hour, minute, solarTimeInfo } = resolveInput(input);
+  // 真太阳时预处理与 mystilight 共用 engine/solar.ts 同一实现（两引擎输入口径一致）
+  const { year, month, day, hour, minute, solarTimeInfo } = resolveTrueSolarInput(input);
 
   const solarTime = SolarTime.fromYmdHms(year, month, day, hour, minute, 0);
   const eightChar = solarTime.getLunarHour().getEightChar();

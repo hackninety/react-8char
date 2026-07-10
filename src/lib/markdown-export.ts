@@ -7,6 +7,7 @@ import type { BaziInput, BaziResult } from './bazi';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from './wuyunliuqi';
 import { buildLifeKline } from './lifekline';
 import { getGanWuXing, getZhiWuXing } from './utils';
+import { SHENSHA_POS_CN } from './shensha-dict';
 import { AI_ANALYST_ROLE, AI_ANALYSIS_GUIDANCE } from './prompt-template';
 
 const WU_XING_ORDER = ['木', '火', '土', '金', '水'] as const;
@@ -59,23 +60,19 @@ function relText(rel: any): string {
   return String(rel);
 }
 
-// 神煞位置 key → 中文（mystilight 实际结构：{ nian/yue/ri/shi: string[], current: { daYun/liuNian/liuYue: string[] } }）
-const SHENSHA_KEY_CN: Record<string, string> = {
-  nian: '年柱', yue: '月柱', ri: '日柱', shi: '时柱',
-  daYun: '当前大运', liuNian: '当前流年', liuYue: '当前流月', liuRi: '当前流日',
-};
+// 神煞位置 key → 中文：取自 shensha-dict 的唯一权威映射（引擎结构 { nian/yue/ri/shi, current: {...} }）
 
 function renderShensha(sh: any): string[] {
   const out: string[] = [];
   if (!sh) return out;
   const pushEntry = (key: string, v: unknown) => {
     if (Array.isArray(v)) {
-      if (v.length) out.push(`- **${SHENSHA_KEY_CN[key] || key}**：${v.join('、')}`);
+      if (v.length) out.push(`- **${SHENSHA_POS_CN[key] || key}**：${v.join('、')}`);
     } else if (v && typeof v === 'object') {
       // current 之类的嵌套：逐项展开
       for (const [ik, iv] of Object.entries(v)) pushEntry(ik, iv);
     } else if (v != null && v !== '') {
-      out.push(`- **${SHENSHA_KEY_CN[key] || key}**：${String(v)}`);
+      out.push(`- **${SHENSHA_POS_CN[key] || key}**：${String(v)}`);
     }
   };
   if (Array.isArray(sh)) {

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollText, Star, BookOpen, Compass, Link, Gem } from 'lucide-react';
+import { SHENSHA_POS_CN, SHENSHA_PILLAR_KEYS, SHENSHA_CURRENT_KEYS, isXiongSha } from '@/lib/shensha-dict';
 import type { BaziResult } from '@/lib/bazi';
 
 function InfoRow({ label, value }: { label: string; value: string | number | undefined }) {
@@ -247,18 +248,12 @@ export function MingLiCard({ result }: { result: BaziResult }) {
 
 // ─── 神煞 ──────────────────────────────────────────────
 
-const SHENSHA_POS_LABELS: [string, string][] = [
-  ['nian', '年柱'], ['yue', '月柱'], ['ri', '日柱'], ['shi', '时柱'],
-];
-const SHENSHA_CUR_LABELS: [string, string][] = [
-  ['daYun', '当前大运'], ['liuNian', '当前流年'], ['liuYue', '当前流月'], ['liuRi', '当前流日'],
-];
-
-// 吉神/凶煞粗分配色（凶煞标红，其余按吉神金色）
-const XIONG_SHA = /空亡|亡神|劫煞|灾煞|勾绞|红艳|童子|孤辰|寡宿|羊刃|飞刃|血刃|元辰|丧门|吊客|白虎|天罗|地网|阴差阳错|十恶大败|四废|披麻/;
+// 位置标签与凶煞名单均取自 shensha-dict（唯一权威来源，勿在此平行维护）
+const SHENSHA_POS_LABELS: [string, string][] = SHENSHA_PILLAR_KEYS.map((k) => [k, SHENSHA_POS_CN[k]]);
+const SHENSHA_CUR_LABELS: [string, string][] = SHENSHA_CURRENT_KEYS.map((k) => [k, SHENSHA_POS_CN[k]]);
 
 function ShenShaBadge({ name }: { name: string }) {
-  const isXiong = XIONG_SHA.test(name);
+  const isXiong = isXiongSha(name);
   return (
     <Badge
       variant="outline"

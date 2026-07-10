@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Download, Copy, Sparkles, Bot, FileText } from 'lucide-react';
+import { Download, Sparkles, Bot, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { buildExportJSON, generateFileName } from '@/lib/bazi';
@@ -41,15 +41,6 @@ export default function JsonExport({ input, result }: JsonExportProps) {
   const handleDownloadMarkdown = () => {
     downloadBlob(markdown, 'text/markdown;charset=utf-8', generateMarkdownFileName(input));
     toast.success('Markdown 文件已下载');
-  };
-
-  const handleCopyToon = async () => {
-    try {
-      await navigator.clipboard.writeText(toonText);
-      toast.success('TOON 已复制到剪贴板');
-    } catch {
-      toast.error('复制失败，请手动复制');
-    }
   };
 
   const handleCopyPrompt = async () => {
@@ -98,8 +89,8 @@ export default function JsonExport({ input, result }: JsonExportProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* 数据文件 */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {/* 数据文件（复制走下方 AI Prompt 按钮，不设单独「复制 TOON」以免重复） */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Button
               variant="outline"
               onClick={handleDownload}
@@ -107,14 +98,6 @@ export default function JsonExport({ input, result }: JsonExportProps) {
             >
               <Download className="w-4 h-4 mr-2" />
               导出 TOON 文件
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleCopyToon}
-              className="border-gold/30 hover:bg-gold/5 cursor-pointer"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              复制 TOON
             </Button>
             <Button
               variant="outline"

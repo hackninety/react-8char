@@ -1,11 +1,9 @@
 import {
   getCurrentEightCharJSON,
-  applyTrueSolarTime,
-  getTrueSolarOffset,
   getLiuYueForYear as _getLiuYueForYear,
 } from './engine/mystilight/ext';
 import type { EightCharJSON } from './engine/mystilight/ext';
-import { getCityByName } from './cities';
+import { resolveTrueSolarInput } from './engine/solar';
 import { buildWuYunLiuQiExport } from './wuyunliuqi';
 import { buildLifeKline } from './lifekline';
 import { analyzeTiaoHou } from './tiaohou';
@@ -55,38 +53,8 @@ export type BaziResult = EightCharJSON;
 export function calculateBazi(input: BaziInput): BaziResult {
   if (!getCurrentEightCharJSON) throw new Error('mystilight-8char 加载失败');
 
-  let { year, month, day, hour, minute } = input;
-
-  let solarTimeInfo: Record<string, unknown> = { applied: false };
-  let lng = input.longitude;
-  if (lng === undefined && input.city) {
-    const cityInfo = getCityByName(input.city);
-    lng = cityInfo?.longitude;
-  }
-  if (lng !== undefined) {
-    // 真太阳时 = 当地标准时 + 地方时差 + 均时差（单点实现见 ext/utils getTrueSolarOffset）。
-    // 时区中央经线 = UTC偏移×15；缺省北京时（UTC+8→120°），国外命例由 utcOffset 指定。
-    const utcOffset = input.utcOffset ?? 8;
-    const tzMeridian = utcOffset * 15;
-    const off = getTrueSolarOffset(year, month, day, lng, tzMeridian);
-    const adjusted = applyTrueSolarTime(year, month, day, hour, minute, lng, tzMeridian);
-    year = adjusted.year;
-    month = adjusted.month;
-    day = adjusted.day;
-    hour = adjusted.hour;
-    minute = adjusted.minute;
-    solarTimeInfo = {
-      applied: true,
-      city: input.city,
-      longitude: lng,
-      latitude: input.latitude,
-      utcOffset,
-      offsetMinutes: off.total,
-      longitudeMinutes: off.longitudeMinutes,
-      eotMinutes: off.eotMinutes,
-      adjustedTime: { year, month, day, hour, minute },
-    };
-  }
+  // 真太阳时预处理下沉至 engine/solar.ts（与 tyme 引擎共用同一实现）
+  const { year, month, day, hour, minute, solarTimeInfo } = resolveTrueSolarInput(input);
 
   const result = getCurrentEightCharJSON({
     year, month, day, hour, minute,

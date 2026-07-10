@@ -1,5 +1,6 @@
 // MCP 输出组装：把导出数据组装成紧凑 Markdown（按需查询哲学——摘要给锚点，细节靠追查工具）。
 import { getGanWuXing, getZhiWuXing } from '../src/lib/utils';
+import { SHENSHA_POS_CN, SHENSHA_PILLAR_KEYS, SHENSHA_CURRENT_KEYS } from '../src/lib/shensha-dict';
 import { getShiShen, getLiuYueForYear } from '../src/lib/bazi';
 import { createShenShaLookup } from '../src/lib/engine/tyme/shensha';
 import type { LifeKlineData, KlineDim } from '../src/lib/lifekline';
@@ -96,13 +97,13 @@ export function formatPaipanSummary(chartId: string, data: any, chart: any, klin
     data.patterns.forEach((x: any) => L.push(`- **${x.name}**［${x.hit}］：${x.note}`));
   }
 
-  // 神煞
+  // 神煞（位置标签取自 shensha-dict 权威映射）
   const sh = data.shensha;
   if (sh) {
     L.push('', '## 神煞');
     const seg = (label: string, arr: unknown) => { if (Array.isArray(arr) && arr.length) L.push(`- ${label}：${arr.join('、')}`); };
-    seg('年柱', sh.nian); seg('月柱', sh.yue); seg('日柱', sh.ri); seg('时柱', sh.shi);
-    if (sh.current) { seg('当前大运', sh.current.daYun); seg('当前流年', sh.current.liuNian); }
+    for (const k of SHENSHA_PILLAR_KEYS) seg(SHENSHA_POS_CN[k], sh[k]);
+    if (sh.current) for (const k of SHENSHA_CURRENT_KEYS) seg(SHENSHA_POS_CN[k], sh.current[k]);
     const dict = data.shenshaDict;
     if (dict && Object.keys(dict).length) {
       L.push('', '**释义**：' + Object.entries(dict).map(([k, v]) => `${k}=${v}`).join('；'));

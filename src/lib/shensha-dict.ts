@@ -52,6 +52,34 @@ export const SHENSHA_MEANINGS: Record<string, string> = {
   孤鸾: '婚缘偏晚、聚少离多之古义，现代宜宽解',
 };
 
+// ─── 神煞数据形状（引擎统一输出 {nian,yue,ri,shi,current:{daYun,liuNian,…}}）───
+// 位置键 → 中文标签的唯一权威映射；markdown-export / ShenShaList / mcp/format 共同消费，
+// 原先三处平行硬编码（技术债），下沉于此防漂移。
+
+export const SHENSHA_POS_CN: Record<string, string> = {
+  nian: '年柱', yue: '月柱', ri: '日柱', shi: '时柱',
+  daYun: '当前大运', liuNian: '当前流年', liuYue: '当前流月', liuRi: '当前流日',
+};
+
+/** 本命四柱位置键（有序） */
+export const SHENSHA_PILLAR_KEYS = ['nian', 'yue', 'ri', 'shi'] as const;
+/** 当前运岁位置键（有序） */
+export const SHENSHA_CURRENT_KEYS = ['daYun', 'liuNian', 'liuYue', 'liuRi'] as const;
+
+// ─── 凶煞名单（数据驱动；原 ShenShaList XIONG_SHA 正则硬编码）───
+// 含引擎可能的两种写法「阴差阳错/阴阳差错」；名单外未知神煞按吉神显示（宁缺勿错标）。
+const XIONG_SHA_NAMES = [
+  '羊刃', '飞刃', '劫煞', '灾煞', '亡神', '空亡', '孤辰', '寡宿', '血刃', '元辰',
+  '勾绞', '丧门', '吊客', '披麻', '白虎', '天罗', '地网', '童子', '红艳',
+  '阴差阳错', '阴阳差错', '十恶大败', '四废', '孤鸾',
+];
+
+/** 是否凶煞（名字可带「(日)」等基准后缀） */
+export function isXiongSha(name: string): boolean {
+  const base = name.replace(/\([^)]*\)/g, '').trim();
+  return XIONG_SHA_NAMES.some((x) => base.includes(x));
+}
+
 /** 从导出神煞结构（{nian,yue,ri,shi,current} 或任意嵌套）收集全部神煞名 */
 export function collectShenShaNames(sh: unknown): string[] {
   const out: string[] = [];

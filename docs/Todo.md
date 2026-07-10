@@ -114,8 +114,13 @@ preview 全流程验证：存两档案→选甲乙→生成清单→复制 Promp
 - **落点**：作为第三引擎接入现有多引擎架构（`src/lib/engine/ziwei/`），
   K 线组件增加「紫微宫位」数据源。工程量大（新重依赖 + 四化评分模型），独立推进。
 
-## 技术债（复查发现，非阻塞）
+## 技术债（已清账 2026-07）
 
-- **神煞形状归一化下沉**：`src/lib/markdown-export.ts` 的 `SHENSHA_KEY_CN` 与 `src/components/ShenShaList.tsx` 的 `SHENSHA_POS_LABELS` 是同一份引擎数据形状的两处平行映射（现在 mystilight 与 tyme 两引擎都产出此形状，更值得统一）。理想做法是在引擎层定义 shensha 类型与位置标签，消费端只读，避免多处漂移。
-- **真太阳时预处理下沉**：`bazi.ts calculateBazi` 与 `engine/tyme/adapter.ts resolveInput` 各有一份真太阳时预处理逻辑。可考虑上提到引擎门面 `engine/index.ts calculateChart` 统一处理，两引擎共用。
-- **凶煞名单**：`ShenShaList.tsx` 的 `XIONG_SHA` 正则硬编码约 20 个凶煞名用于红/金配色，遇到名单外的凶煞会按吉神金色显示。可考虑改为数据驱动或由引擎标注吉凶属性。
+- ✅ **神煞形状归一化下沉**：位置键→中文的唯一权威映射 `SHENSHA_POS_CN`（含柱序/运岁序常量）落在
+  [`shensha-dict.ts`](../src/lib/shensha-dict.ts)，markdown-export / ShenShaList / mcp/format 三处消费端全部切换，
+  平行硬编码删除。
+- ✅ **真太阳时预处理下沉**：抽出共享模块 [`engine/solar.ts`](../src/lib/engine/solar.ts)
+  `resolveTrueSolarInput`，bazi.ts 与 tyme/adapter 两份逐行相同的实现删除；golden 测试
+  （四例真太阳时命例 + 跨日边界 + 双引擎对拍）确认零回归。
+- ✅ **凶煞名单数据驱动**：`isXiongSha()` 落在 shensha-dict（兼容「阴差阳错/阴阳差错」两种写法），
+  ShenShaList 的 `XIONG_SHA` 硬编码正则删除；名单外未知神煞仍按吉神显示（宁缺勿错标）。
