@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { buildExportJSON, generateFileName } from '@/lib/bazi';
 import { generateAIPrompt } from '@/lib/prompt-template';
 import { buildExportMarkdown, generateMarkdownFileName } from '@/lib/markdown-export';
+import { toToon } from '@/lib/toon';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 
 interface JsonExportProps {
@@ -16,7 +17,8 @@ interface JsonExportProps {
 
 export default function JsonExport({ input, result }: JsonExportProps) {
   const exportData = useMemo(() => buildExportJSON(input, result), [input, result]);
-  const compactJson = useMemo(() => JSON.stringify(exportData), [exportData]);
+  // 数据载荷用 TOON（JSON 数据模型的紧凑无损等价表示，约省 21% 字符、token 更省）
+  const toonText = useMemo(() => toToon(exportData), [exportData]);
   const markdown = useMemo(() => buildExportMarkdown(input, result), [input, result]);
 
   const downloadBlob = (content: string, mime: string, filename: string) => {
@@ -32,8 +34,8 @@ export default function JsonExport({ input, result }: JsonExportProps) {
   };
 
   const handleDownload = () => {
-    downloadBlob(compactJson, 'application/json;charset=utf-8', generateFileName(input));
-    toast.success('JSON 文件已下载');
+    downloadBlob(toonText, 'text/plain;charset=utf-8', generateFileName(input).replace(/\.json$/, '.toon'));
+    toast.success('TOON 文件已下载');
   };
 
   const handleDownloadMarkdown = () => {
@@ -41,10 +43,10 @@ export default function JsonExport({ input, result }: JsonExportProps) {
     toast.success('Markdown 文件已下载');
   };
 
-  const handleCopyJSON = async () => {
+  const handleCopyToon = async () => {
     try {
-      await navigator.clipboard.writeText(compactJson);
-      toast.success('JSON 已复制到剪贴板');
+      await navigator.clipboard.writeText(toonText);
+      toast.success('TOON 已复制到剪贴板');
     } catch {
       toast.error('复制失败，请手动复制');
     }
@@ -92,7 +94,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               <Sparkles className="w-3 h-3" />
               已准备好喂 AI
             </div>
-            <span className="text-[11px] text-muted-foreground">Markdown 内容最完整，AI 分析更详细</span>
+            <span className="text-[11px] text-muted-foreground">Markdown 内容最完整；TOON 为 JSON 的紧凑等价表示，更省 token</span>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -104,15 +106,15 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               className="border-gold/30 hover:bg-gold/5 cursor-pointer"
             >
               <Download className="w-4 h-4 mr-2" />
-              导出 JSON 文件
+              导出 TOON 文件
             </Button>
             <Button
               variant="outline"
-              onClick={handleCopyJSON}
+              onClick={handleCopyToon}
               className="border-gold/30 hover:bg-gold/5 cursor-pointer"
             >
               <Copy className="w-4 h-4 mr-2" />
-              复制 JSON
+              复制 TOON
             </Button>
             <Button
               variant="outline"
@@ -131,7 +133,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               className="crimson-gradient text-white hover:opacity-90 cursor-pointer shadow-md shadow-red-900/20"
             >
               <Bot className="w-4 h-4 mr-2" />
-              复制 AI Prompt（JSON）
+              复制 AI Prompt（TOON）
             </Button>
             <Button
               onClick={handleCopyMarkdown}
@@ -144,7 +146,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
 
           <div className="mt-3 rounded-lg bg-muted/50 p-3 max-h-40 overflow-y-auto">
             <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap break-all font-mono leading-relaxed">
-              {compactJson.slice(0, 2000)}{compactJson.length > 2000 ? '...' : ''}
+              {toonText.slice(0, 2000)}{toonText.length > 2000 ? '...' : ''}
             </pre>
           </div>
         </CardContent>

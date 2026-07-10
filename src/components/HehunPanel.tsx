@@ -2,14 +2,15 @@
 // 选择器用原生 select（轻量且可自动化测试；base-ui Select 有已知自动化限制）。
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HeartHandshake, Copy, Sparkles } from 'lucide-react';
+import { HeartHandshake, Copy, Sparkles, Download, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { calculateChart, DEFAULT_ENGINE } from '@/lib/engine';
 import { listProfiles } from '@/lib/storage';
-import { analyzeHehun, buildHehunMarkdown, type HehunResult, type HehunPolarity } from '@/lib/hehun';
+import { analyzeHehun, buildHehunMarkdown, buildHehunExportData, type HehunResult, type HehunPolarity } from '@/lib/hehun';
+import { toToon } from '@/lib/toon';
 import type { BaziResult } from '@/lib/bazi';
 
 interface Props {
@@ -30,6 +31,8 @@ export default function HehunPanel({ profilesVersion }: Props) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<HehunResult | null>(null);
   const [markdown, setMarkdown] = useState('');
+  const [toon, setToon] = useState('');
+  const [fileBase, setFileBase] = useState('合婚对照');
 
   const selectCls =
     'h-8 flex-1 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring';
@@ -56,6 +59,8 @@ export default function HehunPanel({ profilesVersion }: Props) {
       const r = analyzeHehun(partyA, partyB);
       setResult(r);
       setMarkdown(buildHehunMarkdown(partyA, partyB, r));
+      setToon(toToon(buildHehunExportData(partyA, partyB, r)));
+      setFileBase(`合婚_${pa.name}_${pb.name}`);
       toast.success('合婚对照已生成', { icon: '💞' });
     } catch (e: any) {
       console.error(e);
@@ -72,6 +77,28 @@ export default function HehunPanel({ profilesVersion }: Props) {
     } catch {
       toast.error('复制失败，请手动选择文本复制');
     }
+  };
+
+  const downloadBlob = (content: string, mime: string, filename: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadMd = () => {
+    downloadBlob(markdown, 'text/markdown;charset=utf-8', `${fileBase}.md`);
+    toast.success('合婚 Markdown 已下载');
+  };
+
+  const downloadToon = () => {
+    downloadBlob(toon, 'text/plain;charset=utf-8', `${fileBase}.toon`);
+    toast.success('合婚 TOON 已下载（紧凑结构化数据，省 token）');
   };
 
   return (
@@ -125,9 +152,17 @@ export default function HehunPanel({ profilesVersion }: Props) {
                 </li>
               ))}
             </ul>
-            <Button type="button" size="sm" variant="outline" onClick={copyPrompt} className="h-8 gap-1" data-testid="hehun-copy">
-              <Copy className="w-3.5 h-3.5" /> 复制合婚 AI Prompt
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={copyPrompt} className="h-8 gap-1" data-testid="hehun-copy">
+                <Copy className="w-3.5 h-3.5" /> 复制合婚 AI Prompt
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={downloadMd} className="h-8 gap-1" data-testid="hehun-md">
+                <FileText className="w-3.5 h-3.5" /> 导出 MD
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={downloadToon} className="h-8 gap-1" data-testid="hehun-toon">
+                <Download className="w-3.5 h-3.5" /> 导出 TOON
+              </Button>
+            </div>
           </motion.div>
         )}
       </CardContent>

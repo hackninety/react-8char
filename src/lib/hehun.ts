@@ -191,6 +191,39 @@ export function analyzeHehun(pa: Party, pb: Party): HehunResult {
   return { a: A, b: B, items, counts };
 }
 
+// ─── 合婚结构化导出数据（供 TOON/JSON 序列化）────────────
+
+export function buildHehunExportData(pa: Party, pb: Party, r: HehunResult) {
+  const person = (p: Party, per: HehunPerson) => {
+    const an: any = (p.chart as any).analysis;
+    return {
+      name: per.label,
+      gender: per.gender,
+      birth: {
+        year: p.input.year, month: p.input.month, day: p.input.day,
+        hour: p.input.hour, minute: p.input.minute,
+        ...(p.input.city ? { city: p.input.city } : {}),
+      },
+      pillars: per.pillarText,
+      dayMaster: `${per.dayGan}${getGanWuXing(per.dayGan)}`,
+      judge: per.judge,
+      ...(Array.isArray(an?.XiYongShen) && an.XiYongShen.length ? { xiYongShen: an.XiYongShen } : {}),
+    };
+  };
+  return {
+    meta: {
+      tool: '八字合婚对照 (react-8char)',
+      generatedAt: new Date().toISOString(),
+      disclaimer: '合婚为传统民俗参考，结论不构成婚姻决策依据',
+    },
+    a: person(pa, r.a),
+    b: person(pb, r.b),
+    counts: r.counts,
+    items: r.items,
+    aiNote: '轻重与化解由 AI 结合全局论述（不设总分）；「忌」项须同时给化解视角；关键结论标注置信度',
+  };
+}
+
 // ─── 合婚 Markdown（喂 AI）───────────────────────────────
 
 export function buildHehunMarkdown(pa: Party, pb: Party, r: HehunResult): string {

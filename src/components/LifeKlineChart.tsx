@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity } from 'lucide-react';
+import { Activity, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { buildLifeKline, KLINE_DIMS, type KlineDim } from '@/lib/lifekline';
+import { buildLifeKline, buildMonthKline, KLINE_DIMS, type KlineDim } from '@/lib/lifekline';
 import type { BaziResult } from '@/lib/bazi';
 
 // 中式股票配色：红涨绿跌；金色为 5 年均线
@@ -27,9 +27,21 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
   const data = useMemo(() => buildLifeKline(result), [result]);
   const [dim, setDim] = useState<KlineDim>('total');
   const [hover, setHover] = useState<number | null>(null);
+  // 流月下钻：点击年K线展开该年 12 个月子图
+  const [expandedYear, setExpandedYear] = useState<number | null>(null);
+  const [monthHover, setMonthHover] = useState<number | null>(null);
+
+  const monthData = useMemo(() => {
+    if (!data || expandedYear === null) return null;
+    const y = data.years.find((x) => x.year === expandedYear);
+    if (!y) return null;
+    const anchors = Object.fromEntries(KLINE_DIMS.map((d) => [d.key, y.ohlc[d.key].open])) as Record<KlineDim, number>;
+    return buildMonthKline(result, expandedYear, anchors);
+  }, [result, data, expandedYear]);
 
   if (!data || data.years.length < 5) return null;
   const { years } = data;
+  const expandedPoint = expandedYear !== null ? years.find((x) => x.year === expandedYear) : undefined;
 
   const svgW = PAD_L + PAD_R + years.length * SLOT_W;
   const svgH = PAD_T + CHART_H + PAD_B;
@@ -149,13 +161,72 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
                 <text x={xOf(data.currentIndex) + SLOT_W / 2} y={PAD_T + 8} fontSize={9} textAnchor="middle" fill={GOLD} fontWeight="bold">今</text>
               )}
 
-              {/* 悬停感应区 */}
+              {/* 悬停/点击感应区（点击展开该年流月） */}
               {years.map((y, i) => (
                 <rect key={`hit-${y.year}`} x={xOf(i)} y={PAD_T} width={SLOT_W} height={CHART_H} fill="transparent"
-                  onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
+                  onClick={() => { setExpandedYear((cur) => (cur === y.year ? null : y.year)); setMonthHover(null); }} />
               ))}
             </svg>
           </div>
+
+          {/* 流月下钻子图（点击年K线展开） */}
+          {expandedYear !== null && monthData && (
+            <div key={`m-${expandedYear}`} className="mt-2 rounded-lg border border-gold/25 bg-muted/20 p-2.5" data-testid="month-kline">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold">
+                  {expandedYear} {expandedPoint?.ganZhi} · 流月K线
+                  <span className="ml-1.5 font-normal text-muted-foreground">（{dimLabel}维 · 锚定该年开盘值，表达年内节奏）</span>
+                </span>
+                <button type="button" onClick={() => setExpandedYear(null)} className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer" title="收起流月">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <svg width={30 + monthData.length * 26 + 8} height={128} className="text-foreground select-none block mt-1">
+                  {[20, 50, 80].map((v) => (
+                    <g key={v}>
+                      <line x1={30} y1={10 + ((100 - v) / 100) * 90} x2={30 + monthData.length * 26} y2={10 + ((100 - v) / 100) * 90} stroke="currentColor" strokeOpacity={v === 50 ? 0.18 : 0.08} strokeDasharray="2 4" />
+                      <text x={26} y={10 + ((100 - v) / 100) * 90 + 3} fontSize={8} textAnchor="end" fill="currentColor" opacity={0.5}>{v}</text>
+                    </g>
+                  ))}
+                  {monthData.map((m, i) => {
+                    const o = m.ohlc[dim];
+                    const yv = (v: number) => 10 + ((100 - v) / 100) * 90;
+                    const up = o.close >= o.open;
+                    const color = up ? UP : DOWN;
+                    const cx = 30 + i * 26 + 13;
+                    return (
+                      <g key={m.monthIndex}>
+                        <line x1={cx} y1={yv(o.high)} x2={cx} y2={yv(o.low)} stroke={color} strokeWidth={1} />
+                        <rect x={cx - 6} y={yv(Math.max(o.open, o.close))} width={12} height={Math.max(1, Math.abs(yv(o.open) - yv(o.close)))} fill={color} opacity={monthHover === null || monthHover === i ? 1 : 0.45} />
+                        <text x={cx} y={118} fontSize={8} textAnchor="middle" fill="currentColor" opacity={monthHover === i ? 0.95 : 0.55}>{m.monthName}</text>
+                        <rect x={30 + i * 26} y={10} width={26} height={100} fill="transparent"
+                          onMouseEnter={() => setMonthHover(i)} onMouseLeave={() => setMonthHover(null)} />
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+              {(() => {
+                const am = monthData[monthHover ?? 0];
+                return (
+                  <div className="mt-1 border-t border-border/40 pt-1.5 text-[11px] leading-snug">
+                    <span className="font-medium">{am.monthName}（{am.ganZhi}）</span>
+                    <span className="ml-1.5 tabular-nums" style={{ color: am.delta[dim] >= 0 ? UP : DOWN }}>
+                      {dimLabel} {am.scores[dim]}（{am.delta[dim] >= 0 ? '▲' : '▼'}{Math.abs(am.delta[dim])}）
+                    </span>
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
+                      {(am.factors[dim].length ? am.factors[dim] : ['平月']).map((f, fi) => (
+                        <span key={fi}>· {f}</span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* 固定详情面板（在图表下方，永不遮挡K线；移动端可点选） */}
           <div className="mt-2 rounded-lg border border-gold/15 bg-muted/30 p-2.5">
@@ -167,7 +238,7 @@ export default function LifeKlineChart({ result }: LifeKlineChartProps) {
                   {hover === null && data.currentIndex === activeIdx ? ' · 今年' : ''}
                 </span>
               </span>
-              <span className="text-xs text-muted-foreground">悬停/点选查看各年</span>
+              <span className="text-xs text-muted-foreground">悬停查看各年 · 点击K线展开流月</span>
             </div>
 
             {/* 五维评分一览（当前维高亮） */}

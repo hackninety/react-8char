@@ -20,6 +20,9 @@ import type { BaziResult } from './bazi';
 import { getGanWuXing, getZhiWuXing } from './utils';
 import { createShenShaLookup } from './engine/tyme/shensha';
 import { computeDiLi, WARMTH_NEED, type DiLiResult, type DiLiOffsets } from './dili';
+// 直接从引擎扩展层取流月/十神（勿经 bazi.ts 转口，避免循环依赖）
+import { getLiuYueForYear } from './engine/mystilight/ext/liuyue';
+import { getShiShen } from './engine/mystilight/ext/shishen';
 
 // ─── 基础表 ────────────────────────────────────────────
 
@@ -502,4 +505,182 @@ export function buildLifeKline(chart: BaziResult): LifeKlineData | null {
     currentIndex: years.findIndex((y) => y.year === nowYear),
     dili,
   };
+}
+
+// ─── 流月K线（单年下钻：12 个月的月度节奏）────────────────
+// 模型与年线同源，幅度约为年因素的 60%：流月十神喜忌/类象 + 月支与本命四支冲刑合害
+// + 月冲流年(岁破之月)/月冲大运 + 神煞 + 调候 + 空亡。分数围绕锚点（该年开盘值）摆动，
+// OHLC 年内串联，表达年内节奏而非绝对运势。
+
+const FULL_SHORT: Record<string, string> = Object.fromEntries(
+  Object.entries(SHORT_FULL).map(([s, f]) => [f, s]),
+);
+// 地支本气干（月支十神用）
+const ZHI_MAIN: Record<string, string> = {
+  子: '癸', 丑: '己', 寅: '甲', 卯: '乙', 辰: '戊', 巳: '丙',
+  午: '丁', 未: '己', 申: '庚', 酉: '辛', 戌: '戊', 亥: '壬',
+};
+
+export interface KlineMonthPoint {
+  monthIndex: number;
+  monthName: string;
+  ganZhi: string;
+  scores: Record<KlineDim, number>;
+  ohlc: Record<KlineDim, OHLC>;
+  delta: Record<KlineDim, number>;
+  factors: Record<KlineDim, string[]>;
+}
+
+/**
+ * 计算某公历流年的 12 个流月K线。
+ * @param anchors 各维锚点（一般传该年的开盘值），缺省 50
+ */
+export function buildMonthKline(
+  chart: BaziResult,
+  year: number,
+  anchors?: Partial<Record<KlineDim, number>>,
+): KlineMonthPoint[] | null {
+  const p = chart.pillars;
+  if (!p?.day) return null;
+  const dayGan = p.day.gan;
+  const gender = chart.gender || '男';
+  const loveDW = gender === '女' ? DW_LOVE_FEMALE : DW_LOVE_MALE;
+  const { judge } = detectStrength(chart);
+  const { w } = weightsFor(judge);
+
+  // 定位该年所处大运与流年干支
+  const dayunArr = (chart as any).dayunArr as {
+    ganZhi: string; liunianArr?: { year: number; ganZhi: string }[];
+  }[] | undefined;
+  let lnGZ = '';
+  let dyGZ = '';
+  for (const dy of dayunArr ?? []) {
+    const hit = dy.liunianArr?.find((x) => x.year === year);
+    if (hit) { lnGZ = hit.ganZhi ?? ''; dyGZ = dy.ganZhi ?? ''; break; }
+  }
+  if (!lnGZ || lnGZ.length < 2) return null;
+  const lnZhi = lnGZ[1];
+  const dyZhi = dyGZ.length >= 2 ? dyGZ[1] : '';
+
+  const months = getLiuYueForYear(lnGZ[0], dayGan);
+  if (!months.length) return null;
+
+  const natalZhis: [string, string][] = [
+    [p.year.zhi, '年支'], [p.month.zhi, '月支'], [p.day.zhi, '日支'], [p.time.zhi, '时支'],
+  ];
+  const warmthNeed = WARMTH_NEED[p.month.zhi] ?? 0;
+  const dayKong = p.day.xunKong || '';
+  const shenShaOf = createShenShaLookup(
+    { year: p.year, month: p.month, day: p.day, time: p.time },
+    dayKong,
+  );
+
+  const out: KlineMonthPoint[] = [];
+  for (const m of months) {
+    const S = mkRec(() => 0);
+    const F = mkRec<string[]>(() => []);
+    const add = (d: KlineDim, v: number, label: string) => {
+      if (Math.abs(v) < 0.5) return;
+      S[d] += v;
+      F[d].push(`${label} ${fmt(v)}`);
+    };
+
+    const gShort = FULL_SHORT[m.shiShen] ?? m.shiShen;
+    const zGan = ZHI_MAIN[m.zhi] ?? '';
+    const zShort = zGan ? FULL_SHORT[getShiShen(dayGan, zGan)] ?? '' : '';
+
+    // 十神喜忌（总运）+ 分维类象
+    add('total', (w[gShort] ?? 0) * 3.5, `月干${SHORT_FULL[gShort] ?? gShort}`);
+    add('total', (w[zShort] ?? 0) * 3, `月支${SHORT_FULL[zShort] ?? zShort}`);
+    for (const [ss, mag, src] of [[gShort, 3.5, '月干'], [zShort, 3, '月支']] as const) {
+      if (!ss) continue;
+      const full = SHORT_FULL[ss] ?? ss;
+      add('career', (DW_CAREER[ss] ?? 0) * mag, `${src}${full}`);
+      add('wealth', (DW_WEALTH[ss] ?? 0) * mag, `${src}${full}`);
+      add('love', (loveDW[ss] ?? 0) * mag, `${src}${full}`);
+    }
+
+    // 月支 × 本命四支（约年幅 60%）
+    for (const [zhi, label] of natalZhis) {
+      if (CHONG[m.zhi] === zhi) {
+        if (label === '日支') { add('total', -5, '流月冲日支'); add('love', -5, '流月冲婚姻宫'); add('health', -5, '流月冲日支'); }
+        else if (label === '月支') { add('total', -4, '流月冲月支'); add('career', -4, '流月冲月支(提纲)'); add('health', -2, '流月冲月支'); }
+        else { add('total', -3, `流月冲${label}`); add('health', -2, `流月冲${label}`); }
+      } else if (XING[m.zhi]?.includes(zhi)) {
+        add('total', -2, `流月刑${label}`); add('health', -3, `流月刑${label}`);
+        if (label === '日支') add('love', -3, '流月刑婚姻宫');
+      } else if (HAI[m.zhi] === zhi) {
+        add('health', -2, `流月害${label}`);
+        if (label === '日支') add('love', -2, '流月害婚姻宫');
+      } else if (LIU_HE[m.zhi] === zhi) {
+        if (label === '日支') { add('love', 3, '流月合婚姻宫'); add('total', 2, '流月合日支'); }
+        else if (label === '月支') { add('career', 2, '流月合月支'); add('total', 2, '流月合月支'); }
+      }
+    }
+
+    // 月 × 流年 / 大运
+    if (CHONG[m.zhi] === lnZhi) { add('total', -2, '月冲流年(岁破之月)'); add('health', -2, '月冲流年'); }
+    else if (LIU_HE[m.zhi] === lnZhi) add('total', 1.5, '月合流年');
+    if (dyZhi && CHONG[m.zhi] === dyZhi) add('total', -1.5, '月冲大运');
+
+    // 神煞（幅度约年 70%）
+    for (const name of shenShaOf({ gan: m.gan, zhi: m.zhi })) {
+      if (SS_NOBLE.some((x) => name.startsWith(x))) { add('total', 1.5, `${name}`); add('career', 2, `${name}(贵人)`); }
+      if (name.startsWith('将星')) add('career', 2, name);
+      if (name.startsWith('禄神') || name.startsWith('金舆')) add('wealth', 2, name);
+      for (const [k, v] of Object.entries(SS_ROMANCE)) if (name.startsWith(k)) add('love', v * 0.7, name);
+      if (SS_LONELY.some((x) => name.startsWith(x))) add('love', -3, name);
+      if (SS_HEALTH_BAD.some((x) => name.startsWith(x))) add('health', -3, name);
+      if (name.startsWith('劫煞')) add('wealth', -2, name);
+    }
+
+    // 调候（月令气候直接作用）
+    if (Math.abs(warmthNeed) >= 0.3) {
+      const gw = getGanWuXing(m.gan);
+      const zw = getZhiWuXing(m.zhi);
+      const delivered = (gw === '火' ? 0.6 : gw === '水' ? -0.6 : 0) + (zw === '火' ? 1 : zw === '水' ? -1 : 0);
+      const v = clamp(warmthNeed * delivered * 1.5, -4, 4);
+      if (Math.abs(v) >= 1) {
+        const tag = warmthNeed > 0 ? (delivered > 0 ? '流月暖济寒局' : '流月增寒') : (delivered < 0 ? '流月润济燥局' : '流月助燥');
+        add('total', v, tag);
+        add('health', v * 0.7, tag);
+      }
+    }
+
+    // 空亡
+    if (dayKong.includes(m.zhi)) add('total', -2, '流月入空亡');
+
+    out.push({
+      monthIndex: m.monthIndex,
+      monthName: m.monthName,
+      ganZhi: m.ganZhi,
+      scores: mkRec(() => 0),
+      ohlc: mkRec(() => ({ open: 0, high: 0, low: 0, close: 0 })),
+      delta: mkRec(() => 0),
+      factors: F,
+    });
+    // 分数 = 锚点 + 当月净作用（各月独立偏离锚点，表达年内节奏）
+    for (const { key } of KLINE_DIMS) {
+      out[out.length - 1].scores[key] = clamp(Math.round((anchors?.[key] ?? 50) + S[key]), 5, 95);
+    }
+  }
+
+  // OHLC 年内串联（首月开盘=锚点）
+  const prevClose = mkRec(() => 0);
+  for (const { key } of KLINE_DIMS) prevClose[key] = anchors?.[key] ?? 50;
+  for (const mp of out) {
+    for (const { key } of KLINE_DIMS) {
+      const open = prevClose[key];
+      const close = mp.scores[key];
+      mp.delta[key] = close - open;
+      const vol = clamp(2 + mp.factors[key].filter((f) => /冲|刑|害|空亡/.test(f)).length * 2, 2, 10);
+      mp.ohlc[key] = {
+        open, close,
+        high: clamp(Math.max(open, close) + vol * 0.6, 2, 98),
+        low: clamp(Math.min(open, close) - vol * 0.6, 2, 98),
+      };
+      prevClose[key] = close;
+    }
+  }
+  return out;
 }

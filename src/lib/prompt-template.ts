@@ -1,4 +1,6 @@
 // AI 分析提示词：角色设定 + 默认分析框架 + 多流派视角切换协议。
+import { toToon, TOON_SYNTAX_HINT } from './toon';
+
 // 设计目标：一次导出（JSON/Markdown 皆可），AI 对话中可随时切换流派视角
 // 重新解读，无需用户重复上传命盘数据——盘面数据是流派无关的，差异只在解读体系。
 
@@ -160,17 +162,18 @@ ${AI_DEEP_DIVE_PROTOCOL}
 ${AI_SCHOOL_SWITCH_PROTOCOL}`;
 
 export function generateAIPrompt(jsonData: Record<string, any>): string {
-  const jsonStr = JSON.stringify(jsonData);
+  const toonStr = toToon(jsonData);
 
   const aiNote = jsonData.aiNote as string | undefined;
   const userNote = aiNote ? `\n\n> **用户备注**：${aiNote}` : '';
 
   return `${AI_ANALYST_ROLE}
 
-数据说明：JSON 中包含四柱、十神、五行力量、大运流年（流月仅展开近年，规则见 liuYueNote）、干支关系、神煞及释义（shenshaDict）、渊海子平分析、**调候用神查表与原局得否（tiaoHou，其 classic 字段为本造对应的《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）**、**人元司令分野（siLing）**、**十神组合预检（patterns）**、**盲派象法参考表（xiangFa）**、五运六气（中运、司天在泉、主客运、主客气、运气同化），以及人生K线量化评分（lifeKline，逐年 0-100 分，简化扶抑模型仅供参考）等完整信息，请充分利用所有字段；加粗字段为确定性查表/预检结果，引用它们而非凭记忆回忆。${userNote}
+数据说明：以下为 TOON 格式命盘数据（JSON 数据模型的紧凑无损等价表示，更省 token）。${TOON_SYNTAX_HINT}
+数据包含四柱、十神、五行力量、大运流年（流月仅展开近年，规则见 liuYueNote）、干支关系、神煞及释义（shenshaDict）、渊海子平分析、**调候用神查表与原局得否（tiaoHou，其 classic 字段为本造对应的《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）**、**人元司令分野（siLing）**、**十神组合预检（patterns）**、**盲派象法参考表（xiangFa）**、五运六气（中运、司天在泉、主客运、主客气、运气同化），以及人生K线量化评分（lifeKline，逐年 0-100 分，简化扶抑模型仅供参考）等完整信息，请充分利用所有字段；加粗字段为确定性查表/预检结果，引用它们而非凭记忆回忆。${userNote}
 
-\`\`\`json
-${jsonStr}
+\`\`\`toon
+${toonStr}
 \`\`\`
 
 ${AI_ANALYSIS_GUIDANCE}`;
