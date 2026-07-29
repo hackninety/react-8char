@@ -197,4 +197,33 @@ describe('导出集成', () => {
     expect(md).not.toContain('高光年');
     expect(md).not.toContain('总运峰值');
   });
+
+  it('渊海子平量化明细补入 MD;应期不再出现在导出', async () => {
+    const { buildExportMarkdown } = await import('../src/lib/markdown-export');
+    const md = buildExportMarkdown(GOLDEN, chart);
+    expect(md).toContain('### 量化明细');
+    expect(md).toContain('身强计分');
+    expect(md).toContain('判强阈值');
+    expect(md).toContain('湿度计分');
+    expect(md).toContain('阴阳计分');
+    expect(md).not.toContain('应期引动预检');
+  });
+
+  it('流日流时可选块:默认不导出,勾选后附 15 天窗口(逐日十二流时)', async () => {
+    const off = buildExportJSON(GOLDEN, chart) as Record<string, any>;
+    expect(off.liuRiShi).toBeUndefined();
+
+    const on = buildExportJSON(GOLDEN, chart, { includeLiuRiShi: true }) as Record<string, any>;
+    expect(on.liuRiShi.days).toHaveLength(15);
+    expect(on.liuRiShi.note).toContain('五鼠遁');
+    const row = on.liuRiShi.days[0];
+    expect(String(row[2])).toMatch(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
+    expect(String(row[5]).split(' ')).toHaveLength(12); // 十二时辰俱全
+
+    const { buildExportMarkdown } = await import('../src/lib/markdown-export');
+    expect(buildExportMarkdown(GOLDEN, chart)).not.toContain('近期流日流时');
+    const md = buildExportMarkdown(GOLDEN, chart, { includeLiuRiShi: true });
+    expect(md).toContain('## 近期流日流时');
+    expect(md).toContain('逐日十二流时');
+  });
 });

@@ -7,7 +7,7 @@
 // 「命理分析（喜用神/日时/三命通会）」，便于 AI 更细致地解读。
 
 import { buildExportJSON, generateFileName } from './bazi';
-import type { BaziInput, BaziResult } from './bazi';
+import type { BaziInput, BaziResult, ExportOptions } from './bazi';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from './wuyunliuqi';
 import { getGanWuXing, getZhiWuXing } from './utils';
 import { SHENSHA_POS_CN } from './shensha-dict';
@@ -98,8 +98,8 @@ function renderShensha(sh: any): string[] {
 }
 
 /** 构建完整命盘 Markdown（含 AI 角色设定与分析框架，可直接粘贴给 AI）。 */
-export function buildExportMarkdown(input: BaziInput, result: BaziResult): string {
-  const data: any = buildExportJSON(input, result);
+export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?: ExportOptions): string {
+  const data: any = buildExportJSON(input, result, opts);
   const L: string[] = [];
   const push = (...xs: string[]) => L.push(...xs);
 
@@ -112,7 +112,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
   push(
     AI_ANALYST_ROLE,
     '',
-    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「用神三法合参」「应期引动预检」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
+    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「用神三法合参」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
   );
   if (data.aiNote) push('', `> **用户备注**：${data.aiNote}`);
   push('', '---', '');
@@ -230,6 +230,47 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     sj('湿度', yh.shidu);
     sj('阴阳', yh.yinyang);
 
+    // 量化明细：TOON 一直携带完整 breakdown，MD 此前只有一行结论，此处补齐同口径明细
+    const capK = (k: string) => k[0].toUpperCase() + k.slice(1);
+    const partsText = (bd: any): string => {
+      if (!bd?.parts || !bd?.pillars) return '';
+      const sign = (v: unknown) => (typeof v === 'number' && v > 0 ? `+${v}` : String(v ?? '—'));
+      return (['year', 'month', 'day', 'time'] as const)
+        .map((k, i) => {
+          const p = bd.pillars[k];
+          if (!p) return '';
+          return `${['年', '月', '日', '时'][i]} ${p.gan}${sign(bd.parts[`stem${capK(k)}`])}/${p.zhi}${sign(bd.parts[`branch${capK(k)}`])}`;
+        })
+        .filter(Boolean)
+        .join('、');
+    };
+    const detail: string[] = [];
+    const sq = yh.shenQiang;
+    if (sq?.breakdown) {
+      const b = sq.breakdown;
+      const ganScores = b.ganScores ? Object.entries(b.ganScores).map(([g, v]) => `${g}${v}`).join(' ') : '';
+      detail.push(
+        `- **身强计分**：得分 ${sq.score}${sq.threshold != null ? ` / 判强阈值 ${sq.threshold}` : ''} → ${sq.judge}` +
+          (Array.isArray(b.supportStems) ? `；生扶日主之干：${b.supportStems.join('、')}` : '') +
+          (ganScores ? `；十干力量（透干+藏干加权，月支加倍）：${ganScores}` : ''),
+      );
+    }
+    const sd = yh.shidu;
+    if (sd?.breakdown) {
+      const range = Array.isArray(sd.normalRange) ? `（平衡区间 ${sd.normalRange[0]}~${sd.normalRange[1]}，低为寒湿高为暖燥）` : '';
+      const pt = partsText(sd.breakdown);
+      detail.push(`- **湿度计分**：${sd.score}${range}${pt ? `；各柱寒热贡献：${pt}` : ''}`);
+    }
+    const yy = yh.yinyang;
+    if (yy?.breakdown) {
+      const range = Array.isArray(yy.normalRange) ? `（平衡区间 ${yy.normalRange[0]}~${yy.normalRange[1]}，正偏阳负偏阴）` : '';
+      const pt = partsText(yy.breakdown);
+      detail.push(`- **阴阳计分**：${yy.score}${range}${pt ? `；各柱阴阳贡献：${pt}` : ''}`);
+    }
+    if (detail.length) {
+      push('', '### 量化明细', '', ...detail);
+    }
+
     const yl = yh.yueLing;
     if (yl) {
       push('', '### 月令分析', '');
@@ -317,18 +358,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     push(`- **合参**：${ys.heCan}`, '');
   }
 
-  // ── 应期引动预检 ──
-  const yq = data.yingQi;
-  if (Array.isArray(yq) && yq.length) {
-    push('## 应期引动预检', '');
-    push(`> ${data.yingQiNote ?? '应期为传统引动规则的候选提示，非事件预言'}`, '');
-    for (const t of yq) {
-      push(`### ${t.topic}（星：${t.star}${t.palace ? `；宫：${t.palace}` : ''}）`, '');
-      push('| 年 | 干支 | 强度 | 线索 |', '| --- | --- | --- | --- |');
-      (t.hits ?? []).forEach((h: any[]) => push(`| ${h[0]} | ${h[1]} | ${h[2]} | ${td(h[3])} |`));
-      push('');
-    }
-  }
+  // 应期引动预检不随导出（候选年+强度分易被 AI 当预言输出；MCP query_yingqi 按需查询）
 
   // ── 十神组合线索（程序预检）──
   const pats = data.patterns;
@@ -473,6 +503,18 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
       push('', '</details>', '');
     }
   });
+
+  // ── 近期流日流时（可选块：出行择日/办事择时勾选后随盘导出）──
+  const lrs = data.liuRiShi;
+  if (lrs?.days?.length) {
+    push('## 近期流日流时（择日择时参考）', '');
+    push(`> ${lrs.note}`, '');
+    push('| 公历 | 农历 | 流日 | 十神 | 日主长生 |', '| --- | --- | --- | --- | --- |');
+    lrs.days.forEach((d: any[]) => push(`| ${td(d[0])} | ${td(d[1])} | ${td(d[2])} | ${td(d[3])} | ${td(d[4])} |`));
+    push('', '<details><summary>逐日十二流时</summary>', '');
+    lrs.days.forEach((d: any[]) => push(`- **${d[0]} ${d[2]}**：${d[5]}`));
+    push('', '</details>', '');
+  }
 
   // 人生K线量化评分不入导出：简化模型分数易被 AI 锚定为确定结论，反致误报（仅页面展示）
 

@@ -1,6 +1,8 @@
 import {
   getCurrentEightCharJSON,
   getLiuYueForYear as _getLiuYueForYear,
+  getLiuRiForRange as _getLiuRiForRange,
+  getLiuShiForDay as _getLiuShiForDay,
 } from './engine/mystilight/ext';
 import type { EightCharJSON } from './engine/mystilight/ext';
 import { resolveTrueSolarInput } from './engine/solar';
@@ -14,7 +16,6 @@ import { getZipingClassic } from './zipingzhenquan';
 import { buildDecadePlan } from './decadeplan';
 import { detectYunPatterns } from './yunpatterns';
 import { buildWuxingEnergy } from './wuxing-energy';
-import { analyzeYingQi } from './yingqi';
 import { buildYongShenSanFa } from './yongshen';
 import { getDiShi } from './utils';
 import { collectShenShaNames, lookupShenShaMeanings } from './shensha-dict';
@@ -24,7 +25,7 @@ import { buildXiangFaExport } from './xiangfa';
 // 原 fork（mystilight-8char-v2）的 v2 能力已内置为应用内扩展层 engine/mystilight/ext，
 // 上游改为 npm 直接依赖 mystilight-8char，组件侧 API 保持不变。
 
-export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuShiForDay } from './engine/mystilight/ext';
+export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuRiForRange, getLiuShiForDay } from './engine/mystilight/ext';
 export { TIAN_GAN, DI_ZHI, JIA_ZI_60 } from './engine/mystilight/ext';
 export { lunarToSolar, getLunarLeapMonth, reverseLookupBazi } from './engine/mystilight/ext';
 
@@ -87,7 +88,15 @@ export function calculateBazi(input: BaziInput): BaziResult {
 
 // ─── 导出 JSON ────────────────────────────────────────
 
-export function buildExportJSON(input: BaziInput, result: BaziResult) {
+export interface ExportOptions {
+  /** 附带近期流日+逐日十二流时表（默认关；出行择日/办事择时场景勾选后导出） */
+  includeLiuRiShi?: boolean;
+}
+
+/** 流日流时窗口天数（覆盖常见出行/择日周期） */
+const LIURI_WINDOW_DAYS = 15;
+
+export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: ExportOptions) {
   const ext = result as BaziResultX;
   const dayMasterGan = result.pillars?.dayMasterGan || result.pillars?.day?.gan || '';
 
@@ -162,20 +171,30 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     liunianGz: curLnGz || undefined,
   });
 
-  // 应期引动预检：导出仅带近 16 年窗口的紧凑块（任意范围可经 MCP query_yingqi 查询）
-  const yingQi = (['婚恋', '事业', '财运'] as const)
-    .map((t) => {
-      const r = analyzeYingQi(result, t, { from: nowYear - 1, to: nowYear + 15 });
-      if (!r?.hits.length) return null;
-      return {
-        topic: t,
-        star: r.starDesc,
-        ...(r.palaceDesc ? { palace: r.palaceDesc } : {}),
-        dims: ['年', '干支', '强度', '线索'],
-        hits: r.hits.slice(0, 8).map((h) => [h.year, h.ganZhi, h.strength, h.reasons.join('；')]),
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+  // 应期引动预检不随导出：候选年+强度分易被 AI 当「已算定的应期」输出成预言（误报源）；
+  // 需要时经 MCP query_yingqi 按需查询（yingqi.ts 模块保留）。
+
+  // 近期流日流时（可选块）：出行择日看流日、婚嫁办事择时看流时，勾选后才随盘导出
+  const liuRiShi = (() => {
+    if (!opts?.includeLiuRiShi || !dayMasterGan) return null;
+    const t = new Date();
+    const days = _getLiuRiForRange(t.getFullYear(), t.getMonth() + 1, t.getDate(), LIURI_WINDOW_DAYS, dayMasterGan);
+    if (!days.length) return null;
+    return {
+      note: `自 ${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()} 起 ${LIURI_WINDOW_DAYS} 天的流日及逐日十二流时（十神以日主 ${dayMasterGan} 论），供出行择日/办事择时参考。更远日期：流日自表内任一日按六十甲子逐日顺推；流时由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途）顺行十二辰`,
+      dims: ['公历', '农历', '流日', '十神', '日主长生', '十二流时(时辰:干支·十神)'],
+      days: days.map((d) => [
+        `${d.solarYear}-${String(d.solarMonth).padStart(2, '0')}-${String(d.solarDay).padStart(2, '0')}`,
+        `${d.lunarMonth}月${d.lunarDay}`,
+        d.ganZhi,
+        d.shiShen,
+        getDiShi(dayMasterGan, d.zhi),
+        _getLiuShiForDay(d.solarYear, d.solarMonth, d.solarDay, dayMasterGan)
+          .map((h) => `${h.shiChenName}:${h.ganZhi}·${h.shiShen}`)
+          .join(' '),
+      ]),
+    };
+  })();
 
   return {
     meta: {
@@ -237,6 +256,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     liuYueNote,
     dayunArr: enrichedDayunArr,
     currentYun: result.currentYun,
+    ...(liuRiShi ? { liuRiShi } : {}),
     ganRelations: result.ganRelations,
     zhiRelations: result.zhiRelations,
     shensha: ext.shensha,
@@ -274,9 +294,6 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
             ]),
           },
         }
-      : {}),
-    ...(yingQi.length
-      ? { yingQiNote: '应期为传统引动规则的候选提示，非事件预言；仅展开近 16 年窗口，任意年份范围可经 MCP query_yingqi 查询', yingQi }
       : {}),
     xiangFa: buildXiangFaExport(),
     wuYunLiuQi: buildWuYunLiuQiExport(input),
