@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **始终用中文**与用户对话（回复、提问、总结都用中文）。
 - **commit 信息用中文**，沿用仓库现有 `feat:/fix:/test:/docs:` 前缀风格。
 - **每处理完一项任务立即 commit 并 push**（类似存档），不要攒多项改动合并成一个大提交。
+- **直接提交推送 `main` 主分支**，无需另开分支/PR（用户 2026-07 明确要求；除非其单独说明）。
 - 用户 GitHub 账号（hackninety）名下另有 **`*-ts-lib` 系列库**（shj-ts-lib、tbss-ts-lib、nhx-ts-lib、qmdj-ts-lib、lrdq-ts-lib、zslj-ts-lib），其项目群的部分功能引用这些库；若任务需要改动它们，可同步修改对应仓库并推送。
 
 ## 常用命令
