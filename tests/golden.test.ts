@@ -4,7 +4,7 @@
 // 月柱五虎遁、时柱五鼠遁逐项核对），冻结为回归基准——目的是防引擎依赖升级
 // （dependabot 每周检查 mystilight-8char / tyme4ts / lunar-javascript）引入排盘回归。
 import { describe, it, expect } from 'vitest';
-import { calculateBazi } from '../src/lib/bazi';
+import { calculateBazi, lunarToSolar, getLunarLeapMonth } from '../src/lib/bazi';
 import type { BaziInput, BaziResult } from '../src/lib/bazi';
 import { compareEngines } from '../src/lib/engine';
 
@@ -86,6 +86,25 @@ describe('边界例：早晚子时分派（sect 语义锁定）', () => {
   it('sect2 传统派：晚子时日柱算当天（己未）', () => {
     const c = calculateBazi({ ...base, sect: 2 });
     expect(pillarsOf(c)).toBe('甲子 丁丑 己未 丙子');
+  });
+});
+
+describe('农历闰月：自动判断查表与转换（表单闰月免手查的依据）', () => {
+  it('闰月表抽查：1990闰五/2004闰二/2020闰四/2023闰二/2025闰六/2033闰冬；无闰之年返回 0', () => {
+    expect(getLunarLeapMonth(1990)).toBe(5);
+    expect(getLunarLeapMonth(2004)).toBe(2);
+    expect(getLunarLeapMonth(2020)).toBe(4);
+    expect(getLunarLeapMonth(2023)).toBe(2);
+    expect(getLunarLeapMonth(2025)).toBe(6);
+    expect(getLunarLeapMonth(2033)).toBe(11);
+    expect(getLunarLeapMonth(1991)).toBe(0);
+    expect(getLunarLeapMonth(2026)).toBe(0);
+  });
+  it('本月与闰月转出不同公历日：1990 五月初一=05-24，闰五月初一=06-23', () => {
+    const a = lunarToSolar(1990, 5, 1, 12, 0, false);
+    const b = lunarToSolar(1990, 5, 1, 12, 0, true);
+    expect([a.year, a.month, a.day]).toEqual([1990, 5, 24]);
+    expect([b.year, b.month, b.day]).toEqual([1990, 6, 23]);
   });
 });
 

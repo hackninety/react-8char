@@ -26,7 +26,7 @@ import { buildXiangFaExport } from './xiangfa';
 
 export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuShiForDay } from './engine/mystilight/ext';
 export { TIAN_GAN, DI_ZHI, JIA_ZI_60 } from './engine/mystilight/ext';
-export { lunarToSolar, reverseLookupBazi } from './engine/mystilight/ext';
+export { lunarToSolar, getLunarLeapMonth, reverseLookupBazi } from './engine/mystilight/ext';
 
 export type { LiuYueItem, LiuRiItem, LiuShiItem, ReverseLookupResult } from './engine/mystilight/ext';
 

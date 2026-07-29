@@ -26,5 +26,5 @@ export { getLiuShiForDay } from './liushi';
 export type { LiuShiItem } from './liushi';
 
 // 工具：真太阳时（经度差+均时差）/ 农历转公历 / 八字反查
-export { applyTrueSolarTime, getTrueSolarOffset, equationOfTimeMinutes, lunarToSolar, reverseLookupBazi } from './utils';
+export { applyTrueSolarTime, getTrueSolarOffset, equationOfTimeMinutes, lunarToSolar, getLunarLeapMonth, reverseLookupBazi } from './utils';
 export type { AdjustedTime, TrueSolarOffset, ReverseLookupResult } from './utils';
