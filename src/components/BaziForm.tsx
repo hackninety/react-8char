@@ -352,7 +352,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       <div className="space-y-1 w-[calc(16.667%-8px)] min-w-[100px]">
         <Label className="text-xs">性别</Label>
         <Select value={String(gender)} onValueChange={(v) => setGender(Number(v) as 0 | 1)}>
-          <SelectTrigger className="border-gold/20 h-8 text-xs">
+          <SelectTrigger className="border-gold/20 h-8 text-xs w-full min-w-0">
             <SelectValue>{gender === 1 ? '男（乾造）' : '女（坤造）'}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -364,7 +364,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       <div className="space-y-1 w-[calc(16.667%-8px)] min-w-[100px]">
         <Label className="text-xs">分派</Label>
         <Select value={String(sect)} onValueChange={(v) => setSect(Number(v) as 1 | 2)}>
-          <SelectTrigger className="border-gold/20 h-8 text-xs">
+          <SelectTrigger className="border-gold/20 h-8 text-xs w-full min-w-0">
             <SelectValue>{sect === 2 ? '传统派' : '正统派'}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -373,10 +373,11 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1 w-[calc(20%-8px)] min-w-[150px]">
+      {/* SelectTrigger 基类为 w-fit：不加 w-full 时超长引擎名会溢出本容器、被右侧对拍框覆盖（移动端尤甚） */}
+      <div className="space-y-1 w-[calc(20%-8px)] min-w-[185px]">
         <Label className="text-xs">排盘引擎</Label>
         <Select value={engineId} onValueChange={(v) => v && setEngineId(v as EngineId)}>
-          <SelectTrigger className="border-gold/20 h-8 text-xs engine-select">
+          <SelectTrigger className="border-gold/20 h-8 text-xs engine-select w-full min-w-0">
             <SelectValue>{listEngines().find(e => e.id === engineId)?.name ?? engineId}</SelectValue>
           </SelectTrigger>
           <SelectContent>
