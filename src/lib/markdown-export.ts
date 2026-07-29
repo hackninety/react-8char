@@ -9,7 +9,6 @@
 import { buildExportJSON, generateFileName } from './bazi';
 import type { BaziInput, BaziResult } from './bazi';
 import { getWuYunLiuQi, buildWuYunLiuQiMarkdown } from './wuyunliuqi';
-import { buildLifeKline } from './lifekline';
 import { getGanWuXing, getZhiWuXing } from './utils';
 import { SHENSHA_POS_CN } from './shensha-dict';
 import { AI_ANALYST_ROLE, AI_ANALYSIS_GUIDANCE } from './prompt-template';
@@ -475,34 +474,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult): strin
     }
   });
 
-  // ── 人生K线五维量化评分（供 AI 引用的确定性数值参考）──
-  const kline = buildLifeKline(result);
-  if (kline && kline.years.length >= 5) {
-    const five = (s: { total: number; career: number; wealth: number; love: number; health: number }) =>
-      `总${s.total}·事业${s.career}·财${s.wealth}·情${s.love}·健${s.health}`;
-    push('## 人生K线（五维运势量化评分）', '');
-    push(`> 方法：以日主强弱定喜忌（本造判定：**${kline.judge}**，来源：${kline.judgeSource}；${kline.preferenceNote}；性别${kline.gender}），逐年将大运基调、大运支冲刑合害本命（冲提纲/婚姻宫为十年主题）、流年十神、宫位冲刑合害、岁运互冲、伏吟、流年干合日干、三合三会成局（运岁补齐命局拼图，按成局五行喜忌）、调候得济/受伤（寒燥命遇火水运岁）、流年入空亡（逢冲反实）、神煞吉凶按维度量化为 0-100 分，分「总运/事业/财运/感情/健康」。简化模型仅供参考，AI 可引用因素但应以命理逻辑为准；**注意各维可背离（如总分高而财运低）**。财运分表达**净吉凶而非活动量**：区分主动得财（食伤生财/财生正官/身强任财）与被动破财（身弱财生七杀致官非、比劫夺财），故「赚得多却因财惹祸」之年财运为低分，因素栏会注明主动/被动。`, '');
-    if (kline.dili.hasLocation) {
-      push(`> 地利方位：${kline.dili.note}（已按此对各维评分做常数微调；地利属先天禀赋修正，非改命）。`, '');
-    }
-    if (kline.decades.length) {
-      push('### 大运各维均分', '');
-      push('| 大运 | 起止 | 总运 | 事业 | 财运 | 感情 | 健康 |', '| --- | --- | --- | --- | --- | --- | --- |');
-      kline.decades.forEach((d) => {
-        const a = d.avg;
-        push(`| ${d.ganZhi} | ${d.startYear}~${d.endYear} | ${a.total} | ${a.career} | ${a.wealth} | ${a.love} | ${a.health} |`);
-      });
-      push('');
-    }
-    const sorted = [...kline.years].sort((a, b) => b.scores.total - a.scores.total);
-    const peaks = sorted.slice(0, 5);
-    const troughs = sorted.slice(-5).reverse();
-    push('### 总运峰值年份 TOP5', '');
-    peaks.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.age}岁）** ${five(y.scores)}｜${y.factors.total.join('、') || '平年'}`));
-    push('', '### 总运低谷年份 TOP5', '');
-    troughs.forEach((y) => push(`- **${y.year} ${y.ganZhi}（${y.age}岁）** ${five(y.scores)}｜${y.factors.total.join('、') || '平年'}`));
-    push('');
-  }
+  // 人生K线量化评分不入导出：简化模型分数易被 AI 锚定为确定结论，反致误报（仅页面展示）
 
   // ── AI 分析框架 + 多流派视角切换协议 ──
   push('---', '', AI_ANALYSIS_GUIDANCE);
