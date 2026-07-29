@@ -75,6 +75,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [province, setProvince] = useState(saved?.province ?? '北京');
   const [cityName, setCityName] = useState(saved?.cityName ?? '北京');
   const [district, setDistrict] = useState(saved?.district ?? PROVINCES[0].cities[0].districts[0].name);
+  const [name, setName] = useState(saved?.name ?? '');
   const [livingPlace, setLivingPlace] = useState(saved?.livingPlace ?? '');
   const [userNote, setUserNote] = useState(saved?.userNote ?? '');
 
@@ -111,7 +112,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       mode, yearStr, monthStr, dayStr, hourStr, minuteStr, isLeapMonth,
       gender, sect, engine: engineId, compareOn, useTrueSolar,
       locMode, manualPlace, manualLng, manualLat, manualTz,
-      province, cityName, district, livingPlace, userNote,
+      province, cityName, district, name, livingPlace, userNote,
       yearGan, yearZhi, monthGan, monthZhi, dayGan, dayZhi, timeGan, timeZhi,
     });
   });
@@ -209,6 +210,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       engine: engineId,
       compare: compareOn,
       ...loc,
+      name: name.trim() || undefined,
       livingPlace: livingPlace.trim() || undefined,
       userNote: userNote.trim() || undefined,
     });
@@ -248,6 +250,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       engine: engineId,
       compare: compareOn,
       ...loc,
+      name: name.trim() || undefined,
       livingPlace: livingPlace.trim() || undefined,
       userNote: userNote.trim() || undefined,
     });
@@ -476,6 +479,13 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
             </p>
           </div>
         )}
+      </div>
+      <div className="space-y-1 w-[calc(20%-8px)] min-w-[130px]">
+        <Label className="text-xs">姓名（选填）</Label>
+        <Input type="text" placeholder="如：张三" value={name}
+          onChange={(e) => setName(e.target.value)}
+          title="仅用于导出文件名与盘面标注，本机保存、不上传"
+          className="border-gold/20 h-8 text-xs focus:border-gold/50" />
       </div>
       <div className="space-y-1 w-[calc(33.333%-8px)] min-w-[200px] flex-1">
         <Label className="text-xs">常居住地（影响 AI 对八字的分析）</Label>

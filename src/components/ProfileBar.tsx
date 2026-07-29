@@ -35,7 +35,8 @@ export default function ProfileBar({ currentInput, onLoad, onChanged }: Props) {
 
   const handleSave = () => {
     if (!currentInput) return;
-    const trimmed = name.trim();
+    // 未另填档案名时沿用表单姓名（同 react-zwds 按姓名索引档案的口径）
+    const trimmed = name.trim() || (currentInput.name ?? '').trim();
     if (!trimmed) {
       toast.error('请先给档案起个名字（如人名）');
       return;
@@ -67,7 +68,11 @@ export default function ProfileBar({ currentInput, onLoad, onChanged }: Props) {
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={currentInput ? '档案名，如：张三' : '请先排盘，再保存档案'}
+            placeholder={
+              !currentInput ? '请先排盘，再保存档案'
+              : currentInput.name ? `留空则用姓名「${currentInput.name}」`
+              : '档案名，如：张三'
+            }
             disabled={!currentInput}
             className="h-8 text-sm flex-1"
             data-testid="profile-name"

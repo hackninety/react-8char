@@ -51,7 +51,7 @@ export interface FormSnapshot {
   useTrueSolar: boolean;
   locMode: string; manualPlace: string; manualLng: string; manualLat: string; manualTz: string;
   province: string; cityName: string; district: string;
-  livingPlace: string; userNote: string;
+  name: string; livingPlace: string; userNote: string;
   yearGan: string; yearZhi: string; monthGan: string; monthZhi: string;
   dayGan: string; dayZhi: string; timeGan: string; timeZhi: string;
 }

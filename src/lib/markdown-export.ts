@@ -126,6 +126,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
 
   // ── 基本信息 ──
   push('## 基本信息', '');
+  if (info.name) push(`- **姓名**：${info.name}`);
   push(`- **性别**：${genderCn}${zaoCn ? `（${zaoCn}）` : ''}`);
   push(`- **出生阳历**：${input.year}年${input.month}月${input.day}日 ${input.hour}时${input.minute}分`);
   push(`- **分派**：${sectCn}`);

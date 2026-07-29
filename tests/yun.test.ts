@@ -198,6 +198,23 @@ describe('导出集成', () => {
     expect(md).not.toContain('总运峰值');
   });
 
+  it('导出文件名含姓名(缺省无名);姓名进 input 块与 MD 基本信息', async () => {
+    const { generateFileName } = await import('../src/lib/bazi');
+    const { generateMarkdownFileName, buildExportMarkdown } = await import('../src/lib/markdown-export');
+    expect(generateFileName(GOLDEN)).toBe('八字排盘_无名_1990-06-15_08-30.json');
+
+    const named = { ...GOLDEN, name: '张 三/测' }; // 空白与路径分隔符须被剔除
+    expect(generateFileName(named)).toBe('八字排盘_张三测_1990-06-15_08-30.json');
+    expect(generateMarkdownFileName(named)).toBe('八字排盘_张三测_1990-06-15_08-30.md');
+
+    const data = buildExportJSON(named, calculateBazi(named)) as Record<string, any>;
+    expect(data.input.name).toBe('张 三/测');
+    expect(buildExportMarkdown(named, calculateBazi(named))).toContain('**姓名**：张 三/测');
+    // 未填姓名时不产生空字段/空行
+    expect((buildExportJSON(GOLDEN, chart) as any).input.name).toBeUndefined();
+    expect(buildExportMarkdown(GOLDEN, chart)).not.toContain('**姓名**');
+  });
+
   it('渊海子平量化明细补入 MD;应期不再出现在导出', async () => {
     const { buildExportMarkdown } = await import('../src/lib/markdown-export');
     const md = buildExportMarkdown(GOLDEN, chart);

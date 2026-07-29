@@ -41,6 +41,8 @@ export interface BaziInput {
   minute: number;
   gender: 0 | 1;
   sect: 1 | 2;
+  /** 姓名（选填）：进导出文件名与盘面基本信息，便于多人多盘区分（口径同 react-zwds） */
+  name?: string;
   city?: string;
   longitude?: number;
   /** 出生地纬度（用于地利寒热判断，南正北负？——统一北纬为正）；城市模式按省级取，手动可填 */
@@ -235,6 +237,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
       : {}),
     input: {
       ...result.input,
+      ...(input.name?.trim() ? { name: input.name.trim() } : {}),
       gender: result.gender,
       sect: result.sect,
       city: input.city || undefined,
@@ -323,11 +326,18 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
   };
 }
 
+/** 文件名安全化：剔除路径分隔符与 Windows 保留字符、压缩空白（口径同 react-zwds baseFilename） */
+export function sanitizeFileNamePart(s: string): string {
+  return s.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '').trim();
+}
+
 export function generateFileName(input: BaziInput): string {
   const y = String(input.year);
   const m = String(input.month).padStart(2, '0');
   const d = String(input.day).padStart(2, '0');
   const h = String(input.hour).padStart(2, '0');
   const min = String(input.minute).padStart(2, '0');
-  return `八字排盘_${y}-${m}-${d}_${h}-${min}.json`;
+  // 姓名入文件名（缺省「无名」），多人多盘不再靠日期分辨
+  const name = sanitizeFileNamePart(input.name ?? '') || '无名';
+  return `八字排盘_${name}_${y}-${m}-${d}_${h}-${min}.json`;
 }
