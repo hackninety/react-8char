@@ -260,8 +260,9 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
     ...(decadePlan
       ? {
           decadePlan: {
-            note: decadePlan.note,
-            dims: ['干支', '虚岁', '公历', '干支十神', '长生', '喜忌', '均值', '高光年', '低谷年', '运限格局'],
+            // 导出版不含 K线均值/高光/低谷等量化列（同 lifeKline 不导出的理由）；页面表格仍全量展示
+            note: '喜忌为扶抑口径（身强弱定）；运限格局为该运与原局的确定性扫描，轻重成败须结合全局细辨',
+            dims: ['干支', '虚岁', '公历', '干支十神', '长生', '喜忌', '运限格局'],
             rows: decadePlan.rows.map((r) => [
               r.ganZhi,
               `${r.startAge}~${r.endAge}`,
@@ -269,9 +270,6 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
               `${r.ganShen}/${r.zhiShen}`,
               r.diShi,
               r.favor,
-              r.avg ?? '',
-              r.best ? `${r.best.year}(${r.best.score})` : '',
-              r.worst ? `${r.worst.year}(${r.worst.score})` : '',
               r.patterns.map((x) => x.name).join('；'),
             ]),
           },
@@ -282,22 +280,8 @@ export function buildExportJSON(input: BaziInput, result: BaziResult) {
       : {}),
     xiangFa: buildXiangFaExport(),
     wuYunLiuQi: buildWuYunLiuQiExport(input),
-    // 人生K线五维量化评分（紧凑数组省 token，列见 dims 图例）
-    ...(() => {
-      const k = kline;
-      if (!k || k.years.length < 5) return {};
-      return {
-        lifeKline: {
-          judge: k.judge,
-          gender: k.gender,
-          note: k.preferenceNote,
-          ...(k.dili.hasLocation ? { dili: k.dili.note, diliOffsets: k.dili.offsets } : {}),
-          dims: ['年', '干支', '总运', '事业', '财运', '感情', '健康'],
-          decadeAvg: k.decades.map((d) => [d.ganZhi, d.startYear, d.avg.total, d.avg.career, d.avg.wealth, d.avg.love, d.avg.health]),
-          years: k.years.map((y) => [y.year, y.ganZhi, y.scores.total, y.scores.career, y.scores.wealth, y.scores.love, y.scores.health]),
-        },
-      };
-    })(),
+    // 人生K线量化评分不随导出：简化模型的 0-100 分易被 AI 当确定结论锚定，反致误报；
+    // K线仅页面展示（kline 在此只用于身强弱 judge 等内部输入）。
   };
 }
 

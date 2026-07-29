@@ -171,6 +171,11 @@ describe('导出集成', () => {
     const data = buildExportJSON(GOLDEN, chart) as Record<string, any>;
     expect(data.decadePlan.rows.length).toBeGreaterThanOrEqual(10);
     expect(data.decadePlan.dims).toContain('运限格局');
+    // K线量化数据不随导出(易被 AI 锚定致误报);规划表量化列同步剔除
+    expect(data.lifeKline).toBeUndefined();
+    expect(data.decadePlan.dims).not.toContain('均值');
+    expect(data.decadePlan.dims).not.toContain('高光年');
+    expect(data.decadePlan.rows[0].length).toBe(data.decadePlan.dims.length);
     expect(data.wuxingEnergy.layers[0][0]).toBe('原局');
     expect(data.wuxingEnergy.fuYiLikes).toBeDefined();
     expect(data.wuxingEnergy.gongWei.map((g: string[]) => g[0])).toContain('财帛·婚姻'); // golden 男命
@@ -180,13 +185,16 @@ describe('导出集成', () => {
     expect(data.geJu.classic.lun.length).toBeGreaterThan(300);
   });
 
-  it('Markdown 含规划表/能量占比/子平真诠引用块三节', async () => {
+  it('Markdown 含规划表/能量占比/子平真诠引用块三节,不含人生K线', async () => {
     const { buildExportMarkdown } = await import('../src/lib/markdown-export');
     const md = buildExportMarkdown(GOLDEN, chart);
     expect(md).toContain('### 十年规划表');
     expect(md).toContain('### 能量多边形');
     expect(md).toContain('宫位轴');
     expect(md).toContain('《子平真诠·论偏官》原文');
-    expect(md).toContain('高光年'); // 规划表表头
+    // K线量化评分不入导出(易被 AI 锚定致误报)
+    expect(md).not.toContain('人生K线');
+    expect(md).not.toContain('高光年');
+    expect(md).not.toContain('总运峰值');
   });
 });

@@ -27,6 +27,9 @@ describe('TOON 导出', () => {
     expect(prompt).not.toContain('```json');
     expect(prompt).toContain(TOON_SYNTAX_HINT);
     expect(prompt).toContain('tiaoHou');
+    // K线量化评分不随导出(易被 AI 锚定致误报)
+    expect(prompt).not.toContain('lifeKline');
+    expect(prompt).not.toContain('人生K线');
   });
 
   it('合婚结构化导出：TOON 往返无损，含双方四柱/清单/免责', () => {
