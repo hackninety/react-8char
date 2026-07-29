@@ -20,7 +20,7 @@ export { getShiShen } from './shishen';
 // 流月 / 流日 / 流时
 export { getLiuYueForYear } from './liuyue';
 export type { LiuYueItem } from './liuyue';
-export { getLiuRiForMonth } from './liuri';
+export { getLiuRiForMonth, getLiuRiForRange } from './liuri';
 export type { LiuRiItem } from './liuri';
 export { getLiuShiForDay } from './liushi';
 export type { LiuShiItem } from './liushi';

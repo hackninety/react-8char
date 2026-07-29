@@ -55,13 +55,14 @@ describe('格局自动判定（子平真诠机械取格）', () => {
     expect(ys.heCan).toContain('相悖');
   });
 
-  it('导出集成：buildExportJSON 含 geJu 与 yingQi 字段', async () => {
+  it('导出集成：buildExportJSON 含 geJu；应期不随导出（仅 MCP query_yingqi 按需查）', async () => {
     const { buildExportJSON } = await import('../src/lib/bazi');
     const chart = calculateBazi(BEIJING);
     const data: any = buildExportJSON(BEIJING, chart);
     expect(data.geJu?.ge).toBe('七杀格');
-    expect(Array.isArray(data.yingQi)).toBe(true);
-    expect(data.yingQiNote).toContain('非事件预言');
+    // 应期候选年+强度分易被 AI 当预言输出（误报源），已从静态导出剔除；analyzeYingQi 模块保留供 MCP
+    expect(data.yingQi).toBeUndefined();
+    expect(data.yingQiNote).toBeUndefined();
     // 大运/流年长生字段
     const dy0 = data.dayunArr.find((d: any) => d.ganZhi);
     expect(dy0.diShi).toBeTruthy();

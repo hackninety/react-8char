@@ -44,6 +44,38 @@ function getMonthJieBounds(liuNianYear: number, monthIndex: number) {
 }
 
 /**
+ * 获取自某公历日起连续 N 天的流日干支和十神（跨月无碍）。
+ * 供导出「近期流日流时」窗口用：出行择日/办事择时场景勾选后随盘导出。
+ */
+export function getLiuRiForRange(
+  solarYear: number, solarMonth: number, solarDay: number,
+  days: number, dayMasterGan: string,
+): LiuRiItem[] {
+  if (!Lunar) return [];
+  const result: LiuRiItem[] = [];
+  const cur = new Date(solarYear, solarMonth - 1, solarDay);
+  for (let i = 0; i < days; i++) {
+    try {
+      const lunar = Lunar.fromDate(cur);
+      const gz: string = lunar.getDayInGanZhi();
+      result.push({
+        solarYear: cur.getFullYear(),
+        solarMonth: cur.getMonth() + 1,
+        solarDay: cur.getDate(),
+        lunarDay: lunar.getDayInChinese(),
+        lunarMonth: lunar.getMonthInChinese(),
+        ganZhi: gz,
+        gan: gz[0],
+        zhi: gz[1],
+        shiShen: getShiShen(dayMasterGan, gz[0]),
+      });
+    } catch { /* skip */ }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
+
+/**
  * 获取某流年某月的每日流日干支和十神（基于节气边界）
  * @param liuNianYear 流年年份
  * @param monthIndex 传统月份索引 (1-12)
