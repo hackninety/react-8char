@@ -58,12 +58,12 @@ export default function JsonExport({ input, result }: JsonExportProps) {
   };
 
   const handleDownload = () => {
-    downloadBlob(toonText, 'text/plain;charset=utf-8', generateFileName(input).replace(/\.json$/, '.toon'));
+    downloadBlob(toonText, 'text/plain;charset=utf-8', generateFileName(input, exportData).replace(/\.json$/, '.toon'));
     toast.success('TOON 文件已下载');
   };
 
   const handleDownloadMarkdown = () => {
-    downloadBlob(markdown, 'text/markdown;charset=utf-8', generateMarkdownFileName(input));
+    downloadBlob(markdown, 'text/markdown;charset=utf-8', generateMarkdownFileName(input, exportData));
     toast.success('Markdown 文件已下载');
   };
 

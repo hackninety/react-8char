@@ -22,7 +22,7 @@ export { getLiuYueForYear } from './liuyue';
 export type { LiuYueItem } from './liuyue';
 export { getLiuRiForMonth, getLiuRiForRange } from './liuri';
 export type { LiuRiItem } from './liuri';
-export { getLiuShiForDay } from './liushi';
+export { getLiuShiForDay, getShiChenName } from './liushi';
 export type { LiuShiItem } from './liushi';
 
 // 工具：真太阳时（经度差+均时差）/ 农历转公历 / 八字反查

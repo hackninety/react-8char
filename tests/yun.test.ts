@@ -215,6 +215,44 @@ describe('导出集成', () => {
     expect(buildExportMarkdown(GOLDEN, chart)).not.toContain('**姓名**');
   });
 
+  it('文件名按勾选追加流日/流时后缀,值与导出块同源', async () => {
+    const { generateFileName, getShiChenName } = await import('../src/lib/bazi');
+    const { generateMarkdownFileName } = await import('../src/lib/markdown-export');
+    const named = { ...GOLDEN, name: '演示' };
+    const base = '八字排盘_演示_1990-06-15_08-30';
+
+    const t = new Date();
+    const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    const shiChen = getShiChenName(t.getHours());
+
+    // 都不勾:保持原样
+    expect(generateFileName(named, buildExportJSON(named, chart))).toBe(`${base}.json`);
+    // 单勾流日 / 单勾流时 / 两者都勾
+    const onlyRi = buildExportJSON(named, chart, { includeLiuRi: true });
+    expect(generateFileName(named, onlyRi)).toBe(`${base}_流日${today}.json`);
+    const onlyShi = buildExportJSON(named, chart, { includeLiuShi: true });
+    expect(generateFileName(named, onlyShi)).toBe(`${base}_流时${shiChen}.json`);
+    const both = buildExportJSON(named, chart, { includeLiuRi: true, includeLiuShi: true });
+    expect(generateFileName(named, both)).toBe(`${base}_流日${today}_流时${shiChen}.json`);
+    expect(generateMarkdownFileName(named, both)).toBe(`${base}_流日${today}_流时${shiChen}.md`);
+    // 后缀取自块本身(同源),非各自 new Date()
+    expect((both as any).liuRi.date).toBe(today);
+    expect((both as any).liuShi.nowShiChen).toBe(shiChen);
+  });
+
+  it('小时→时辰名:子时跨日(23点与0点同归子时),边界逐格正确', async () => {
+    const { getShiChenName } = await import('../src/lib/bazi');
+    expect(getShiChenName(23)).toBe('子时');
+    expect(getShiChenName(0)).toBe('子时');
+    expect(getShiChenName(1)).toBe('丑时');
+    expect(getShiChenName(2)).toBe('丑时');
+    expect(getShiChenName(3)).toBe('寅时');
+    expect(getShiChenName(12)).toBe('午时');
+    expect(getShiChenName(17)).toBe('酉时');
+    expect(getShiChenName(18)).toBe('酉时');
+    expect(getShiChenName(22)).toBe('亥时');
+  });
+
   it('渊海子平量化明细补入 MD;应期不再出现在导出', async () => {
     const { buildExportMarkdown } = await import('../src/lib/markdown-export');
     const md = buildExportMarkdown(GOLDEN, chart);

@@ -12,6 +12,13 @@ export interface LiuShiItem {
 }
 
 /**
+ * 小时（0-23）→ 时辰名。子时跨日（23:00~00:59）故先 +1 再两小时一格。
+ */
+export function getShiChenName(hour: number): string {
+  return SHI_CHEN_NAMES[Math.floor(((hour + 1) % 24) / 2)];
+}
+
+/**
  * 获取某日的十二时辰流时干支和十神
  * @param solarYear 公历年
  * @param solarMonth 公历月

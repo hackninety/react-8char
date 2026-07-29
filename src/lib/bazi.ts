@@ -3,6 +3,7 @@ import {
   getLiuYueForYear as _getLiuYueForYear,
   getLiuRiForRange as _getLiuRiForRange,
   getLiuShiForDay as _getLiuShiForDay,
+  getShiChenName,
 } from './engine/mystilight/ext';
 import type { EightCharJSON } from './engine/mystilight/ext';
 import { resolveTrueSolarInput } from './engine/solar';
@@ -25,7 +26,7 @@ import { buildXiangFaExport } from './xiangfa';
 // 原 fork（mystilight-8char-v2）的 v2 能力已内置为应用内扩展层 engine/mystilight/ext，
 // 上游改为 npm 直接依赖 mystilight-8char，组件侧 API 保持不变。
 
-export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuRiForRange, getLiuShiForDay } from './engine/mystilight/ext';
+export { getShiShen, getLiuYueForYear, getLiuRiForMonth, getLiuRiForRange, getLiuShiForDay, getShiChenName } from './engine/mystilight/ext';
 export { TIAN_GAN, DI_ZHI, JIA_ZI_60 } from './engine/mystilight/ext';
 export { lunarToSolar, getLunarLeapMonth, reverseLookupBazi } from './engine/mystilight/ext';
 
@@ -185,7 +186,9 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     const days = _getLiuRiForRange(y, m, 1, new Date(y, m, 0).getDate(), dayMasterGan);
     if (!days.length) return null;
     return {
-      note: `${y}年${m}月（公历当月）逐日流日，十神以日主 ${dayMasterGan} 论，供出行择日参考。表外日期可自表内任一日按六十甲子顺推（日干支逐日进一位，60 日一循环）`,
+      // date = 导出基准日（今日）；文件名后缀与 AI 判断「今天是表中哪一行」均取此值
+      date: `${y}-${String(m).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`,
+      note: `${y}年${m}月（公历当月）逐日流日，十神以日主 ${dayMasterGan} 论，供出行择日参考；导出当日为 ${y}-${m}-${t.getDate()}。表外日期可自表内任一日按六十甲子顺推（日干支逐日进一位，60 日一循环）`,
       dims: ['公历', '农历', '流日', '十神', '日主长生'],
       days: days.map((d) => [
         `${d.solarYear}-${String(d.solarMonth).padStart(2, '0')}-${String(d.solarDay).padStart(2, '0')}`,
@@ -209,10 +212,13 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     if (!hours.length) return null;
     const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const todayGz = _getLiuRiForRange(y, m, d, 1, dayMasterGan)[0]?.ganZhi ?? '';
+    const nowShiChen = getShiChenName(t.getHours());
     return {
       date: dateStr,
       ...(todayGz ? { dayGanZhi: todayGz } : {}),
-      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十二时辰流时，十神以日主 ${dayMasterGan} 论，供办事择时参考。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自子时顺行十二辰`,
+      // 导出时刻所值时辰：文件名后缀取此值，AI 也据此知道「当下」在十二辰的哪一格
+      nowShiChen,
+      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十二时辰流时，十神以日主 ${dayMasterGan} 论，供办事择时参考；导出时刻正值${nowShiChen}。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自子时顺行十二辰`,
       dims: ['时辰', '干支', '十神'],
       hours: hours.map((h) => [h.shiChenName, h.ganZhi, h.shiShen]),
     };
@@ -331,7 +337,12 @@ export function sanitizeFileNamePart(s: string): string {
   return s.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '').trim();
 }
 
-export function generateFileName(input: BaziInput): string {
+/**
+ * 导出文件名。基名为「八字排盘_姓名_出生日期_出生时刻」；
+ * 勾选了流日/流时可选块时各追加一段后缀（口径同 react-zwds），
+ * 后缀值取自 exportData 里的块本身，保证文件名与内容严格同源。
+ */
+export function generateFileName(input: BaziInput, exportData?: unknown): string {
   const y = String(input.year);
   const m = String(input.month).padStart(2, '0');
   const d = String(input.day).padStart(2, '0');
@@ -339,5 +350,10 @@ export function generateFileName(input: BaziInput): string {
   const min = String(input.minute).padStart(2, '0');
   // 姓名入文件名（缺省「无名」），多人多盘不再靠日期分辨
   const name = sanitizeFileNamePart(input.name ?? '') || '无名';
-  return `八字排盘_${name}_${y}-${m}-${d}_${h}-${min}.json`;
+
+  const data = exportData as { liuRi?: { date?: string }; liuShi?: { nowShiChen?: string } } | undefined;
+  const liuRi = data?.liuRi?.date ? `_流日${sanitizeFileNamePart(data.liuRi.date)}` : '';
+  const liuShi = data?.liuShi?.nowShiChen ? `_流时${sanitizeFileNamePart(data.liuShi.nowShiChen)}` : '';
+
+  return `八字排盘_${name}_${y}-${m}-${d}_${h}-${min}${liuRi}${liuShi}.json`;
 }

@@ -533,7 +533,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
   return L.join('\n');
 }
 
-/** 与 JSON 导出同名、扩展名换成 .md */
-export function generateMarkdownFileName(input: BaziInput): string {
-  return generateFileName(input).replace(/\.json$/, '.md');
+/** 与 JSON 导出同名、扩展名换成 .md（exportData 用于附加流日/流时后缀） */
+export function generateMarkdownFileName(input: BaziInput, exportData?: unknown): string {
+  return generateFileName(input, exportData).replace(/\.json$/, '.md');
 }
