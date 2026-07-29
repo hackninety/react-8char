@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, MapPin, Calendar, Search, Moon } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { BaziInput } from '@/lib/bazi';
-import { TIAN_GAN, DI_ZHI, lunarToSolar, reverseLookupBazi } from '@/lib/bazi';
+import { TIAN_GAN, DI_ZHI, lunarToSolar, getLunarLeapMonth, reverseLookupBazi } from '@/lib/bazi';
 import type { ReverseLookupResult } from '@/lib/bazi';
 import { PROVINCES, findLongitude, findLatitude } from '@/lib/cities';
 import { listEngines, DEFAULT_ENGINE } from '@/lib/engine';
@@ -22,6 +22,17 @@ import type { EngineId } from '@/lib/engine';
 import { loadForm, saveForm } from '@/lib/storage';
 
 type InputMode = 'solar' | 'lunar' | 'bazi';
+
+// 农历月中文名（闰月提示用；11/12 月俗称冬月/腊月）
+const CN_LUNAR_MONTHS = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'] as const;
+const cnLunarMonth = (m: number) => CN_LUNAR_MONTHS[m - 1] ?? String(m);
+
+/** 闰月自动判断结果：仅 ask（所填月恰为该年闰月）需要用户二选一，其余情形一律按非闰月排 */
+type LeapState =
+  | { kind: 'pending' }              // 年份未填好，无从判断
+  | { kind: 'none' }                 // 该年无闰月
+  | { kind: 'other'; leapMonth: number } // 该年有闰月但与所填月无关
+  | { kind: 'ask'; leapMonth: number };  // 所填月恰为该年闰月，需用户确认生于本月还是闰月
 
 interface BaziFormProps {
   onSubmit: (input: BaziInput) => void;
@@ -78,6 +89,21 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [timeZhi, setTimeZhi] = useState(saved?.timeZhi ?? '');
   const [lookupResults, setLookupResults] = useState<ReverseLookupResult[]>([]);
   const [lookupError, setLookupError] = useState('');
+
+  // 闰月自动判断：按所填农历年查该年闰月，仅当所填月恰为闰月时才让用户二选一
+  const leapState: LeapState = useMemo(() => {
+    if (mode !== 'lunar') return { kind: 'pending' };
+    const y = Number(yearStr);
+    if (!Number.isInteger(y) || y < 1900 || y > currentYear) return { kind: 'pending' };
+    let leapMonth = 0;
+    try {
+      leapMonth = getLunarLeapMonth(y);
+    } catch {
+      return { kind: 'pending' };
+    }
+    if (leapMonth <= 0) return { kind: 'none' };
+    return Number(monthStr) === leapMonth ? { kind: 'ask', leapMonth } : { kind: 'other', leapMonth };
+  }, [mode, yearStr, monthStr, currentYear]);
 
   // 表单任一字段变化即持久化（瞬时态 lookupResults/lookupError 不存）
   useEffect(() => {
@@ -161,7 +187,9 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
 
     if (mode === 'lunar') {
       try {
-        const solar = lunarToSolar(solarYear, solarMonth, solarDay, solarHour, solarMinute, isLeapMonth);
+        // 闰月已自动判断：只有所填月恰为该年闰月且用户勾选时才按闰月排（杜绝误勾历史存档值）
+        const effectiveLeap = leapState.kind === 'ask' && isLeapMonth;
+        const solar = lunarToSolar(solarYear, solarMonth, solarDay, solarHour, solarMinute, effectiveLeap);
         solarYear = solar.year;
         solarMonth = solar.month;
         solarDay = solar.day;
@@ -255,13 +283,29 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     </div>
   );
 
-  const renderLeapMonthToggle = () => (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
-      <input type="checkbox" checked={isLeapMonth} onChange={(e) => setIsLeapMonth(e.target.checked)}
-        className="w-4 h-4 rounded border-gold/30 text-crimson accent-[var(--color-crimson)]" />
-      <span className="text-xs text-muted-foreground">闰月</span>
-    </label>
-  );
+  // 闰月行：展示自动判断结果；仅在真正歧义时（所填月恰为该年闰月）出现勾选框
+  const renderLeapMonthRow = () => {
+    if (leapState.kind === 'ask') {
+      const m = cnLunarMonth(leapState.leapMonth);
+      return (
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked={isLeapMonth} onChange={(e) => setIsLeapMonth(e.target.checked)}
+              className="w-4 h-4 rounded border-gold/30 text-crimson accent-[var(--color-crimson)]" />
+            <span className="text-xs font-medium text-crimson dark:text-gold">生于闰{m}月</span>
+          </label>
+          <span className="text-xs text-muted-foreground">
+            {yearStr} 年有闰{m}月：生于普通{m}月不勾选，生于闰{m}月请勾选
+          </span>
+        </div>
+      );
+    }
+    const note =
+      leapState.kind === 'none' ? `已自动判断：${yearStr} 年无闰月`
+      : leapState.kind === 'other' ? `已自动判断：${yearStr} 年只有闰${cnLunarMonth(leapState.leapMonth)}月，与所填月份无关`
+      : '闰月无需手选，将按农历年月自动判断';
+    return <span className="text-xs text-muted-foreground">{note}</span>;
+  };
 
   // 单个天干或地支选择器
   const renderGanOrZhiSelect = (
@@ -480,12 +524,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                 onSubmit={handleSubmit} className="space-y-5"
               >
                 {renderDateInputs()}
-                {mode === 'lunar' && (
-                  <div className="flex items-center gap-4">
-                    {renderLeapMonthToggle()}
-                    <span className="text-xs text-muted-foreground">如当月有闰月，请勾选此项</span>
-                  </div>
-                )}
+                {mode === 'lunar' && renderLeapMonthRow()}
                 {renderCommonSelects()}
                 {lookupError && <p className="text-xs text-destructive">{lookupError}</p>}
                 <Button type="submit" disabled={loading}

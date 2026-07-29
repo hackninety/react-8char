@@ -1,5 +1,7 @@
 // 工具函数（移植自原 fork 的 src/v2/utils.mjs），Lunar/fromBaZi 改为直连上游接入点
 import { Lunar, fromBaZi } from '../upstream';
+// 闰月查询走直接依赖 lunar-javascript（上游接入点未暴露 LunarYear；两处为同一库，闰月表一致）
+import { LunarYear } from 'lunar-javascript';
 
 export interface AdjustedTime {
   year: number;
@@ -75,6 +77,15 @@ export function applyTrueSolarTime(
     hour: dt.getHours(),
     minute: dt.getMinutes(),
   };
+}
+
+/**
+ * 查询农历年的闰月月序（1~12，无闰月返回 0）。
+ * 表单据此自动判断闰月：仅当所填农历月恰为该年闰月时才需要用户区分「本月/闰月」，
+ * 其余情形一律按非闰月处理，免去排盘前翻日历核对。
+ */
+export function getLunarLeapMonth(year: number): number {
+  return LunarYear.fromYear(year).getLeapMonth();
 }
 
 /**
