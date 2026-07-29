@@ -95,8 +95,9 @@ export default function JsonExport({ input, result }: JsonExportProps) {
             <Bot className="w-4 h-4" />
             数据导出 & AI 分析
           </CardTitle>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+          {/* 移动端徽标与说明各占一行，避免徽标被挤成两行；sm 起恢复单行 */}
+          <div className="flex flex-col items-start gap-1.5 mt-2 sm:flex-row sm:items-center sm:gap-2">
+            <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-1 rounded-full whitespace-nowrap shrink-0">
               <Sparkles className="w-3 h-3" />
               已准备好喂 AI
             </div>
