@@ -89,12 +89,11 @@ export function calculateBazi(input: BaziInput): BaziResult {
 // ─── 导出 JSON ────────────────────────────────────────
 
 export interface ExportOptions {
-  /** 附带近期流日+逐日十二流时表（默认关；出行择日/办事择时场景勾选后导出） */
-  includeLiuRiShi?: boolean;
+  /** 附带当前公历月逐日流日表（默认关；出行择日场景勾选后导出） */
+  includeLiuRi?: boolean;
+  /** 附带今日十二时辰流时表（默认关；办事择时场景勾选后导出） */
+  includeLiuShi?: boolean;
 }
-
-/** 流日流时窗口天数（覆盖常见出行/择日周期） */
-const LIURI_WINDOW_DAYS = 15;
 
 export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: ExportOptions) {
   const ext = result as BaziResultX;
@@ -174,25 +173,46 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
   // 应期引动预检不随导出：候选年+强度分易被 AI 当「已算定的应期」输出成预言（误报源）；
   // 需要时经 MCP query_yingqi 按需查询（yingqi.ts 模块保留）。
 
-  // 近期流日流时（可选块）：出行择日看流日、婚嫁办事择时看流时，勾选后才随盘导出
-  const liuRiShi = (() => {
-    if (!opts?.includeLiuRiShi || !dayMasterGan) return null;
+  // 本月流日（可选块）：出行择日用——当前公历月逐日干支/十神/长生；
+  // 其他日期 AI 可据 note 里的六十甲子顺推规则自表内任一日推算
+  const liuRi = (() => {
+    if (!opts?.includeLiuRi || !dayMasterGan) return null;
     const t = new Date();
-    const days = _getLiuRiForRange(t.getFullYear(), t.getMonth() + 1, t.getDate(), LIURI_WINDOW_DAYS, dayMasterGan);
+    const y = t.getFullYear();
+    const m = t.getMonth() + 1;
+    const days = _getLiuRiForRange(y, m, 1, new Date(y, m, 0).getDate(), dayMasterGan);
     if (!days.length) return null;
     return {
-      note: `自 ${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()} 起 ${LIURI_WINDOW_DAYS} 天的流日及逐日十二流时（十神以日主 ${dayMasterGan} 论），供出行择日/办事择时参考。更远日期：流日自表内任一日按六十甲子逐日顺推；流时由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途）顺行十二辰`,
-      dims: ['公历', '农历', '流日', '十神', '日主长生', '十二流时(时辰:干支·十神)'],
+      note: `${y}年${m}月（公历当月）逐日流日，十神以日主 ${dayMasterGan} 论，供出行择日参考。表外日期可自表内任一日按六十甲子顺推（日干支逐日进一位，60 日一循环）`,
+      dims: ['公历', '农历', '流日', '十神', '日主长生'],
       days: days.map((d) => [
         `${d.solarYear}-${String(d.solarMonth).padStart(2, '0')}-${String(d.solarDay).padStart(2, '0')}`,
         `${d.lunarMonth}月${d.lunarDay}`,
         d.ganZhi,
         d.shiShen,
         getDiShi(dayMasterGan, d.zhi),
-        _getLiuShiForDay(d.solarYear, d.solarMonth, d.solarDay, dayMasterGan)
-          .map((h) => `${h.shiChenName}:${h.ganZhi}·${h.shiShen}`)
-          .join(' '),
       ]),
+    };
+  })();
+
+  // 今日流时（可选块）：办事择时用——今日十二时辰干支/十神；
+  // 任意他日的流时由该日日干按五鼠遁自推（note 附口诀）
+  const liuShi = (() => {
+    if (!opts?.includeLiuShi || !dayMasterGan) return null;
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = t.getMonth() + 1;
+    const d = t.getDate();
+    const hours = _getLiuShiForDay(y, m, d, dayMasterGan);
+    if (!hours.length) return null;
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const todayGz = _getLiuRiForRange(y, m, d, 1, dayMasterGan)[0]?.ganZhi ?? '';
+    return {
+      date: dateStr,
+      ...(todayGz ? { dayGanZhi: todayGz } : {}),
+      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十二时辰流时，十神以日主 ${dayMasterGan} 论，供办事择时参考。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自子时顺行十二辰`,
+      dims: ['时辰', '干支', '十神'],
+      hours: hours.map((h) => [h.shiChenName, h.ganZhi, h.shiShen]),
     };
   })();
 
@@ -256,7 +276,8 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     liuYueNote,
     dayunArr: enrichedDayunArr,
     currentYun: result.currentYun,
-    ...(liuRiShi ? { liuRiShi } : {}),
+    ...(liuRi ? { liuRi } : {}),
+    ...(liuShi ? { liuShi } : {}),
     ganRelations: result.ganRelations,
     zhiRelations: result.zhiRelations,
     shensha: ext.shensha,

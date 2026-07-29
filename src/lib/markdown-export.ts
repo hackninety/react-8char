@@ -504,16 +504,24 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
     }
   });
 
-  // ── 近期流日流时（可选块：出行择日/办事择时勾选后随盘导出）──
-  const lrs = data.liuRiShi;
-  if (lrs?.days?.length) {
-    push('## 近期流日流时（择日择时参考）', '');
-    push(`> ${lrs.note}`, '');
+  // ── 本月流日（可选块：出行择日勾选后随盘导出）──
+  const lr = data.liuRi;
+  if (lr?.days?.length) {
+    push('## 本月流日（择日参考）', '');
+    push(`> ${lr.note}`, '');
     push('| 公历 | 农历 | 流日 | 十神 | 日主长生 |', '| --- | --- | --- | --- | --- |');
-    lrs.days.forEach((d: any[]) => push(`| ${td(d[0])} | ${td(d[1])} | ${td(d[2])} | ${td(d[3])} | ${td(d[4])} |`));
-    push('', '<details><summary>逐日十二流时</summary>', '');
-    lrs.days.forEach((d: any[]) => push(`- **${d[0]} ${d[2]}**：${d[5]}`));
-    push('', '</details>', '');
+    lr.days.forEach((d: any[]) => push(`| ${td(d[0])} | ${td(d[1])} | ${td(d[2])} | ${td(d[3])} | ${td(d[4])} |`));
+    push('');
+  }
+
+  // ── 今日流时（可选块：办事择时勾选后随盘导出）──
+  const ls = data.liuShi;
+  if (ls?.hours?.length) {
+    push('## 今日流时（择时参考）', '');
+    push(`> ${ls.note}`, '');
+    push('| 时辰 | 干支 | 十神 |', '| --- | --- | --- |');
+    ls.hours.forEach((h: any[]) => push(`| ${td(h[0])} | ${td(h[1])} | ${td(h[2])} |`));
+    push('');
   }
 
   // 人生K线量化评分不入导出：简化模型分数易被 AI 锚定为确定结论，反致误报（仅页面展示）

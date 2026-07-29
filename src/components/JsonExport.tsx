@@ -25,8 +25,9 @@ function formatSize(text: string): string {
 export default function JsonExport({ input, result }: JsonExportProps) {
   // 穷通宝鉴原文库为懒加载 chunk：就绪后重建导出内容（classic 字段补齐）
   const [qtReady, setQtReady] = useState(isQiongTongLoaded());
-  // 近期流日流时（15 天窗口）默认不导出：出行择日/办事择时等特殊场景勾选后附带
-  const [withLiuRiShi, setWithLiuRiShi] = useState(false);
+  // 流日/流时默认不导出，特殊场景独立勾选：流日=当前公历月逐日（出行择日）、流时=今日十二辰（办事择时）
+  const [withLiuRi, setWithLiuRi] = useState(false);
+  const [withLiuShi, setWithLiuShi] = useState(false);
   useEffect(() => {
     let on = true;
     void preloadQiongTong().then(() => { if (on && !qtReady) setQtReady(true); });
@@ -36,11 +37,11 @@ export default function JsonExport({ input, result }: JsonExportProps) {
 
   // qtReady 是「原文库懒加载就绪」信号：就绪后重建以补齐 classic 字段
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const exportData = useMemo(() => buildExportJSON(input, result, { includeLiuRiShi: withLiuRiShi }), [input, result, withLiuRiShi, qtReady]);
+  const exportData = useMemo(() => buildExportJSON(input, result, { includeLiuRi: withLiuRi, includeLiuShi: withLiuShi }), [input, result, withLiuRi, withLiuShi, qtReady]);
   // 数据载荷用 TOON（JSON 数据模型的紧凑无损等价表示，约省 21% 字符、token 更省）
   const toonText = useMemo(() => toToon(exportData), [exportData]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const markdown = useMemo(() => buildExportMarkdown(input, result, { includeLiuRiShi: withLiuRiShi }), [input, result, withLiuRiShi, qtReady]);
+  const markdown = useMemo(() => buildExportMarkdown(input, result, { includeLiuRi: withLiuRi, includeLiuShi: withLiuShi }), [input, result, withLiuRi, withLiuShi, qtReady]);
   const toonSize = useMemo(() => formatSize(toonText), [toonText]);
   const mdSize = useMemo(() => formatSize(markdown), [markdown]);
 
@@ -113,12 +114,19 @@ export default function JsonExport({ input, result }: JsonExportProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* 可选：近期流日流时（默认不导出，防止无关数据稀释 AI 注意力） */}
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-            <input type="checkbox" checked={withLiuRiShi} onChange={(e) => setWithLiuRiShi(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-gold/30 accent-[var(--color-crimson)]" />
-            <span className="text-muted-foreground">附近 15 天流日+逐日流时（出行择日、办事择时才勾，默认不导出）</span>
-          </label>
+          {/* 可选：流日/流时独立勾选（默认不导出，防止无关数据稀释 AI 注意力） */}
+          <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-x-5">
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <input type="checkbox" checked={withLiuRi} onChange={(e) => setWithLiuRi(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gold/30 accent-[var(--color-crimson)]" />
+              <span className="text-muted-foreground">附本月流日（出行择日用，默认不导出）</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <input type="checkbox" checked={withLiuShi} onChange={(e) => setWithLiuShi(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gold/30 accent-[var(--color-crimson)]" />
+              <span className="text-muted-foreground">附今日流时（办事择时用，默认不导出）</span>
+            </label>
+          </div>
 
           {/* 数据文件（复制走下方 AI Prompt 按钮，不设单独「复制 TOON」以免重复） */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

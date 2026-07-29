@@ -209,21 +209,31 @@ describe('导出集成', () => {
     expect(md).not.toContain('应期引动预检');
   });
 
-  it('流日流时可选块:默认不导出,勾选后附 15 天窗口(逐日十二流时)', async () => {
+  it('流日/流时独立可选:默认皆不导出;流日=公历当月逐日,流时=今日十二辰', async () => {
     const off = buildExportJSON(GOLDEN, chart) as Record<string, any>;
-    expect(off.liuRiShi).toBeUndefined();
+    expect(off.liuRi).toBeUndefined();
+    expect(off.liuShi).toBeUndefined();
 
-    const on = buildExportJSON(GOLDEN, chart, { includeLiuRiShi: true }) as Record<string, any>;
-    expect(on.liuRiShi.days).toHaveLength(15);
-    expect(on.liuRiShi.note).toContain('五鼠遁');
-    const row = on.liuRiShi.days[0];
-    expect(String(row[2])).toMatch(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
-    expect(String(row[5]).split(' ')).toHaveLength(12); // 十二时辰俱全
+    const t = new Date();
+    const daysInMonth = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+    const on = buildExportJSON(GOLDEN, chart, { includeLiuRi: true, includeLiuShi: true }) as Record<string, any>;
+    expect(on.liuRi.days).toHaveLength(daysInMonth);
+    expect(on.liuRi.note).toContain('六十甲子');
+    expect(String(on.liuRi.days[0][2])).toMatch(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
+    expect(on.liuShi.hours).toHaveLength(12);
+    expect(on.liuShi.note).toContain('五鼠遁');
+    expect(on.liuShi.dayGanZhi).toMatch(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
+
+    // 单开流日不带流时,反之亦然
+    expect((buildExportJSON(GOLDEN, chart, { includeLiuRi: true }) as any).liuShi).toBeUndefined();
+    expect((buildExportJSON(GOLDEN, chart, { includeLiuShi: true }) as any).liuRi).toBeUndefined();
 
     const { buildExportMarkdown } = await import('../src/lib/markdown-export');
-    expect(buildExportMarkdown(GOLDEN, chart)).not.toContain('近期流日流时');
-    const md = buildExportMarkdown(GOLDEN, chart, { includeLiuRiShi: true });
-    expect(md).toContain('## 近期流日流时');
-    expect(md).toContain('逐日十二流时');
+    const mdOff = buildExportMarkdown(GOLDEN, chart);
+    expect(mdOff).not.toContain('本月流日');
+    expect(mdOff).not.toContain('今日流时');
+    const md = buildExportMarkdown(GOLDEN, chart, { includeLiuRi: true, includeLiuShi: true });
+    expect(md).toContain('## 本月流日');
+    expect(md).toContain('## 今日流时');
   });
 });

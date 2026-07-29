@@ -37,7 +37,7 @@ React 19 + Vite + Tailwind 4 的八字排盘应用。核心设计哲学：**确�
 - `solar.ts` 真太阳时预处理（经度差+均时差），两引擎共用同一实现。
 
 ### 数据流（单向）
-`BaziForm` → `calculateBazi`（`src/lib/bazi.ts`）→ 引擎 `EightCharJSON` + 应用私挂字段（`BaziResultX`）→ 组件渲染；导出走 `buildExportJSON` → TOON（`toon.ts`）或 `buildExportMarkdown`（`markdown-export.ts`）。`buildExportJSON` 是 TOON/Prompt/MCP 三处共用的唯一数据组装点，`ExportOptions.includeLiuRiShi` 可选附「近 15 天流日+逐日流时」块（导出卡片勾选，默认关）。
+`BaziForm` → `calculateBazi`（`src/lib/bazi.ts`）→ 引擎 `EightCharJSON` + 应用私挂字段（`BaziResultX`）→ 组件渲染；导出走 `buildExportJSON` → TOON（`toon.ts`）或 `buildExportMarkdown`（`markdown-export.ts`）。`buildExportJSON` 是 TOON/Prompt/MCP 三处共用的唯一数据组装点，`ExportOptions.includeLiuRi/includeLiuShi` 可选附「公历当月逐日流日」「今日十二时辰流时」块（导出卡片独立勾选，默认关；note 附六十甲子顺推/五鼠遁口诀供 AI 推表外日期）。
 
 ### AI 锚定数据层 `src/lib/`（确定性模块，均随导出）
 `tiaohou`（穷通宝鉴 120 条调候查表+原局得否）、`siling`（人元司令分野）、`geju`（子平真诠机械取格）+ `zipingzhenquan`（八格原文，懒加载 chunk，导出前需 preload）、`patterns`（28 条十神组合预检）、`yunpatterns`（岁运格局扫描）、`yongshen`（用神三法合参）、`xiangfa`（盲派象法表）、`shensha-dict`（神煞释义）、`wuxing-energy`（宫位轴能量计点）、`decadeplan`（十年规划表）、`wuyunliuqi`（五运六气）。干支冲合刑害基础表统一下沉在 `ganzhi.ts`。例外：`yingqi`（应期引动预检）**不随导出**（候选年+强度分易被 AI 当预言致误报），仅 MCP `query_yingqi` 按需查询。
