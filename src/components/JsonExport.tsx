@@ -16,6 +16,12 @@ interface JsonExportProps {
   result: BaziResult;
 }
 
+// 预估文件大小（UTF-8 字节数，与下载落盘一致）
+function formatSize(text: string): string {
+  const kb = new TextEncoder().encode(text).length / 1024;
+  return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb.toFixed(1)} KB`;
+}
+
 export default function JsonExport({ input, result }: JsonExportProps) {
   // 穷通宝鉴原文库为懒加载 chunk：就绪后重建导出内容（classic 字段补齐）
   const [qtReady, setQtReady] = useState(isQiongTongLoaded());
@@ -35,6 +41,8 @@ export default function JsonExport({ input, result }: JsonExportProps) {
   const toonText = useMemo(() => toToon(exportData), [exportData]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const markdown = useMemo(() => buildExportMarkdown(input, result, { includeLiuRiShi: withLiuRiShi }), [input, result, withLiuRiShi, qtReady]);
+  const toonSize = useMemo(() => formatSize(toonText), [toonText]);
+  const mdSize = useMemo(() => formatSize(markdown), [markdown]);
 
   const downloadBlob = (content: string, mime: string, filename: string) => {
     const blob = new Blob([content], { type: mime });
@@ -120,7 +128,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               className="border-gold/30 hover:bg-gold/5 cursor-pointer"
             >
               <Download className="w-4 h-4 mr-2" />
-              导出 TOON 文件
+              导出 TOON 文件（{toonSize}）
             </Button>
             <Button
               variant="outline"
@@ -128,7 +136,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
               className="border-gold/30 hover:bg-gold/5 cursor-pointer"
             >
               <Download className="w-4 h-4 mr-2" />
-              导出 Markdown 文件
+              导出 Markdown 文件（{mdSize}）
             </Button>
           </div>
 
