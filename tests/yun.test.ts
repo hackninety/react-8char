@@ -167,7 +167,7 @@ describe('子平真诠原文接入', () => {
 });
 
 describe('导出集成', () => {
-  it('导出含 decadePlan/wuxingEnergy/geJu.classic(懒加载已就绪)', () => {
+  it('导出含 decadePlan/geJu.classic(懒加载已就绪),结论型标签均缺席', () => {
     const data = buildExportJSON(GOLDEN, chart) as Record<string, any>;
     expect(data.decadePlan.rows.length).toBeGreaterThanOrEqual(10);
     expect(data.decadePlan.dims).toContain('运限格局');
@@ -175,27 +175,33 @@ describe('导出集成', () => {
     expect(data.lifeKline).toBeUndefined();
     expect(data.decadePlan.dims).not.toContain('均值');
     expect(data.decadePlan.dims).not.toContain('高光年');
+    // 喜忌列(扶抑单口径逐运结论标签)不导出:AI 易照抄跳过自行论证
+    expect(data.decadePlan.dims).not.toContain('喜忌');
     expect(data.decadePlan.rows[0].length).toBe(data.decadePlan.dims.length);
-    expect(data.wuxingEnergy.layers[0][0]).toBe('原局');
-    expect(data.wuxingEnergy.fuYiLikes).toBeDefined();
-    expect(data.wuxingEnergy.gongWei.map((g: string[]) => g[0])).toContain('财帛·婚姻'); // golden 男命
+    // 能量多边形不随导出:与 wuXingPower 双套五行口径易被 AI 混用(雷达图仅页面展示)
+    expect(data.wuxingEnergy).toBeUndefined();
+    // 太岁风险等级(结论型标签)剔除;relation/details 事实保留
+    expect(data.yuanHaiZiping?.taiSui?.riskLevel).toBeUndefined();
     // golden 为七杀格 → 附论偏官原文
     expect(data.geJu.ge).toBe('七杀格');
     expect(data.geJu.classic.chapter).toBe('论偏官');
     expect(data.geJu.classic.lun.length).toBeGreaterThan(300);
   });
 
-  it('Markdown 含规划表/能量占比/子平真诠引用块三节,不含人生K线', async () => {
+  it('Markdown 含规划表/子平真诠引用块,不含人生K线/能量多边形/命理分析/风险等级', async () => {
     const { buildExportMarkdown } = await import('../src/lib/markdown-export');
     const md = buildExportMarkdown(GOLDEN, chart);
     expect(md).toContain('### 十年规划表');
-    expect(md).toContain('### 能量多边形');
-    expect(md).toContain('宫位轴');
     expect(md).toContain('《子平真诠·论偏官》原文');
     // K线量化评分不入导出(易被 AI 锚定致误报)
     expect(md).not.toContain('人生K线');
     expect(md).not.toContain('高光年');
     expect(md).not.toContain('总运峰值');
+    // 结论型/双口径块不入导出(防 AI 照抄或混用):能量多边形/命理分析(三命通会成品断语)/太岁风险等级
+    expect(md).not.toContain('能量多边形');
+    expect(md).not.toContain('## 命理分析');
+    expect(md).not.toContain('三命通会');
+    expect(md).not.toContain('风险等级');
   });
 
   it('导出文件名含姓名(缺省无名);姓名进 input 块与 MD 基本信息', async () => {

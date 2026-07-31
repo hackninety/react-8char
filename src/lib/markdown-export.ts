@@ -112,7 +112,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
   push(
     AI_ANALYST_ROLE,
     '',
-    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/命理分析/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「用神三法合参」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
+    '数据说明：以下为完整八字命盘数据（Markdown 格式），包含文中各章节的全部盘面信息（四柱/十神/藏干/大运流年含近年流月/五运六气为必备，五行力量/渊海子平/神煞及释义/干支关系依引擎能力提供）。其中「调候用神」（含本造《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）「人元司令分野」「格局判定」「用神三法合参」「十神组合线索」「盲派象法参考」为确定性查表/预检结果——分析时引用它们，勿凭记忆另查另编。盘面数据流派无关，支持对话中随时切换盲派/调候/滴天髓/格局等视角重新解读（协议见文末）。',
   );
   if (data.aiNote) push('', `> **用户备注**：${data.aiNote}`);
   push('', '---', '');
@@ -195,18 +195,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
   });
   push('', `**五行总值**：${total.toFixed(2)}`, '');
 
-  // ── 能量多边形三层占比（宫位轴×原局/+当前大运/+今年流年，干支计点） ──
-  const we = data.wuxingEnergy;
-  if (we?.layers?.length) {
-    push('### 能量多边形（宫位三层占比·岁运叠加）', '');
-    push(`> ${we.method}${we.fuYiLikes ? `；扶抑喜行：${we.fuYiLikes.join('、')}` : ''}`, '');
-    if (Array.isArray(we.gongWei)) {
-      push(`> 宫位轴（六亲星映射）：${we.gongWei.map((g: string[]) => `${g[0]}=${g[1]}(${g[2]})`).join('、')}；${we.gongWeiNote ?? ''}`, '');
-    }
-    push(`| 层 | ${we.dims.map((d: string) => `${d}·${we.groupOf?.[d] ?? ''}`).join(' | ')} |`, `|${' --- |'.repeat(we.dims.length + 1)}`);
-    we.layers.forEach((l: (string | number)[]) => push(`| ${l[0]} | ${l.slice(1).map((v) => `${v}%`).join(' | ')} |`));
-    push('');
-  }
+  // 能量多边形不随导出（与 wuXingPower 双套五行数值口径，AI 易混用致旺衰误判；雷达图仅页面展示）
 
   // ── 命盘要素 ──
   push('## 命盘要素', '');
@@ -293,7 +282,7 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
     if (taiSui) {
       push('', '### 太岁', '');
       if (taiSui.relation) push(`- **关系**：${taiSui.relation}`);
-      if (taiSui.riskLevel) push(`- **风险等级**：${taiSui.riskLevel}`);
+      // 风险等级为结论型标签不入导出（AI 易照抄成断语）；relation/details 事实保留
       if (Array.isArray(taiSui.details)) taiSui.details.forEach((d: string) => push(`- ${d}`));
     }
     push('');
@@ -384,25 +373,9 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
     push('');
   }
 
-  // ── 命理分析（喜用神/日时/三命通会，JSON 导出未含，此处补全）──
-  const an: any = (result as any).analysis;
-  const xiYong = Array.isArray(an?.XiYongShen) ? an.XiYongShen : [];
-  const rishi = Array.isArray(an?.rishi) ? an.rishi : [];
-  const sanMing = Array.isArray(an?.SanMingTongHui) ? an.SanMingTongHui : [];
-  if (xiYong.length || rishi.length || sanMing.length) {
-    push('## 命理分析', '');
-    if (xiYong.length) push('### 喜用神', '', xiYong.join('、'), '');
-    if (rishi.length) {
-      push('### 日时分析', '');
-      rishi.forEach((s: string) => push(`- ${s}`));
-      push('');
-    }
-    if (sanMing.length) {
-      push('### 三命通会', '');
-      sanMing.forEach((s: string) => push(`- ${s}`));
-      push('');
-    }
-  }
+  // 命理分析（引擎自带喜用神/日时断语/三命通会）不入导出：按日时机械查表的成品断语，
+  // 与全局无关却措辞肯定，AI 易直接引为已验结论；其喜用神又与「用神三法合参」双源冲突。
+  // 页面 ShenShaList 仍全量展示。
 
   // ── 干支关系 ──
   const gr = Array.isArray(data.ganRelations) ? data.ganRelations : [];

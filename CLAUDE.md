@@ -40,7 +40,7 @@ React 19 + Vite + Tailwind 4 的八字排盘应用。核心设计哲学：**确�
 `BaziForm` → `calculateBazi`（`src/lib/bazi.ts`）→ 引擎 `EightCharJSON` + 应用私挂字段（`BaziResultX`）→ 组件渲染；导出走 `buildExportJSON` → TOON（`toon.ts`）或 `buildExportMarkdown`（`markdown-export.ts`）。`buildExportJSON` 是 TOON/Prompt/MCP 三处共用的唯一数据组装点，`ExportOptions.includeLiuRi/includeLiuShi` 可选附「公历当月逐日流日」「今日十二时辰流时」块（导出卡片独立勾选，默认关；note 附六十甲子顺推/五鼠遁口诀供 AI 推表外日期）。
 
 ### AI 锚定数据层 `src/lib/`（确定性模块，均随导出）
-`tiaohou`（穷通宝鉴 120 条调候查表+原局得否）、`siling`（人元司令分野）、`geju`（子平真诠机械取格）+ `zipingzhenquan`（八格原文，懒加载 chunk，导出前需 preload）、`patterns`（28 条十神组合预检）、`yunpatterns`（岁运格局扫描）、`yongshen`（用神三法合参）、`xiangfa`（盲派象法表）、`shensha-dict`（神煞释义）、`wuxing-energy`（宫位轴能量计点）、`decadeplan`（十年规划表）、`wuyunliuqi`（五运六气）。干支冲合刑害基础表统一下沉在 `ganzhi.ts`。例外：`yingqi`（应期引动预检）**不随导出**（候选年+强度分易被 AI 当预言致误报），仅 MCP `query_yingqi` 按需查询。
+`tiaohou`（穷通宝鉴 120 条调候查表+原局得否）、`siling`（人元司令分野）、`geju`（子平真诠机械取格）+ `zipingzhenquan`（八格原文，懒加载 chunk，导出前需 preload）、`patterns`（28 条十神组合预检）、`yunpatterns`（岁运格局扫描）、`yongshen`（用神三法合参）、`xiangfa`（盲派象法表）、`shensha-dict`（神煞释义）、`decadeplan`（十年规划表，导出版不含扶抑喜忌列）、`wuyunliuqi`（五运六气）。干支冲合刑害基础表统一下沉在 `ganzhi.ts`。例外（**不随导出**，防结论型数据被 AI 锚定/混用）：`yingqi`（应期引动预检——候选年+强度分易被当预言，仅 MCP `query_yingqi` 按需查询）、`wuxing-energy`（宫位轴能量计点——与 wuXingPower 双套五行口径易被混用，仅页面雷达图）、引擎自带「命理分析」（三命通会等日时查表成品断语，仅页面展示）、太岁 riskLevel（结论标签，导出剔除）。
 
 ### 人生K线 `lifekline.ts` —— 仅页面展示
 运势量化模型；其身强弱判定 `judge` 被 patterns/decadeplan/yongshen/wuxing-energy 复用（内部输入）。**lifeKline 分数与十年规划表的均值/高光/低谷列均不进 TOON/MD 导出**；MCP 的 `get_kline` 工具仍可按需查询。

@@ -16,7 +16,6 @@ import { analyzeGeJu } from './geju';
 import { getZipingClassic } from './zipingzhenquan';
 import { buildDecadePlan } from './decadeplan';
 import { detectYunPatterns } from './yunpatterns';
-import { buildWuxingEnergy } from './wuxing-energy';
 import { buildYongShenSanFa } from './yongshen';
 import { getDiShi } from './utils';
 import { collectShenShaNames, lookupShenShaMeanings } from './shensha-dict';
@@ -98,6 +97,16 @@ export interface ExportOptions {
   includeLiuShi?: boolean;
 }
 
+/** 太岁「风险等级」为结论型标签（AI 易照抄成断语），导出剔除；relation/details 等事实保留 */
+function stripTaiSuiRiskLevel<T>(yh: T): T {
+  if (!yh || typeof yh !== 'object') return yh;
+  const o = yh as T & { taiSui?: Record<string, unknown> };
+  if (!o.taiSui || typeof o.taiSui !== 'object' || !('riskLevel' in o.taiSui)) return yh;
+  const taiSui = { ...o.taiSui };
+  delete taiSui.riskLevel;
+  return { ...o, taiSui };
+}
+
 export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: ExportOptions) {
   const ext = result as BaziResultX;
   const dayMasterGan = result.pillars?.dayMasterGan || result.pillars?.day?.gan || '';
@@ -164,14 +173,8 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     ? detectYunPatterns({ pillars: result.pillars, judge: kline?.judge, gender: result.gender, dayunGz: curDyGz, liunianGz: curLnGz || undefined })
     : [];
 
-  // 能量多边形三层占比（宫位轴×原局/+当前大运/+今年流年，干支计点法；任意年份可由 K线面板联动查看）
-  const wuxingEnergy = buildWuxingEnergy({
-    pillars: result.pillars,
-    judge: kline?.judge,
-    gender: result.gender,
-    dayunGz: curDyGz || undefined,
-    liunianGz: curLnGz || undefined,
-  });
+  // 能量多边形不随导出：与 wuXingPower（旺衰加权）双套五行数值口径并存，
+  // AI 易混用/择错口径致旺衰误判（雷达图仅页面展示，WuxingRadar 自行计点）。
 
   // 应期引动预检不随导出：候选年+强度分易被 AI 当「已算定的应期」输出成预言（误报源）；
   // 需要时经 MCP query_yingqi 按需查询（yingqi.ts 模块保留）。
@@ -266,21 +269,6 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     shenGong: result.shenGong,
     shenGongNaYin: result.shenGongNaYin,
     wuXingPower: result.wuXingPower,
-    // 能量多边形三层占比（宫位轴=六亲星映射；结构计点口径，区别于 wuXingPower 旺衰加权）
-    ...(wuxingEnergy
-      ? {
-          wuxingEnergy: {
-            method: wuxingEnergy.method,
-            groupOf: wuxingEnergy.groupOf,
-            // 宫位轴:[宫位, 十神组, 五行]（婚姻已按性别并入配偶星轴）
-            gongWei: wuxingEnergy.palaces.map((p) => [p.label, p.group, p.wx]),
-            gongWeiNote: wuxingEnergy.palaceNote,
-            ...(wuxingEnergy.likes ? { fuYiLikes: wuxingEnergy.likes } : {}),
-            dims: ['木', '火', '土', '金', '水'],
-            layers: wuxingEnergy.layers.map((l) => [l.label, ...['木', '火', '土', '金', '水'].map((w) => l.percent[w])]),
-          },
-        }
-      : {}),
     yun: result.yun,
     liuYueNote,
     dayunArr: enrichedDayunArr,
@@ -291,7 +279,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     zhiRelations: result.zhiRelations,
     shensha: ext.shensha,
     ...(Object.keys(shenshaDict).length ? { shenshaDict } : {}),
-    yuanHaiZiping: result.yuanHaiZiping,
+    yuanHaiZiping: stripTaiSuiRiskLevel(result.yuanHaiZiping),
     ...(tiaoHou ? { tiaoHou } : {}),
     ...(siLing ? { siLing } : {}),
     ...(geJu ? { geJu } : {}),
@@ -310,16 +298,16 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     ...(decadePlan
       ? {
           decadePlan: {
-            // 导出版不含 K线均值/高光/低谷等量化列（同 lifeKline 不导出的理由）；页面表格仍全量展示
-            note: '喜忌为扶抑口径（身强弱定）；运限格局为该运与原局的确定性扫描，轻重成败须结合全局细辨',
-            dims: ['干支', '虚岁', '公历', '干支十神', '长生', '喜忌', '运限格局'],
+            // 导出版不含 K线均值/高光/低谷量化列与扶抑喜忌列：前者同 lifeKline 不导出的理由，
+            // 后者为扶抑单口径的逐运结论标签，AI 易照抄跳过自行论证（从格/调候视角下更整体反向）；页面表格仍全量展示
+            note: '运限格局为该运与原局的确定性扫描，轻重成败须结合全局细辨',
+            dims: ['干支', '虚岁', '公历', '干支十神', '长生', '运限格局'],
             rows: decadePlan.rows.map((r) => [
               r.ganZhi,
               `${r.startAge}~${r.endAge}`,
               `${r.startYear}~${r.endYear}`,
               `${r.ganShen}/${r.zhiShen}`,
               r.diShi,
-              r.favor,
               r.patterns.map((x) => x.name).join('；'),
             ]),
           },

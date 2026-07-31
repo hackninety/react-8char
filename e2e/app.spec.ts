@@ -89,7 +89,8 @@ test('排盘 → K线流月下钻 → TOON 下载（golden 命例干支断言，
   expect(content).toContain('庚午');
   expect(content).toContain('tiaoHou');
   expect(content).toContain('decadePlan');
-  expect(content).toContain('wuxingEnergy');
+  // 能量多边形不随导出（与 wuXingPower 双套口径易被 AI 混用；雷达图仅页面展示）
+  expect(content).not.toContain('wuxingEnergy');
 
   expect(pageErrors, `页面错误：\n${pageErrors.join('\n')}`).toHaveLength(0);
 });
