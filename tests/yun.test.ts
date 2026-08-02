@@ -246,6 +246,28 @@ describe('导出集成', () => {
     expect((both as any).liuShi.nowShiChen).toBe(shiChen);
   });
 
+  it('流时十二行为同一日干的完整五鼠遁序列(子时不得混入次日周期)', async () => {
+    const { getLiuShiForDay } = await import('../src/lib/bazi');
+    const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    // 五鼠遁：日干 → 子时干
+    const WSD: Record<string, string> = { 甲: '甲', 己: '甲', 乙: '丙', 庚: '丙', 丙: '戊', 辛: '戊', 丁: '庚', 壬: '庚', 戊: '壬', 癸: '壬' };
+    // 抽查多天（覆盖十个日干轮转）
+    for (let off = 0; off < 10; off++) {
+      const hours = getLiuShiForDay(2026, 7, 20 + off, '辛');
+      expect(hours).toHaveLength(12);
+      // 逐行连贯：干+1、支+1
+      for (let i = 1; i < 12; i++) {
+        expect(GAN[(GAN.indexOf(hours[i - 1].gan) + 1) % 10], `第${i}行天干`).toBe(hours[i].gan);
+        expect(ZHI[i], `第${i}行地支`).toBe(hours[i].zhi);
+      }
+      // 子时干与当日日干的五鼠遁一致（等价于整表同属当日周期）
+      const { getLiuRiForRange } = await import('../src/lib/bazi');
+      const dayGan = getLiuRiForRange(2026, 7, 20 + off, 1, '辛')[0].gan;
+      expect(hours[0].gan, `日干${dayGan}的子时干`).toBe(WSD[dayGan]);
+    }
+  });
+
   it('小时→时辰名:子时跨日(23点与0点同归子时),边界逐格正确', async () => {
     const { getShiChenName } = await import('../src/lib/bazi');
     expect(getShiChenName(23)).toBe('子时');

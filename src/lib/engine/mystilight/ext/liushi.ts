@@ -31,7 +31,10 @@ export function getLiuShiForDay(solarYear: number, solarMonth: number, solarDay:
   const result: LiuShiItem[] = [];
   for (let i = 0; i < 12; i++) {
     try {
-      const h = SHI_CHEN_HOURS[i];
+      // 子时取当日 0 点（早子时段）而非代表小时 23 点：23 点会触发 lunar-javascript
+      // 的换日口径、按次日日干起五鼠遁，导致子时行与丑~亥行分属两套日周期（表内干支不连贯）。
+      // 统一取当日时刻后，十二行为同一日干的完整五鼠遁序列；今晚 23 时起属次日子时。
+      const h = i === 0 ? 0 : SHI_CHEN_HOURS[i];
       const lunar = Lunar.fromDate(new Date(solarYear, solarMonth - 1, solarDay, h, 0));
       const gz: string = lunar.getTimeInGanZhi();
       const gan = gz[0];

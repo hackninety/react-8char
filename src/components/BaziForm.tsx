@@ -58,7 +58,9 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [dayStr, setDayStr] = useState(saved?.dayStr ?? String(now.getDate()));
   const [hourStr, setHourStr] = useState(saved?.hourStr ?? String(now.getHours()));
   const [minuteStr, setMinuteStr] = useState(saved?.minuteStr ?? String(now.getMinutes()));
-  const [isLeapMonth, setIsLeapMonth] = useState(saved?.isLeapMonth ?? false);
+  // 闰月勾选与其生效的「农历年|月」绑定存储：年/月一旦变动勾选即自动失效（派生态，无需 effect 重置），
+  // 防止上一张盘存档下来的 ✓ 静默套用到恰好也存在同名闰月的新盘（如先排 1990 闰五月、再排 2020 年四月）
+  const [leapFor, setLeapFor] = useState(saved?.isLeapMonth ? `${yearStr}|${monthStr}` : '');
 
   // 共用
   const [gender, setGender] = useState<0 | 1>(saved?.gender ?? 1);
@@ -90,6 +92,10 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [timeZhi, setTimeZhi] = useState(saved?.timeZhi ?? '');
   const [lookupResults, setLookupResults] = useState<ReverseLookupResult[]>([]);
   const [lookupError, setLookupError] = useState('');
+
+  // 派生勾选态：仅当勾选时所绑的年月与当前所填一致才视为勾选
+  const ymKey = `${yearStr}|${monthStr}`;
+  const isLeapMonth = leapFor !== '' && leapFor === ymKey;
 
   // 闰月自动判断：按所填农历年查该年闰月，仅当所填月恰为闰月时才让用户二选一
   const leapState: LeapState = useMemo(() => {
@@ -293,7 +299,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       return (
         <div className="flex items-center gap-3 flex-wrap">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={isLeapMonth} onChange={(e) => setIsLeapMonth(e.target.checked)}
+            <input type="checkbox" checked={isLeapMonth}
+              onChange={(e) => setLeapFor(e.target.checked ? ymKey : '')}
               className="w-4 h-4 rounded border-gold/30 text-crimson accent-[var(--color-crimson)]" />
             <span className="text-xs font-medium text-crimson dark:text-gold">生于闰{m}月</span>
           </label>

@@ -188,10 +188,11 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     const m = t.getMonth() + 1;
     const days = _getLiuRiForRange(y, m, 1, new Date(y, m, 0).getDate(), dayMasterGan);
     if (!days.length) return null;
+    // date = 导出基准日（今日）；文件名后缀与 AI 判断「今天是表中哪一行」均取此值
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
     return {
-      // date = 导出基准日（今日）；文件名后缀与 AI 判断「今天是表中哪一行」均取此值
-      date: `${y}-${String(m).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`,
-      note: `${y}年${m}月（公历当月）逐日流日，十神以日主 ${dayMasterGan} 论，供出行择日参考；导出当日为 ${y}-${m}-${t.getDate()}。表外日期可自表内任一日按六十甲子顺推（日干支逐日进一位，60 日一循环）`,
+      date: dateStr,
+      note: `${y}年${m}月（公历当月）逐日流日，十神以日主 ${dayMasterGan} 论，供出行择日参考；导出当日为 ${dateStr}。表外日期可自表内任一日按六十甲子顺推（日干支逐日进一位，60 日一循环）`,
       dims: ['公历', '农历', '流日', '十神', '日主长生'],
       days: days.map((d) => [
         `${d.solarYear}-${String(d.solarMonth).padStart(2, '0')}-${String(d.solarDay).padStart(2, '0')}`,
@@ -221,7 +222,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
       ...(todayGz ? { dayGanZhi: todayGz } : {}),
       // 导出时刻所值时辰：文件名后缀取此值，AI 也据此知道「当下」在十二辰的哪一格
       nowShiChen,
-      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十二时辰流时，十神以日主 ${dayMasterGan} 论，供办事择时参考；导出时刻正值${nowShiChen}。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自子时顺行十二辰`,
+      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十二时辰流时，十神以日主 ${dayMasterGan} 论，供办事择时参考；导出时刻正值${nowShiChen}。表中子时指今日凌晨 0-1 时（早子时段）；今晚 23 时起入次日子时，干支按次日日干另起五鼠遁。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自子时顺行十二辰`,
       dims: ['时辰', '干支', '十神'],
       hours: hours.map((h) => [h.shiChenName, h.ganZhi, h.shiShen]),
     };

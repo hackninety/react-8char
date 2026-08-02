@@ -4,6 +4,21 @@
 
 ## 已完成
 
+### ✅ 导出反锚定清理 + 闰月自动判断 + 流日流时可选导出 + 流时子时口径修复（2026-07 末）
+① **量化数据移出 AI 导出**（防 AI 把自定分值锚定为命理定论致误报）：`lifeKline` 字段与 MD「人生K线」
+整节不再随 TOON/MD 导出，十年规划表导出版同步剔除 均值/高光/低谷 三列（页面与 MCP `get_kline` 不变，
+早期条目中「评分随导出」的描述自此作废）；`yingQi` 应期预检同理移出静态导出，仅 MCP `query_yingqi` 按需查。
+反向补足：渊海子平身强/湿度/阴阳的计分明细（阈值/生扶之干/十干力量/各柱贡献）补入 MD「量化明细」小节。
+② **农历闰月自动判断**：[`getLunarLeapMonth`](../src/lib/engine/mystilight/ext/utils.ts)（lunar-javascript
+`LunarYear` 查表），表单三态自动判断，仅所填月恰为该年闰月时出现勾选；年/月变动即取消勾选防跨盘残留；
+golden 补闰月抽查与本月/闰月转换差异断言。③ **流日/流时独立可选导出**：`ExportOptions.includeLiuRi/includeLiuShi`
+附「公历当月逐日流日」「今日十二时辰流时」块（默认关），note 附六十甲子顺推/五鼠遁口诀供 AI 推表外日期；
+文件名按勾选追加 `_流日YYYY-MM-DD`/`_流时X时` 后缀（取自块内 `date`/`nowShiChen`，与内容严格同源）；
+姓名入 `BaziInput.name` → 文件名/`input` 块/MD 基本信息。④ **流时子时口径修复**（bug）：
+[`getLiuShiForDay`](../src/lib/engine/mystilight/ext/liushi.ts) 原以代表小时 23 点取子时，触发 lunar-javascript
+换日口径、按次日日干起五鼠遁，致子时行与丑~亥行分属两套日周期（表内干支不连贯，UI 流时面板同病）；
+改取当日 0 点（早子时段）后整表为当日日干完整五鼠遁序列，与 tyme4ts 独立对拍 400 天流日 + 30 天×12 辰全一致。
+
 ### ✅ 格局·古籍语料 + 岁运格局扫描 + 十年规划表 + 五行能量多边形（2026-07，参照 react-zwds 三件套）
 ① **子平真诠八格原文**：[`scripts/fetch-zipingzhenquan.mjs`](../scripts/fetch-zipingzhenquan.mjs) 双源抓取
 （archive.org 公版书带章节标题为主源 × 殆知阁 daizhige 为校源，30 字滑窗覆盖率 ≥75% 方写入，绝不凭记忆默写），

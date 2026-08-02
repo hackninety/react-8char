@@ -11,6 +11,7 @@ import { calculateChart, DEFAULT_ENGINE } from '@/lib/engine';
 import { listProfiles } from '@/lib/storage';
 import { analyzeHehun, buildHehunMarkdown, buildHehunExportData, type HehunResult, type HehunPolarity } from '@/lib/hehun';
 import { toToon } from '@/lib/toon';
+import { sanitizeFileNamePart } from '@/lib/bazi';
 import type { BaziResult } from '@/lib/bazi';
 
 interface Props {
@@ -62,7 +63,7 @@ export default function HehunPanel({ profilesVersion }: Props) {
       setResult(r);
       setMarkdown(buildHehunMarkdown(partyA, partyB, r));
       setToon(toToon(buildHehunExportData(partyA, partyB, r)));
-      setFileBase(`合婚_${pa.name}_${pb.name}`);
+      setFileBase(`合婚_${sanitizeFileNamePart(pa.name) || '甲'}_${sanitizeFileNamePart(pb.name) || '乙'}`);
       toast.success('合婚对照已生成', { icon: '💞' });
     } catch (e) {
       console.error(e);
