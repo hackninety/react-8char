@@ -25,7 +25,7 @@ function formatSize(text: string): string {
 export default function JsonExport({ input, result }: JsonExportProps) {
   // 穷通宝鉴原文库为懒加载 chunk：就绪后重建导出内容（classic 字段补齐）
   const [qtReady, setQtReady] = useState(isQiongTongLoaded());
-  // 流日/流时默认不导出，特殊场景独立勾选：流日=当前公历月逐日（出行择日）、流时=今日十二辰（办事择时）
+  // 流日/流时默认不导出，特殊场景独立勾选：流日=当前公历月逐日（出行择日）、流时=今日十三时辰·早晚子时分列（办事择时）
   const [withLiuRi, setWithLiuRi] = useState(false);
   const [withLiuShi, setWithLiuShi] = useState(false);
   useEffect(() => {

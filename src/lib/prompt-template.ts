@@ -181,7 +181,7 @@ export function generateAIPrompt(jsonData: Record<string, unknown>): string {
   return `${AI_ANALYST_ROLE}
 
 数据说明：以下为 TOON 格式命盘数据（JSON 数据模型的紧凑无损等价表示，更省 token）。${TOON_SYNTAX_HINT}
-数据包含四柱、十神、五行力量、大运流年（流月仅展开近年，规则见 liuYueNote；diShi 为日主在该支的十二长生）、干支关系、神煞及释义（shenshaDict）、渊海子平分析、**调候用神查表与原局得否（tiaoHou，其 classic 字段为本造对应的《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）**、**人元司令分野（siLing）**、**格局判定（geJu，子平真诠机械取格+相神忌神呈现）**、**用神三法合参（yongShen，扶抑/调候/通关并列及相悖提示）**、**十神组合预检（patterns）**、**盲派象法参考表（xiangFa）**，以及五运六气（中运、司天在泉、主客运、主客气、运气同化）等完整信息${jsonData.liuRi ? '，另附当月逐日流日表（liuRi，出行择日参考，表外日期按其 note 的六十甲子规则顺推）' : ''}${jsonData.liuShi ? '，另附今日十二时辰流时表（liuShi，办事择时参考，他日流时按其 note 的五鼠遁口诀自推）' : ''}，请充分利用所有字段；加粗字段为确定性查表/预检结果，引用它们而非凭记忆回忆。${userNote}
+数据包含四柱、十神、五行力量、大运流年（流月仅展开近年，规则见 liuYueNote；diShi 为日主在该支的十二长生）、干支关系、神煞及释义（shenshaDict）、渊海子平分析、**调候用神查表与原局得否（tiaoHou，其 classic 字段为本造对应的《穷通宝鉴》原文段——引用原文以此为准，勿凭记忆补写）**、**人元司令分野（siLing）**、**格局判定（geJu，子平真诠机械取格+相神忌神呈现）**、**用神三法合参（yongShen，扶抑/调候/通关并列及相悖提示）**、**十神组合预检（patterns）**、**盲派象法参考表（xiangFa）**，以及五运六气（中运、司天在泉、主客运、主客气、运气同化）等完整信息${jsonData.liuRi ? '，另附当月逐日流日表（liuRi，出行择日参考，表外日期按其 note 的六十甲子规则顺推）' : ''}${jsonData.liuShi ? '，另附今日十三时辰流时表（liuShi，早/晚子时分列，办事择时参考，他日流时按其 note 的五鼠遁口诀自推）' : ''}，请充分利用所有字段；加粗字段为确定性查表/预检结果，引用它们而非凭记忆回忆。${userNote}
 
 \`\`\`toon
 ${toonStr}

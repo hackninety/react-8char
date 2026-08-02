@@ -93,7 +93,7 @@ export function calculateBazi(input: BaziInput): BaziResult {
 export interface ExportOptions {
   /** 附带当前公历月逐日流日表（默认关；出行择日场景勾选后导出） */
   includeLiuRi?: boolean;
-  /** 附带今日十二时辰流时表（默认关；办事择时场景勾选后导出） */
+  /** 附带今日十三时辰流时表（早/晚子时分列，默认关；办事择时场景勾选后导出） */
   includeLiuShi?: boolean;
 }
 
@@ -204,7 +204,7 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     };
   })();
 
-  // 今日流时（可选块）：办事择时用——今日十二时辰干支/十神；
+  // 今日流时（可选块）：办事择时用——今日十三时辰干支/十神（早/晚子时分列，口径同 react-zwds）；
   // 任意他日的流时由该日日干按五鼠遁自推（note 附口诀）
   const liuShi = (() => {
     if (!opts?.includeLiuShi || !dayMasterGan) return null;
@@ -220,11 +220,11 @@ export function buildExportJSON(input: BaziInput, result: BaziResult, opts?: Exp
     return {
       date: dateStr,
       ...(todayGz ? { dayGanZhi: todayGz } : {}),
-      // 导出时刻所值时辰：文件名后缀取此值，AI 也据此知道「当下」在十二辰的哪一格
+      // 导出时刻所值时辰：文件名后缀取此值，AI 也据此知道「当下」在十三格的哪一格
       nowShiChen,
-      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十二时辰流时，十神以日主 ${dayMasterGan} 论，供办事择时参考；导出时刻正值${nowShiChen}。表中子时指今日凌晨 0-1 时（早子时段）；今晚 23 时起入次日子时，干支按次日日干另起五鼠遁。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自子时顺行十二辰`,
-      dims: ['时辰', '干支', '十神'],
-      hours: hours.map((h) => [h.shiChenName, h.ganZhi, h.shiShen]),
+      note: `今日（${dateStr}${todayGz ? `，流日${todayGz}` : ''}）十三时辰流时（早/晚子时分列），十神以日主 ${dayMasterGan} 论，供办事择时参考；导出时刻正值${nowShiChen}。早子时（0-1 时）按今日日干起五鼠遁；晚子时（23 时起）入次日周期，干支即次日日干之子时——早晚子时之争只影响日柱归属，时干支两派同此。任意其他日的流时：由该日日干按五鼠遁起子时（甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸壬子是真途），自早子时顺行至亥，再接晚子时`,
+      dims: ['时辰', '钟点', '干支', '十神'],
+      hours: hours.map((h) => [h.shiChenName, h.range, h.ganZhi, h.shiShen]),
     };
   })();
 

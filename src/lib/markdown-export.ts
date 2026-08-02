@@ -493,8 +493,8 @@ export function buildExportMarkdown(input: BaziInput, result: BaziResult, opts?:
   if (ls?.hours?.length) {
     push('## 今日流时（择时参考）', '');
     push(`> ${ls.note}`, '');
-    push('| 时辰 | 干支 | 十神 |', '| --- | --- | --- |');
-    ls.hours.forEach((h: any[]) => push(`| ${td(h[0])} | ${td(h[1])} | ${td(h[2])} |`));
+    push('| 时辰 | 钟点 | 干支 | 十神 |', '| --- | --- | --- | --- |');
+    ls.hours.forEach((h: any[]) => push(`| ${td(h[0])} | ${td(h[1])} | ${td(h[2])} | ${td(h[3])} |`));
     push('');
   }
 

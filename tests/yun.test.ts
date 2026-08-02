@@ -246,8 +246,8 @@ describe('导出集成', () => {
     expect((both as any).liuShi.nowShiChen).toBe(shiChen);
   });
 
-  it('流时十二行为同一日干的完整五鼠遁序列(子时不得混入次日周期)', async () => {
-    const { getLiuShiForDay } = await import('../src/lib/bazi');
+  it('流时十三行(早/晚子时分列,同react-zwds):前12行为当日五鼠遁连贯序列,晚子时=次日子时', async () => {
+    const { getLiuShiForDay, getLiuRiForRange } = await import('../src/lib/bazi');
     const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
     const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
     // 五鼠遁：日干 → 子时干
@@ -255,23 +255,30 @@ describe('导出集成', () => {
     // 抽查多天（覆盖十个日干轮转）
     for (let off = 0; off < 10; off++) {
       const hours = getLiuShiForDay(2026, 7, 20 + off, '辛');
-      expect(hours).toHaveLength(12);
-      // 逐行连贯：干+1、支+1
+      expect(hours).toHaveLength(13);
+      expect(hours[0].shiChenName).toBe('早子时');
+      expect(hours[12].shiChenName).toBe('晚子时');
+      expect(hours[0].range).toBe('00:00~01:00');
+      expect(hours[12].range).toBe('23:00~00:00');
+      // 早子~亥逐行连贯：干+1、支+1（同属当日周期）
       for (let i = 1; i < 12; i++) {
         expect(GAN[(GAN.indexOf(hours[i - 1].gan) + 1) % 10], `第${i}行天干`).toBe(hours[i].gan);
         expect(ZHI[i], `第${i}行地支`).toBe(hours[i].zhi);
       }
-      // 子时干与当日日干的五鼠遁一致（等价于整表同属当日周期）
-      const { getLiuRiForRange } = await import('../src/lib/bazi');
+      // 早子时干 = 当日日干五鼠遁；晚子时 = 次日日干五鼠遁之子时（干进两位、支同为子）
       const dayGan = getLiuRiForRange(2026, 7, 20 + off, 1, '辛')[0].gan;
-      expect(hours[0].gan, `日干${dayGan}的子时干`).toBe(WSD[dayGan]);
+      const nextGan = getLiuRiForRange(2026, 7, 21 + off, 1, '辛')[0].gan;
+      expect(hours[0].gan, `日干${dayGan}的早子时干`).toBe(WSD[dayGan]);
+      expect(hours[12].gan, `次日干${nextGan}的子时干`).toBe(WSD[nextGan]);
+      expect(hours[12].zhi).toBe('子');
+      expect(GAN[(GAN.indexOf(hours[0].gan) + 2) % 10]).toBe(hours[12].gan); // 干进两位
     }
   });
 
-  it('小时→时辰名:子时跨日(23点与0点同归子时),边界逐格正确', async () => {
+  it('小时→时辰名:十三时辰口径(0点=早子时,23点=晚子时),边界逐格正确', async () => {
     const { getShiChenName } = await import('../src/lib/bazi');
-    expect(getShiChenName(23)).toBe('子时');
-    expect(getShiChenName(0)).toBe('子时');
+    expect(getShiChenName(23)).toBe('晚子时');
+    expect(getShiChenName(0)).toBe('早子时');
     expect(getShiChenName(1)).toBe('丑时');
     expect(getShiChenName(2)).toBe('丑时');
     expect(getShiChenName(3)).toBe('寅时');
@@ -292,7 +299,7 @@ describe('导出集成', () => {
     expect(md).not.toContain('应期引动预检');
   });
 
-  it('流日/流时独立可选:默认皆不导出;流日=公历当月逐日,流时=今日十二辰', async () => {
+  it('流日/流时独立可选:默认皆不导出;流日=公历当月逐日,流时=今日十三辰', async () => {
     const off = buildExportJSON(GOLDEN, chart) as Record<string, any>;
     expect(off.liuRi).toBeUndefined();
     expect(off.liuShi).toBeUndefined();
@@ -303,7 +310,7 @@ describe('导出集成', () => {
     expect(on.liuRi.days).toHaveLength(daysInMonth);
     expect(on.liuRi.note).toContain('六十甲子');
     expect(String(on.liuRi.days[0][2])).toMatch(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
-    expect(on.liuShi.hours).toHaveLength(12);
+    expect(on.liuShi.hours).toHaveLength(13); // 十三时辰：早/晚子时分列
     expect(on.liuShi.note).toContain('五鼠遁');
     expect(on.liuShi.dayGanZhi).toMatch(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
 

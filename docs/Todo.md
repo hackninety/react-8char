@@ -12,7 +12,7 @@
 ② **农历闰月自动判断**：[`getLunarLeapMonth`](../src/lib/engine/mystilight/ext/utils.ts)（lunar-javascript
 `LunarYear` 查表），表单三态自动判断，仅所填月恰为该年闰月时出现勾选；年/月变动即取消勾选防跨盘残留；
 golden 补闰月抽查与本月/闰月转换差异断言。③ **流日/流时独立可选导出**：`ExportOptions.includeLiuRi/includeLiuShi`
-附「公历当月逐日流日」「今日十二时辰流时」块（默认关），note 附六十甲子顺推/五鼠遁口诀供 AI 推表外日期；
+附「公历当月逐日流日」「今日十三时辰流时（早/晚子时分列）」块（默认关），note 附六十甲子顺推/五鼠遁口诀供 AI 推表外日期；
 文件名按勾选追加 `_流日YYYY-MM-DD`/`_流时X时` 后缀（取自块内 `date`/`nowShiChen`，与内容严格同源）；
 姓名入 `BaziInput.name` → 文件名/`input` 块/MD 基本信息。④ **流时子时口径修复**（bug）：
 [`getLiuShiForDay`](../src/lib/engine/mystilight/ext/liushi.ts) 原以代表小时 23 点取子时，触发 lunar-javascript
