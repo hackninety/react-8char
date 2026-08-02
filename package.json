@@ -7,12 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "npm run build && wrangler dev",
     "mcp:check": "tsc -p tsconfig.mcp.json",
     "mcp:build": "esbuild mcp/server.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist-mcp/server.mjs --log-level=warning",
     "test": "vitest run",
     "mcp:e2e": "node scripts/mcp-stdio-check.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
@@ -36,6 +37,7 @@
     "tyme4ts": "^1.5.2"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.44.0",
     "@eslint/js": "^9.39.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@playwright/test": "^1.61.1",
@@ -51,6 +53,7 @@
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
     "vitest": "^4.1.10",
+    "wrangler": "^4.110.0",
     "zod": "^3.25.76"
   }
 }
