@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, MapPin, Calendar, Search, Moon } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, Search, Moon, Clock3 } from 'lucide-react';
+import RectifyPanel from '@/components/RectifyPanel';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,6 +93,8 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [timeZhi, setTimeZhi] = useState(saved?.timeZhi ?? '');
   const [lookupResults, setLookupResults] = useState<ReverseLookupResult[]>([]);
   const [lookupError, setLookupError] = useState('');
+  // 校对时辰（定盘）：解析好的公历基础输入；null=面板关闭
+  const [rectifyBase, setRectifyBase] = useState<{ year: number; month: number; day: number; gender: 0 | 1; sect: 1 | 2 } | null>(null);
 
   // 派生勾选态：仅当勾选时所绑的年月与当前所填一致才视为勾选
   const ymKey = `${yearStr}|${monthStr}`;
@@ -216,6 +219,50 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       engine: engineId,
       compare: compareOn,
       ...loc,
+      name: name.trim() || undefined,
+      livingPlace: livingPlace.trim() || undefined,
+      userNote: userNote.trim() || undefined,
+    });
+  };
+
+  // 打开校对时辰面板：只验证年月日（时分未知正是要校的），农历先转公历（时刻用正午占位不影响日期）
+  const openRectify = () => {
+    setLookupError('');
+    const y = Number(yearStr);
+    const m = Number(monthStr);
+    const d = Number(dayStr);
+    if (!Number.isInteger(y) || y < 1900 || y > currentYear) { setLookupError(`年份须在 1900 ~ ${currentYear} 之间`); return; }
+    if (!Number.isInteger(m) || m < 1 || m > 12) { setLookupError('月份须在 1 ~ 12 之间'); return; }
+    if (!Number.isInteger(d) || d < 1 || d > 31) { setLookupError('日期须在 1 ~ 31 之间'); return; }
+    let sy = y, sm = m, sd = d;
+    if (mode === 'lunar') {
+      try {
+        const solar = lunarToSolar(y, m, d, 12, 0, leapState.kind === 'ask' && isLeapMonth);
+        sy = solar.year; sm = solar.month; sd = solar.day;
+      } catch (err) {
+        setLookupError(`农历转换失败：${err instanceof Error ? err.message : '日期无效'}`);
+        return;
+      }
+    }
+    setRectifyBase({ year: sy, month: sm, day: sd, gender, sect });
+  };
+
+  // 校时选定：回填该时辰代表时刻并直接起盘（关闭真太阳时——时辰不详即无可靠钟表时刻）
+  const handleRectifyPick = (hour: number, minute: number) => {
+    if (!rectifyBase) return;
+    setMode('solar');
+    setYearStr(String(rectifyBase.year));
+    setMonthStr(String(rectifyBase.month));
+    setDayStr(String(rectifyBase.day));
+    setHourStr(String(hour));
+    setMinuteStr(String(minute));
+    setUseTrueSolar(false);
+    setRectifyBase(null);
+    onSubmit({
+      ...rectifyBase,
+      hour, minute,
+      engine: engineId,
+      compare: compareOn,
       name: name.trim() || undefined,
       livingPlace: livingPlace.trim() || undefined,
       userNote: userNote.trim() || undefined,
@@ -543,6 +590,11 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
               >
                 {renderDateInputs()}
                 {mode === 'lunar' && renderLeapMonthRow()}
+                <button type="button" onClick={openRectify} data-testid="rectify-open"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-crimson dark:hover:text-gold transition-colors cursor-pointer">
+                  <Clock3 className="w-3.5 h-3.5" />
+                  时辰不详？校对时辰（十三时辰并排定盘，早/晚子时重点比对）
+                </button>
                 {renderCommonSelects()}
                 {lookupError && <p className="text-xs text-destructive">{lookupError}</p>}
                 <Button type="submit" disabled={loading}
@@ -612,6 +664,10 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </AnimatePresence>
         </CardContent>
       </Card>
+
+      {rectifyBase && (
+        <RectifyPanel base={rectifyBase} onPick={handleRectifyPick} onClose={() => setRectifyBase(null)} />
+      )}
     </motion.div>
   );
 }

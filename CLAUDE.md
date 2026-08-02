@@ -45,6 +45,9 @@ React 19 + Vite + Tailwind 4 的八字排盘应用。核心设计哲学：**确�
 ### 人生K线 `lifekline.ts` —— 仅页面展示
 运势量化模型；其身强弱判定 `judge` 被 patterns/decadeplan/yongshen/wuxing-energy 复用（内部输入）。**lifeKline 分数与十年规划表的均值/高光/低谷列均不进 TOON/MD 导出**；MCP 的 `get_kline` 工具仍可按需查询。
 
+### 校对时辰（定盘）`rectify.ts` + `RectifyPanel`
+时辰不详时同日十三时辰并排起盘（不作真太阳时校正），特征勾选×1 + 大事年份 K线反查×2 打匹配分；参照 react-zwds 同名功能。晚子时换日由 sect 决定（两派时柱同、日柱异）——期望值测试冻结在 `tests/rectify.test.ts`。
+
 ### 提示词协议 `prompt-template.ts`
 AI 角色 + 分析框架 + 反幻觉纪律 + 六大专项深挖 + 四流派视角切换协议，Markdown 导出与 AI Prompt 共用；改导出字段时须同步这里的字段说明文字。
 
