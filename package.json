@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "mcp:check": "tsc -p tsconfig.mcp.json",
-    "mcp:build": "esbuild mcp/server.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist-mcp/server.mjs --log-level=warning",
+    "mcp:build": "node scripts/build-mcp.mjs",
     "test": "vitest run",
     "mcp:e2e": "node scripts/mcp-stdio-check.mjs",
     "e2e": "playwright test"

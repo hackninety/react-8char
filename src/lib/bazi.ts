@@ -7,6 +7,7 @@ import {
 } from './engine/mystilight/ext';
 import type { EightCharJSON } from './engine/mystilight/ext';
 import { resolveTrueSolarInput } from './engine/solar';
+import { solarTermShiftFor, withSolarTermShift } from './engine/jieqi-scale';
 import { buildWuYunLiuQiExport } from './wuyunliuqi';
 import { buildLifeKline } from './lifekline';
 import { analyzeTiaoHou } from './tiaohou';
@@ -47,7 +48,7 @@ export interface BaziInput {
   longitude?: number;
   /** 出生地纬度（用于地利寒热判断，南正北负？——统一北纬为正）；城市模式按省级取，手动可填 */
   latitude?: number;
-  /** 出生地时区 UTC 偏移（小时，如东京 9、纽约 -5）；缺省 8（北京时）。仅手动经度时需指定 */
+  /** 出生地时区 UTC 偏移（小时，如东京 9、纽约 -5）；缺省 8（北京时）。决定真太阳时中央经线，并换算出生瞬间与北京时节气比较 */
   utcOffset?: number;
   livingPlace?: string;
   userNote?: string;
@@ -77,11 +78,12 @@ export function calculateBazi(input: BaziInput): BaziResult {
   // 真太阳时预处理下沉至 engine/solar.ts（与 tyme 引擎共用同一实现）
   const { year, month, day, hour, minute, solarTimeInfo } = resolveTrueSolarInput(input);
 
-  const result = getCurrentEightCharJSON({
+  // 节气表为北京时；输入为当地钟表或真太阳时。按输入尺度平移节气表，年/月柱与起运按瞬间比较，日/时柱不变。
+  const result = withSolarTermShift(solarTermShiftFor(input, solarTimeInfo), () => getCurrentEightCharJSON({
     year, month, day, hour, minute,
     gender: input.gender,
     sect: input.sect,
-  });
+  }));
 
   (result as BaziResultX)._solarTimeInfo = solarTimeInfo;
 

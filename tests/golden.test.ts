@@ -3,6 +3,8 @@
 // 期望值来源：当前代码计算 + 双引擎对拍硬一致 + 手工复核（立春时刻对天文数据、
 // 月柱五虎遁、时柱五鼠遁逐项核对），冻结为回归基准——目的是防引擎依赖升级
 // （dependabot 每周检查 mystilight-8char / tyme4ts / lunar-javascript）引入排盘回归。
+// 起运日按「出生瞬间 vs 交节瞬间」口径（节气表平移到输入尺度），四例新值经
+// tests/solar-term-scale.test.ts 的独立 lunar-javascript 对照复核；四柱不变。
 import { describe, it, expect } from 'vitest';
 import { calculateBazi, lunarToSolar, getLunarLeapMonth } from '../src/lib/bazi';
 import type { BaziInput, BaziResult } from '../src/lib/bazi';
@@ -24,25 +26,25 @@ const GOLDEN_CASES: Golden[] = [
     name: '北京男（真太阳时 -15 分）',
     input: { year: 1990, month: 6, day: 15, hour: 8, minute: 30, gender: 1, sect: 1, city: '北京' },
     pillars: '庚午 壬午 辛亥 壬辰',
-    startDate: '1997-12-05',
+    startDate: '1997-11-25',
   },
   {
     name: '重庆女（晚子时+真太阳时移出子时）',
     input: { year: 1985, month: 1, day: 20, hour: 23, minute: 30, gender: 0, sect: 1, city: '重庆' },
     pillars: '甲子 丁丑 己未 乙亥',
-    startDate: '1990-02-09',
+    startDate: '1990-02-20',
   },
   {
     name: '悉尼男（南半球，UTC+10）',
     input: { year: 1992, month: 12, day: 5, hour: 14, minute: 0, gender: 1, sect: 1, longitude: 151.2, latitude: -33.87, utcOffset: 10 },
     pillars: '壬申 辛亥 乙卯 癸未',
-    startDate: '1993-06-15',
+    startDate: '1993-06-25',
   },
   {
     name: '纽约女（西经，UTC-5）',
     input: { year: 1988, month: 3, day: 10, hour: 9, minute: 15, gender: 0, sect: 1, longitude: -74.0, latitude: 40.7, utcOffset: -5 },
     pillars: '戊辰 乙卯 甲子 己巳',
-    startDate: '1989-10-10',
+    startDate: '1989-12-10',
   },
 ];
 

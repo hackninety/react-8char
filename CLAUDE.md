@@ -35,6 +35,7 @@ React 19 + Vite + Tailwind 4 的八字排盘应用。核心设计哲学：**确�
 - `registry.ts` 按 id 惰性加载双引擎：`mystilight`（默认，渊海子平体系）与 `tyme`（tyme4ts，起运流派多，主要用于对拍校验）；`compare.ts` 生成对拍报告，区分「硬差异」（必须一致）与「流派性差异」（预期口径不同）。
 - `mystilight/upstream.ts` 是 npm 包 `mystilight-8char` 的**唯一接入点**（该包 main 字段指向不存在的文件，此处直连 `index.js`，勿绕过）；`mystilight/ext/` 为应用内扩展层：流月/流日/流时、农历↔公历转换、闰月查询（`getLunarLeapMonth`）、真太阳时、八字反查。
 - `solar.ts` 真太阳时预处理（经度差+均时差），两引擎共用同一实现。
+- `jieqi-scale.ts` 节气时间尺度平移：两引擎节气表为北京时，单次排盘内按 `utcOffset + 真太阳时偏移 − 8h` 平移，使年/月柱与起运按出生瞬间比较（tyme 侧原型包裹在 `tyme/jieqi-scale.ts`；mystilight 侧靠 `scripts/mystilight-jieqi-patch.mjs` 在 vite/Vitest/`mcp:build` 打补丁，升级该包时补丁目标不唯一会直接报错）。
 
 ### 数据流（单向）
 `BaziForm` → `calculateBazi`（`src/lib/bazi.ts`）→ 引擎 `EightCharJSON` + 应用私挂字段（`BaziResultX`）→ 组件渲染；导出走 `buildExportJSON` → TOON（`toon.ts`）或 `buildExportMarkdown`（`markdown-export.ts`）。`buildExportJSON` 是 TOON/Prompt/MCP 三处共用的唯一数据组装点，`ExportOptions.includeLiuRi/includeLiuShi` 可选附「公历当月逐日流日」「今日十三时辰流时（早/晚子时分列）」块（导出卡片独立勾选，默认关；note 附六十甲子顺推/五鼠遁口诀供 AI 推表外日期）。

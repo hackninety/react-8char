@@ -51,6 +51,15 @@
 - **响应式** - 移动端适配
 - **暗色模式** - 支持明暗主题切换
 
+## 节气时间口径（按出生瞬间）
+
+两引擎（mystilight-8char 内联的 lunar-javascript、tyme4ts）的节气表都是北京时（UTC+8），而排盘输入是出生地钟表或真太阳时。排盘时按输入尺度把节气表平移 `utcOffset×60 + 真太阳时偏移 − 480` 分钟（`src/lib/engine/jieqi-scale.ts`），于是：
+
+- **年柱、月柱、起运**按「出生瞬间 vs 交节瞬间」比较——国外出生、1986–1991 中国夏令时（填 UTC+9）、开启真太阳时都不再错位；
+- **日柱、时柱**仍按所填当地钟表（开启时按真太阳时）读取。
+
+例：纽约 2024-02-04 10:00（UTC−5，即北京时 23:00，已过立春 16:27）排 **甲辰 丙寅 戊戌 丁巳**。未提供 `utcOffset` 时按北京时处理，平移为 0、与上游一致。mystilight 一侧靠 `scripts/mystilight-jieqi-patch.mjs` 在 dev 预构建 / vite build / Vitest / `mcp:build` 中打一行补丁；独立对照与随机用例见 `tests/solar-term-scale.test.ts`。
+
 ## MCP Server（AI 按需查询）
 
 ```bash

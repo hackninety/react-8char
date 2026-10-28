@@ -10,6 +10,9 @@ import { getEngineDescriptor } from '../registry';
 import { getShiShen } from '../mystilight/ext/shishen';
 import { computeTymeShenSha } from './shensha';
 import { resolveTrueSolarInput } from '../solar';
+import type { ResolvedSolarInput } from '../solar';
+import { solarTermShiftFor, withSolarTermShift } from '../jieqi-scale';
+import { shiftTymeSolarTerms } from './jieqi-scale';
 import { getGanWuXing, getZhiWuXing } from '../../utils';
 import { applySect } from './sects';
 
@@ -61,8 +64,12 @@ function pillarOf(sc: SixtyCycle, dayStem: HeavenStem, value: number): Pillar {
 function calculate(input: BaziInput): UnifiedBaziChart {
   applySect(input.sect);
   // 真太阳时预处理与 mystilight 共用 engine/solar.ts 同一实现（两引擎输入口径一致）
-  const { year, month, day, hour, minute, solarTimeInfo } = resolveTrueSolarInput(input);
+  const resolved = resolveTrueSolarInput(input);
+  // 节气表为北京时；输入为当地钟表或真太阳时。按输入尺度平移节气表，年/月柱与起运按瞬间比较，日/时柱不变。
+  return withSolarTermShift(solarTermShiftFor(input, resolved.solarTimeInfo), () => buildChart(input, resolved), shiftTymeSolarTerms);
+}
 
+function buildChart(input: BaziInput, { year, month, day, hour, minute, solarTimeInfo }: ResolvedSolarInput): UnifiedBaziChart {
   const solarTime = SolarTime.fromYmdHms(year, month, day, hour, minute, 0);
   const eightChar = solarTime.getLunarHour().getEightChar();
   const dayStem = eightChar.getDay().getHeavenStem();

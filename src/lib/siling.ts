@@ -87,7 +87,7 @@ function collectJie(year: number): { name: string; ms: number }[] {
 /**
  * 计算出生时刻的人元司令。
  * @param dayGan 日主天干（算司令干十神用）
- * @param chartMonthZhi 命盘月支（校验一致性；真太阳时校正跨节时会不一致，出注说明）
+ * @param chartMonthZhi 命盘月支（校验一致性；引擎已按出生瞬间比节气，仍不一致时出注说明）
  */
 export function computeSiLing(input: SiLingInput, dayGan: string, chartMonthZhi?: string): SiLingResult | null {
   try {
@@ -128,7 +128,7 @@ export function computeSiLing(input: SiLingInput, dayGan: string, chartMonthZhi?
 
     const notes: string[] = [];
     if (chartMonthZhi && chartMonthZhi !== zhi) {
-      notes.push(`按天文节气所值为${zhi}月，与命盘月支${chartMonthZhi}不一致（多因真太阳时校正跨节或流派口径），司令以天文节气为准`);
+      notes.push(`按天文节气所值为${zhi}月，与命盘月支${chartMonthZhi}不一致（多因节气时刻精度或流派口径），司令以天文节气为准`);
     }
     if (dayN <= 1 || daysInto >= sumDays(seq) - 1) {
       notes.push('生于分野交界附近，司令归属对时刻敏感，宜两说并参');
