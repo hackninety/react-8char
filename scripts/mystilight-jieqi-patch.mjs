@@ -7,15 +7,38 @@ import { readFileSync } from 'node:fs';
 
 /** 与 jieqi-scale.ts 及 react-mcp 同键：其 vendor 快照若与外层平移叠加，嵌套检查会直接报错而非静默双重平移 */
 export const JIEQI_SHIFT_KEY = 'react-mcp.jieqiShiftDays';
+export const OBSERVATION_TIME_KEY = 'react-mcp.baziObservationTime';
 export const MYSTILIGHT_FILE = /mystilight-8char[\\/]index\.js$/;
 
 const TARGET = 'o["jieQi"][key] = Solar.fromJulianDay(julianDays[i]);';
 const REPLACEMENT = `o["jieQi"][key] = Solar.fromJulianDay(julianDays[i] + (globalThis[Symbol.for(${JSON.stringify(JIEQI_SHIFT_KEY)})] || 0));`;
+const OBSERVATION_TARGET = 'const lunarCur = Solar.fromYmd(curY, curM, curD).getLunar();';
+// 当前运限有自己的钟表/时区；不能继承出生的经度、夏令时或真太阳时偏移。
+// MCP 显式提供观测时刻；前端沿用浏览器当前时刻及该时刻的民用偏移。
+const OBSERVATION_REPLACEMENT = `const lunarCur = (() => {
+  const observation = globalThis[Symbol.for(${JSON.stringify(OBSERVATION_TIME_KEY)})] || {
+    year: curY, month: curM, day: curD, hour: now.getHours(), minute: now.getMinutes(),
+    utcOffsetMinutes: -now.getTimezoneOffset()
+  };
+  const key = Symbol.for(${JSON.stringify(JIEQI_SHIFT_KEY)});
+  const previous = globalThis[key];
+  try {
+    globalThis[key] = (observation.utcOffsetMinutes - 480) / 1440;
+    return Solar.fromYmdHms(observation.year, observation.month, observation.day, observation.hour, observation.minute, 0).getLunar();
+  } finally {
+    if (previous === undefined) delete globalThis[key]; else globalThis[key] = previous;
+  }
+})();`;
+const MONTH_TARGET = 'const monthGanZhi = sect === 2 ? lunarCur.getMonthInGanZhiExact() : lunarCur.getMonthInGanZhi();';
+const MONTH_REPLACEMENT = 'const monthGanZhi = lunarCur.getMonthInGanZhiExact();';
 
 export function patchMystilight(code) {
-  const count = code.split(TARGET).length - 1;
-  if (count !== 1) throw new Error(`mystilight-8char solar-term patch expected exactly one target, found ${count}; review the upstream bundle before upgrading`);
-  return code.replace(TARGET, REPLACEMENT);
+  for (const [target, replacement] of [[TARGET, REPLACEMENT], [OBSERVATION_TARGET, OBSERVATION_REPLACEMENT], [MONTH_TARGET, MONTH_REPLACEMENT]]) {
+    const count = code.split(target).length - 1;
+    if (count !== 1) throw new Error(`mystilight-8char solar-term patch expected exactly one target, found ${count}; review the upstream bundle before upgrading`);
+    code = code.replace(target, replacement);
+  }
+  return code;
 }
 
 /** esbuild 插件：供 Vite 依赖预构建（optimizeDeps）与 mcp:build 打包使用 */

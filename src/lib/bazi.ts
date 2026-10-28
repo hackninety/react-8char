@@ -79,6 +79,7 @@ export function calculateBazi(input: BaziInput): BaziResult {
   const { year, month, day, hour, minute, solarTimeInfo } = resolveTrueSolarInput(input);
 
   // 节气表为北京时；输入为当地钟表或真太阳时。按输入尺度平移节气表，年/月柱与起运按瞬间比较，日/时柱不变。
+  // 构建补丁单独按浏览器当前时分/偏移生成流月，不能把出生偏移带入当前运限。
   const result = withSolarTermShift(solarTermShiftFor(input, solarTimeInfo), () => getCurrentEightCharJSON({
     year, month, day, hour, minute,
     gender: input.gender,
