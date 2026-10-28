@@ -11,16 +11,18 @@ import LifeKlineChart from './LifeKlineChart';
 import JsonExport from './JsonExport';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
 import type { CompareReport, EngineMeta } from '@/lib/engine';
+import type { CaseReference } from 'mingli-cases-react';
 
 interface BaziChartProps {
   input: BaziInput;
   result: BaziResult;
+  caseReference?: CaseReference | null;
 }
 
 const PILLAR_LABELS = ['年柱', '月柱', '日柱', '时柱'];
 const PILLAR_KEYS = ['year', 'month', 'day', 'time'] as const;
 
-export default function BaziChart({ input, result }: BaziChartProps) {
+export default function BaziChart({ input, result, caseReference }: BaziChartProps) {
   const { pillars, wuXingPower, gender } = result;
   const ext = result as BaziResult & import('@/lib/bazi').BaziResultExtras;
   const engineMeta = ext.engine as EngineMeta | undefined;
@@ -109,7 +111,7 @@ export default function BaziChart({ input, result }: BaziChartProps) {
       <LifeKlineChart result={result} />
 
       {/* JSON 导出 */}
-      <JsonExport input={input} result={result} />
+      <JsonExport input={input} result={result} caseReference={caseReference} />
     </motion.div>
   );
 }

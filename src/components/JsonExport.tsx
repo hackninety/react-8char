@@ -10,10 +10,13 @@ import { buildExportMarkdown, generateMarkdownFileName } from '@/lib/markdown-ex
 import { toToon } from '@/lib/toon';
 import { preloadQiongTong, isQiongTongLoaded } from '@/lib/tiaohou';
 import type { BaziInput, BaziResult } from '@/lib/bazi';
+import type { CaseReference } from 'mingli-cases-react';
+import { appendCaseReferenceMarkdown, withCaseReference } from '@/lib/case-reference';
 
 interface JsonExportProps {
   input: BaziInput;
   result: BaziResult;
+  caseReference?: CaseReference | null;
 }
 
 // 预估文件大小（UTF-8 字节数，与下载落盘一致）
@@ -22,7 +25,7 @@ function formatSize(text: string): string {
   return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb.toFixed(1)} KB`;
 }
 
-export default function JsonExport({ input, result }: JsonExportProps) {
+export default function JsonExport({ input, result, caseReference }: JsonExportProps) {
   // 穷通宝鉴原文库为懒加载 chunk：就绪后重建导出内容（classic 字段补齐）
   const [qtReady, setQtReady] = useState(isQiongTongLoaded());
   // 流日/流时默认不导出，特殊场景独立勾选：流日=当前公历月逐日（出行择日）、流时=今日十三时辰·早晚子时分列（办事择时）
@@ -37,11 +40,11 @@ export default function JsonExport({ input, result }: JsonExportProps) {
 
   // qtReady 是「原文库懒加载就绪」信号：就绪后重建以补齐 classic 字段
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const exportData = useMemo(() => buildExportJSON(input, result, { includeLiuRi: withLiuRi, includeLiuShi: withLiuShi }), [input, result, withLiuRi, withLiuShi, qtReady]);
+  const exportData = useMemo(() => withCaseReference(buildExportJSON(input, result, { includeLiuRi: withLiuRi, includeLiuShi: withLiuShi }), caseReference), [input, result, withLiuRi, withLiuShi, qtReady, caseReference]);
   // 数据载荷用 TOON（JSON 数据模型的紧凑无损等价表示，约省 21% 字符、token 更省）
   const toonText = useMemo(() => toToon(exportData), [exportData]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const markdown = useMemo(() => buildExportMarkdown(input, result, { includeLiuRi: withLiuRi, includeLiuShi: withLiuShi }), [input, result, withLiuRi, withLiuShi, qtReady]);
+  const markdown = useMemo(() => appendCaseReferenceMarkdown(buildExportMarkdown(input, result, { includeLiuRi: withLiuRi, includeLiuShi: withLiuShi }), caseReference), [input, result, withLiuRi, withLiuShi, qtReady, caseReference]);
   const toonSize = useMemo(() => formatSize(toonText), [toonText]);
   const mdSize = useMemo(() => formatSize(markdown), [markdown]);
 
@@ -114,6 +117,7 @@ export default function JsonExport({ input, result }: JsonExportProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
+          {caseReference && <p className="text-xs text-muted-foreground">本次导出附有独立命例参考「{caseReference.title}」，其中原题答案不代表当前命主事实；可在命例库清除。</p>}
           {/* 可选：流日/流时独立勾选（默认不导出，防止无关数据稀释 AI 注意力） */}
           <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-x-5">
             <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">

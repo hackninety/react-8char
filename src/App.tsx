@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
@@ -9,6 +9,8 @@ import BaziChart from '@/components/BaziChart';
 import ThemeToggle from '@/components/ThemeToggle';
 import ProfileBar from '@/components/ProfileBar';
 import HehunPanel from '@/components/HehunPanel';
+import CaseLibraryEntry from '@/components/CaseLibraryEntry';
+import type { CaseReference } from 'mingli-cases-react';
 import { calculateChart, compareEngines, DEFAULT_ENGINE } from '@/lib/engine';
 import { preloadQiongTong } from '@/lib/tiaohou';
 import { preloadZiping } from '@/lib/zipingzhenquan';
@@ -28,6 +30,9 @@ export default function App() {
   const [formEpoch, setFormEpoch] = useState(0);
   // 档案列表变更信号（ProfileBar 增删后合婚面板重新读取）
   const [profilesVersion, setProfilesVersion] = useState(0);
+  const [caseReference, setCaseReference] = useState<CaseReference | null>(null);
+  const [caseLibraryEpoch, setCaseLibraryEpoch] = useState(0);
+  const caseLibraryGeneration = useRef(0);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -52,6 +57,10 @@ export default function App() {
   }, [input]);
 
   const handleSubmit = useCallback((formInput: BaziInput, silent = false) => {
+    // 新命盘清除旧参考并卸载命例库，旧异步请求不能给新命盘回填引用。
+    setCaseReference(null);
+    caseLibraryGeneration.current += 1;
+    setCaseLibraryEpoch(caseLibraryGeneration.current);
     setLoading(true);
     setResult(null);
     setInput(formInput);
@@ -140,6 +149,19 @@ export default function App() {
               onChanged={() => setProfilesVersion((v) => v + 1)}
             />
 
+            <CaseLibraryEntry
+              key={`case-library-${caseLibraryEpoch}`}
+              reference={caseReference}
+              onReferenceChange={(reference) => {
+                if (caseLibraryGeneration.current === caseLibraryEpoch) setCaseReference(reference);
+              }}
+              onClear={() => {
+                setCaseReference(null);
+                caseLibraryGeneration.current += 1;
+                setCaseLibraryEpoch(caseLibraryGeneration.current);
+              }}
+            />
+
             <HehunPanel profilesVersion={profilesVersion} />
 
             {/* 不用 AnimatePresence mode="wait"：React 19 下退出动画会卡死、
@@ -168,7 +190,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <BaziChart input={input} result={result} />
+                <BaziChart input={input} result={result} caseReference={caseReference} />
               </motion.div>
             )}
           </div>

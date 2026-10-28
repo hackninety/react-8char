@@ -1,5 +1,6 @@
 // AI 分析提示词：角色设定 + 默认分析框架 + 多流派视角切换协议。
 import { toToon, TOON_SYNTAX_HINT } from './toon';
+import { CASE_REFERENCE_BOUNDARY } from './case-reference';
 
 // 设计目标：一次导出（JSON/Markdown 皆可），AI 对话中可随时切换流派视角
 // 重新解读，无需用户重复上传命盘数据——盘面数据是流派无关的，差异只在解读体系。
@@ -177,6 +178,7 @@ export function generateAIPrompt(jsonData: Record<string, unknown>): string {
 
   const aiNote = jsonData.aiNote as string | undefined;
   const userNote = aiNote ? `\n\n> **用户备注**：${aiNote}` : '';
+  const caseNote = jsonData.caseReference ? `\n\n**命例参考边界**：${CASE_REFERENCE_BOUNDARY}` : '';
 
   return `${AI_ANALYST_ROLE}
 
@@ -187,5 +189,5 @@ export function generateAIPrompt(jsonData: Record<string, unknown>): string {
 ${toonStr}
 \`\`\`
 
-${AI_ANALYSIS_GUIDANCE}`;
+${AI_ANALYSIS_GUIDANCE}${caseNote}`;
 }
