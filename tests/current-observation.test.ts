@@ -6,7 +6,8 @@ const born: BaziInput = { year: 1990, month: 6, day: 15, hour: 8, minute: 30, ge
 function currentMonth(input = born) {
   const chart = calculateBazi(input);
   return { month: chart.currentYun?.liuYue?.ganZhi?.join(''), monthData: chart.currentYun?.liuYue,
-    monthShenSha: (chart.shensha as { current: { liuYue: string[] } }).current.liuYue,
+    // 上游运行时输出含 shensha，但 EightCharJSON 声明尚未列出该字段。
+    monthShenSha: (chart as unknown as { shensha: { current: { liuYue: string[] } } }).shensha.current.liuYue,
     pillars: chart.pillars, yun: chart.yun };
 }
 afterEach(() => {
