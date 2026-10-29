@@ -18,7 +18,8 @@ test('排盘 → K线流月下钻 → TOON 下载（golden 命例干支断言，
   const pageErrors: string[] = [];
   page.on('pageerror', (e) => pageErrors.push(String(e)));
   page.on('console', (msg) => {
-    if (msg.type() === 'error') pageErrors.push(msg.text());
+    // 正式 Chrome 会自动请求站点图标；本站未提供图标，这个 404 不是页面错误（CI 的 Chromium 不发此请求）。
+    if (msg.type() === 'error' && !msg.location().url.endsWith('/favicon.ico')) pageErrors.push(msg.text());
   });
 
   await page.goto('/');
