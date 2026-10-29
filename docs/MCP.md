@@ -1,25 +1,51 @@
-# 八字排盘 MCP Server
+# 八字排盘 MCP 使用说明
 
-把排盘引擎暴露为 [MCP](https://modelcontextprotocol.io)（Model Context Protocol）工具，让 Claude 等 AI **按需查询**盘面数据，而不是一次性吞下整份静态导出——AI 分析到哪一年就查哪一年，交互式工具调用对推理质量的提升通常大于更大的静态上下文。
+有两种 [MCP](https://modelcontextprotocol.io)（Model Context Protocol）入口：统一服务提供跨术数排盘与 common 资料检索；本仓库的专用八字服务提供 `chartId` 驱动的深挖工具。两种服务均返回计算结果或资料，由 AI 组织分析。
 
-## 构建
+## 统一远程 MCP：排八字并查询 common
+
+地址为 **`https://mcp.0x7c.cc/mcp`**，传输方式 **Streamable HTTP**，**无鉴权，无需访问令牌**。
 
 ```bash
-npm install          # 首次
+# Codex
+codex mcp add paipan-common-remote --url https://mcp.0x7c.cc/mcp
+
+# Claude Code
+claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x7c.cc/mcp
+```
+
+命令分别用于对应客户端；配置后重新连接 MCP。已有本机 `paipan-common` 时，本机与远程选一种即可。其他支持远程 MCP 的客户端填写相同地址、Streamable HTTP 与“无鉴权”。依据：[Codex 官方文档](https://learn.chatgpt.com/docs/extend/mcp)、[Claude Code 官方文档](https://code.claude.com/docs/en/mcp)。
+
+统一服务的六个工具为 `system_catalog`、`chart_calculate`、`prepare_reading`、`corpus_list`、`corpus_search`、`corpus_read`。先调用 `system_catalog` 确认 `bazi` 当前支持的参数，再计算并检索命例，最后读取命中的原文。可复制的完整对话示例见 [README](../README.md#在-ai-中使用统一-mcp)。
+
+统一 `bazi` 使用公历出生日期、时分、显式时区和性别；真太阳时另需出生经度，流日/流时另需 `queryTime`。不要用专用服务的 `city`、`latitude`、`utcOffset` 字段替代统一服务的参数结构。统一服务的八字关联 common 资料为命例库；下表中的合婚、反查、双引擎对拍、K线和古籍 resources 属于专用服务，并非统一远端的工具目录。
+
+## 本地专用八字 MCP：构建
+
+```bash
+npm ci               # 按锁文件安装依赖
 npm run mcp:build    # 产出 dist-mcp/server.mjs（自包含单文件，零运行时依赖）
 npm run mcp:check    # 可选：类型检查 mcp/ 与 src/lib
 ```
 
-## 接入
+## 本地专用八字 MCP：接入
+
+下列示例路径适用于本机 `D:/WWW/react-8char`，其他电脑需改为实际绝对路径，并保证客户端可找到 `node`。服务名为 `bazi`，传输方式为 stdio，计算在本机进行。
+
+### Codex
+
+```bash
+codex mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
+```
 
 ### Claude Code（本仓库内）
 
-仓库已带项目级 [`.mcp.json`](../.mcp.json)，在本项目目录里打开 Claude Code 即自动可用（需先 `npm run mcp:build`）。
+仓库已带项目级 [`.mcp.json`](../.mcp.json)，先 `npm run mcp:build`，再在本项目目录里打开 Claude Code，确认项目 MCP 配置后即可使用。
 
 其他项目/全局接入：
 
 ```bash
-claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
+claude mcp add --transport stdio --scope user bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 ```
 
 ### Claude Desktop
@@ -37,7 +63,9 @@ claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 }
 ```
 
-## 工具目录
+配置后重连 MCP；构建更新或进程重启后，旧 `chartId` 需要重新排盘生成。
+
+## 专用服务工具目录
 
 | 工具 | 作用 | 关键入参 |
 |---|---|---|
@@ -62,11 +90,11 @@ claude mcp add bazi -- node D:/WWW/react-8char/dist-mcp/server.mjs
 - **stdio 传输**：stdout 只走 JSON-RPC。排盘引擎的耗时 `console.log` 会撕裂协议，入口（[`mcp/server.ts`](../mcp/server.ts)）先把 log/info/debug/warn 改道 stderr，再动态加载业务模块。
 - **chartId 缓存**：`paipan` 按输入参数哈希生成确定性 id（同参重排同 id），进程内 LRU 缓存 20 张盘；服务重启后 id 失效，工具会返回明确的「请重新 paipan」提示。
 - **反幻觉指引**：server `instructions` 要求 AI 以工具返回为准、禁止凭记忆排盘或引经、结论附论据与置信度——与 web 端导出的分析纪律一致。
-- **复用 web 端全部逻辑**：MCP 层只做参数映射与 Markdown 组装（[`mcp/tools.ts`](../mcp/tools.ts) / [`mcp/format.ts`](../mcp/format.ts)），排盘、调候、司令、组合预检、K线全部走 `src/lib/*` 同一套代码，与网页结果严格一致。
+- **复用网页排盘与分析实现**：MCP 层做参数映射与 Markdown 组装（[`mcp/tools.ts`](../mcp/tools.ts) / [`mcp/format.ts`](../mcp/format.ts)），排盘、调候、司令、组合预检、K线走 `src/lib/*` 同一套代码。对比结果时需核对输入参数与时区；当前运限还受各自进程的当前时刻影响。
 
-## 典型对话流
+## 专用服务典型对话流
 
-1. 「帮我看看 1990年6月15日早上8点半北京出生的男命」→ AI 调 `paipan` 得摘要与 chartId
-2. 「2026 年财运如何？」→ `query_year(chartId, 2026)`，引用财运分与逐项因素作答
+1. 「公历 1990年6月15日 08:30，男，固定 UTC+8，不做真太阳时校正，请排八字」→ AI 调 `paipan` 得摘要与 chartId；专用服务不传 city/longitude 即不做真太阳时校正
+2. 「2026 年财运如何？」→ `query_year(chartId, 2026)`，结合干支、运限与逐项因素作答；K线分值属于该模型的辅助评分，不能直接当作事件结论
 3. 「哪个月适合动土搬家？」→ `query_liuyue` / `query_liuri` 择月择日
 4. 「这个盘准不准？」→ `compare_engines` 双引擎对拍

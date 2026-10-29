@@ -2,9 +2,36 @@
 
 基于 React + TypeScript 的现代八字排盘工具，采用渊海子平体系，提供完整的四柱八字排盘、大运流年流月流日流时分析、JSON 导出等功能。
 
+## 在 AI 中使用统一 MCP
+
+支持 MCP 的 AI 客户端可以直接连接 **`https://mcp.0x7c.cc/mcp`**，传输方式选择 **Streamable HTTP**，**无需访问令牌或登录**。统一服务负责排盘和检索 `common-ts-lib` 资料，AI 根据返回的盘面与原文进行分析。
+
+```bash
+# Codex
+codex mcp add paipan-common-remote --url https://mcp.0x7c.cc/mcp
+
+# Claude Code
+claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x7c.cc/mcp
+```
+
+命令分别用于对应客户端，配置后重新连接 MCP；已有本机 `paipan-common` 配置时，本机与远程选一种即可。其他支持远程 MCP 的客户端填写上述地址、传输方式和“无鉴权”。配置方法见 [Codex 官方文档](https://learn.chatgpt.com/docs/extend/mcp)与 [Claude Code 官方文档](https://code.claude.com/docs/en/mcp)。
+
+可直接向 AI 发送以下示例：
+
+```text
+先调用 system_catalog 核对 bazi 的参数，再用 prepare_reading 只排八字。
+出生资料：公历 1990-05-17 10:30，男，时区固定 +08:00，不启用真太阳时。
+查询时刻：2026-10-29 12:00，时区固定 +08:00。
+请检索 common 中相关命例，用 corpus_read 阅读原文后再分析，并区分盘面事实、案例参考和你的推断；先不读取原题答案。
+```
+
+八字输入须明确公历日期、时分、时区及性别；真太阳时还须提供出生地经度。流日、流时查询必须提供 `queryTime`。不知道时辰时先说明缺项，不用中午 12 点代填。IANA 时区（如 `Asia/Shanghai`）按日期处理夏令时，固定 `+08:00` 始终表示东八区，两者不可随意替换。
+
+统一服务有 `system_catalog`、`chart_calculate`、`prepare_reading`、`corpus_list`、`corpus_search`、`corpus_read` 六个工具；八字关联的 common 资料为公开命例库。下面介绍的网页调候原文、合婚、双引擎对拍等功能，以及本仓库的 **11 工具专用八字 MCP**，有各自的入口和能力范围，详见 [MCP 使用说明](docs/MCP.md)。
+
 ## 技术栈
 
-- **框架**: Vite + React 18 + TypeScript
+- **框架**: Vite 7 + React 19 + TypeScript
 - **UI**: Tailwind CSS + shadcn/ui + lucide-react
 - **动画**: framer-motion
 - **排盘核心**: [mystilight-8char](https://github.com/mystilight/mystilight-8char)（npm 直接依赖，渊海子平体系）+ 应用内扩展层 `src/lib/engine/mystilight/ext`（十神/流月/流日/流时/真太阳时/农历转换/八字反查）
@@ -45,9 +72,9 @@
 - **多流派视角** - 盲派做功/调候穷通宝鉴/旺衰滴天髓/格局子平真诠四派协议内嵌导出，对话中随时切换重读
 - **AI Prompt** - 一键生成 AI 分析专用提示词（TOON / Markdown 两种格式）
 - **多命盘档案** - 命名保存起盘参数（本机 localStorage），点击档案回填表单并重算
-- **公开命例库** - 在表单下方点击「打开命例库」才加载资料；按来源、资料集、年份、原题术数与题材筛选，保留来源版本、原出生资料和上游预排盘。答案默认隐藏，练习提示词不带答案；主动选择「用于 AI 参考」才在 TOON / Markdown / AI Prompt 附加独立参考区。案例不会回填出生表单或保存到个人档案，清除参考、重新排盘或载入档案会移除旧引用。数据和界面来自 `common-ts-lib` 中独立版本的 `mingli-cases-ts-lib` / `mingli-cases-react`。
+- **公开命例库** - 在表单下方点击「打开命例库」才加载资料；按来源、资料集、年份、原题术数与题材筛选，保留来源版本、原出生资料、时间精度标记和上游预排盘。答案默认隐藏，可直接选择「用于 AI 参考（不含答案）」；先揭晓答案后，才可明确选择「用于 AI 参考（含已揭晓答案）」。点击「隐藏答案」会撤回含答案的参考。所选内容在 TOON / Markdown / AI Prompt 中作为独立参考区，案例不会回填出生表单或保存到个人档案，清除参考、重新排盘或载入档案会移除旧引用。数据和界面来自 [common-ts-lib](https://github.com/hackninety/common-ts-lib) 中独立发布的 `mingli-cases-ts-lib` / `mingli-cases-react` **0.1.1 固定 Release 包**；标为未经核实的时刻或区间中点不得当作确定生时。
 - **合婚对照** - 从档案选两人双盘对照：宫星合冲刑害/互为十神与配偶星应象/喜用互补/调候互济/空亡参照，吉平忌清单不打总分，复制合婚 AI Prompt / 导出 MD / 导出 TOON
-- **MCP Server** - 排盘引擎暴露为 MCP 工具（paipan/query_year/应期/流月流日/调候快查/八字反查/双引擎对拍/合婚等 11 个）+ 六大专项深挖 prompts，Claude 等 AI 按需查询盘面而非吞静态导出，见 [docs/MCP.md](docs/MCP.md)
+- **本地专用八字 MCP** - 排盘引擎暴露为 MCP 工具（paipan/query_year/应期/流月流日/调候快查/八字反查/双引擎对拍/合婚等 11 个）+ 六大专项深挖 prompts，Claude 等 AI 可按需查询，见 [docs/MCP.md](docs/MCP.md)
 - **响应式** - 移动端适配
 - **暗色模式** - 支持明暗主题切换
 
@@ -58,15 +85,19 @@
 - **年柱、月柱、起运**按「出生瞬间 vs 交节瞬间」比较——国外出生、1986–1991 中国夏令时（填 UTC+9）、开启真太阳时都不再错位；
 - **日柱、时柱**仍按所填当地钟表（开启时按真太阳时）读取。
 
-例：纽约 2024-02-04 10:00（UTC−5，即北京时 23:00，已过立春 16:27）排 **甲辰 丙寅 戊戌 丁巳**。未提供 `utcOffset` 时按北京时处理，平移为 0、与上游一致。mystilight 一侧靠 `scripts/mystilight-jieqi-patch.mjs` 在 dev 预构建 / vite build / Vitest / `mcp:build` 中打一行补丁；独立对照与随机用例见 `tests/solar-term-scale.test.ts`。
+例：纽约 2024-02-04 10:00（UTC−5，即北京时 23:00，已过立春 16:27）排 **甲辰 丙寅 戊戌 丁巳**。本项目未提供 `utcOffset` 时默认 UTC+8；同时未启用真太阳时才是零平移。统一 MCP 则要求显式提供时区。
 
-## MCP Server（AI 按需查询）
+**当前流月单独采用观测时刻的时分和 UTC 偏移**：网页使用浏览器当前时刻，统一 MCP 使用 `queryTime`，均不继承出生地时区或出生真太阳时校正。流月按交节瞬间切换，晚子流派只控制日界；当前流年仍沿用上游的公历年份索引，不应视为精确到立春瞬间的切换。
+
+mystilight 一侧通过 `scripts/mystilight-jieqi-patch.mjs` 在 dev 预构建 / vite build / Vitest / `mcp:build` 中执行三处受保护的替换，分别处理出生节气尺度、观测时刻尺度与精确流月；每处目标必须恰好匹配一次，上游变化会使构建报错。独立对照与随机用例见 `tests/solar-term-scale.test.ts`。
+
+## 本地专用八字 MCP（AI 按需查询）
 
 ```bash
 npm run mcp:build   # 产出 dist-mcp/server.mjs（stdio 传输，自包含）
 ```
 
-仓库自带项目级 `.mcp.json`，本目录内的 Claude Code 直接可用；Claude Desktop 配置与工具目录详见 [docs/MCP.md](docs/MCP.md)。
+仓库自带项目级 `.mcp.json`，构建后在本目录打开 Claude Code 并确认项目 MCP 配置即可使用。此服务名为 `bazi`，提供本项目的按盘查询工具；统一远程服务名为 `paipan-common-remote`，提供跨术数排盘和 common 检索。Codex、Claude Code、Claude Desktop 的本地接入与工具目录详见 [docs/MCP.md](docs/MCP.md)。
 
 ## 开发
 
@@ -93,7 +124,9 @@ npm run lint
 npm run preview
 ```
 
-## 部署到 Cloudflare Pages
+## 静态站点部署
+
+当前线上使用 Cloudflare Workers 静态资源与 Git 集成：安装依赖后运行 `npm run build`，发布目录为 `dist`。构建使用 Node.js **22.12 或以上的 22.x**。下面的 Pages 流程适用于另建 Pages 站点；已有 Worker 应继续使用其现有部署配置。
 
 ### 方式一：通过 Cloudflare Dashboard（推荐首次部署）
 
@@ -107,7 +140,7 @@ npm run preview
    | Build command | `npm run build` |
    | Build output directory | `dist` |
    | Root directory | `/` |
-   | Node.js version | `18` 或以上 |
+   | Node.js version | `22.12` 或以上的 `22.x` |
 
 4. 点击 **Save and Deploy** 完成部署，后续推送 main 分支自动触发重新构建。
 
@@ -131,7 +164,7 @@ wrangler pages deploy dist --project-name react-8char
 
 ### 环境变量
 
-本项目无需配置服务端环境变量，所有计算均在浏览器端完成。
+网页排盘在浏览器端完成，无需服务端环境变量。本地专用 MCP 在运行它的电脑中计算；使用统一远程 MCP 时，输入会发送到上述 MCP 服务进行计算与检索。
 
 ## 项目结构
 
@@ -140,7 +173,7 @@ src/
   main.tsx              # 入口
   App.tsx               # 主组件（主题、状态管理）
   lib/
-    bazi.ts             # 排盘逻辑（调用 mystilight-8char-v2）
+    bazi.ts             # 排盘逻辑（统一引擎入口）
     cities.ts           # 城市列表（80+ 城市，按省分组）
     utils.ts            # 工具函数（五行颜色、十神颜色等）
     prompt-template.ts  # AI 提示词模板
@@ -157,7 +190,9 @@ src/
 
 ## 依赖说明
 
-本项目核心排盘计算依赖 [`mystilight-8char-v2`](https://github.com/hackninety/mystilight-8char-v2)，该库是 [mystilight-8char](https://github.com/mystilight/mystilight-8char) 的 fork 扩展版本，在不修改原版代码的前提下新增了流月/流日/流时/十神计算等扩展 API。依赖通过 GitHub 仓库直接引用（`github:hackninety/mystilight-8char-v2`），`npm install` 时自动拉取，无需额外配置。
+排盘核心直接依赖 npm 包 [`mystilight-8char`](https://github.com/mystilight/mystilight-8char)，通过 `src/lib/engine/mystilight/upstream.ts` 接入，流月/流日/流时/十神等扩展保存在本项目 `src/lib/engine/mystilight/ext/`；第二引擎为 npm 包 `tyme4ts`。旧的 `mystilight-8char-v2` Git fork 已不作为当前依赖。
+
+命例数据与组件由 `common-ts-lib` 单仓库多包管理，各包保留独立包名、接口和 Release 版本；`package.json` 固定各自 `.tgz` 地址，`package-lock.json` 锁定安装内容。部署使用 `npm ci`，无需旧的独立资料库仓库或相邻本地目录。
 
 ## 许可证
 
