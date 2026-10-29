@@ -6,12 +6,18 @@
 
 支持 MCP 的 AI 客户端可以直接连接 **`https://mcp.0x7c.cc/mcp`**，传输方式选择 **Streamable HTTP**，**无需访问令牌或登录**。统一服务负责排盘和检索 `common-ts-lib` 资料，AI 根据返回的盘面与原文进行分析。
 
+统一服务 `paipan-common` 提供 **31 个工具**：6 个跨术数排盘与 common 检索基础工具、11 个 `bazi_` 八字高级工具、14 个 `taiyi_` 太乙高级工具；另有 7 个提示词和 5 个静态资源。本机 stdio 与远程 HTTP 使用同一套能力，每次传完整参数，不使用旧 `chartId`。
+
+`prepare_reading.searchQueries` 可明确提供 1–3 个检索关键词，原问题保留在 `question`，结果会返回实际关键词。
+
+首次配置时按所用客户端选择一条；本机 stdio 与远程 HTTP 二选一。已存在 `paipan-common` 时先在客户端移除旧同名连接再更换方式，旧 `bazi`、`taiyi`、`paipan-common-remote` 连接可移除，避免重复注册。保存后重连 MCP。
+
 ```bash
 # Codex
-codex mcp add paipan-common-remote --url https://mcp.0x7c.cc/mcp
+codex mcp add paipan-common --url https://mcp.0x7c.cc/mcp
 
 # Claude Code
-claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x7c.cc/mcp
+claude mcp add --transport http --scope user paipan-common https://mcp.0x7c.cc/mcp
 ```
 
 命令分别用于对应客户端，配置后重新连接 MCP；已有本机 `paipan-common` 配置时，本机与远程选一种即可。其他支持远程 MCP 的客户端填写上述地址、传输方式和“无鉴权”。配置方法见 [Codex 官方文档](https://learn.chatgpt.com/docs/extend/mcp)与 [Claude Code 官方文档](https://code.claude.com/docs/en/mcp)。
@@ -27,7 +33,7 @@ claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x
 
 八字输入须明确公历日期、时分、时区及性别；真太阳时还须提供出生地经度。流日、流时查询必须提供 `queryTime`。不知道时辰时先说明缺项，不用中午 12 点代填。IANA 时区（如 `Asia/Shanghai`）按日期处理夏令时，固定 `+08:00` 始终表示东八区，两者不可随意替换。
 
-统一服务有 `system_catalog`、`chart_calculate`、`prepare_reading`、`corpus_list`、`corpus_search`、`corpus_read` 六个工具；八字关联的 common 资料为公开命例库。下面介绍的网页调候原文、合婚、双引擎对拍等功能，以及本仓库的 **11 工具专用八字 MCP**，有各自的入口和能力范围，详见 [MCP 使用说明](docs/MCP.md)。
+六个基础工具为 `system_catalog`、`chart_calculate`、`prepare_reading`、`corpus_list`、`corpus_search`、`corpus_read`。八字关联 common 命例库，高级合婚、反查、对拍、应期、K线与经典资源也已迁入同一服务，详见 [MCP 使用说明](docs/MCP.md)。
 
 ## 技术栈
 
@@ -58,7 +64,7 @@ claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x
 - **当前运限格局** - 岁运格局扫描（大运/流年两 scope）：伏吟/天克地冲/冲提纲/岁运并临/岁运交战/阳刃逢冲/空亡入运/财库冲开/运岁凑成伤官见官·枭神夺食·官杀混杂等经典组合确定性命名检出，附依据与经典义
 - **十年规划表** - 一运一行人生总览：干支十神/十二长生/扶抑喜忌/K线总运均值/高光低谷年/该运格局 chips，点行展开逐年明细；随导出喂 AI（导出版不含扶抑喜忌列与 K线均值/高光低谷等结论型量化列，防 AI 照抄锚定误报）
 - **能量多边形** - 宫位轴（事业官禄/财帛/子女才华/兄弟同侪/父母学业，婚姻随性别并入配偶星轴——八字对应紫微宫分类的六亲星映射）×「原局 → +大运 → +流年」层叠结构占比雷达（干支计点法），**总局/大限/流年三档范围切换**（总局=总命局原局能量），嵌在人生K线内随悬停联动，喜忌红绿着色（与引擎旺衰加权的五行力量互补两个口径）；仅页面展示、不随导出（双套五行数值易被 AI 混用致旺衰误判）
-- **应期预检** - 婚恋/事业/财运候选引动年（星透干/星合日主/宫逢合冲/财库冲开）；不随静态导出（候选年+强度分易被 AI 当预言输出致误报），经 MCP `query_yingqi` 按需查询
+- **应期预检** - 婚恋/事业/财运候选引动年（星透干/星合日主/宫逢合冲/财库冲开）；不随静态导出（候选年+强度分易被 AI 当预言输出致误报），经统一 MCP `bazi_query_yingqi` 按需查询
 - **十神组合预检** - 伤官见官/杀印相生/官杀混杂/魁罡/从格候选等 28 条经典组合确定性检出并标注落点
 - **神煞释义** - 盘中出现的神煞附一行经典义（三命通会/协纪辨方书通说），消除 AI 编义
 - **干支关系** - 天干关系、地支关系（合冲刑害）
@@ -74,7 +80,7 @@ claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x
 - **多命盘档案** - 命名保存起盘参数（本机 localStorage），点击档案回填表单并重算
 - **公开命例库** - 在表单下方点击「打开命例库」才加载资料；按来源、资料集、年份、原题术数与题材筛选，保留来源版本、原出生资料、时间精度标记和上游预排盘。答案默认隐藏，可直接选择「用于 AI 参考（不含答案）」；先揭晓答案后，才可明确选择「用于 AI 参考（含已揭晓答案）」。点击「隐藏答案」会撤回含答案的参考。所选内容在 TOON / Markdown / AI Prompt 中作为独立参考区，案例不会回填出生表单或保存到个人档案，清除参考、重新排盘或载入档案会移除旧引用。数据和界面来自 [common-ts-lib](https://github.com/hackninety/common-ts-lib) 中独立发布的 `mingli-cases-ts-lib` / `mingli-cases-react` **0.1.1 固定 Release 包**；标为未经核实的时刻或区间中点不得当作确定生时。
 - **合婚对照** - 从档案选两人双盘对照：宫星合冲刑害/互为十神与配偶星应象/喜用互补/调候互济/空亡参照，吉平忌清单不打总分，复制合婚 AI Prompt / 导出 MD / 导出 TOON
-- **本地专用八字 MCP** - 排盘引擎暴露为 MCP 工具（paipan/query_year/应期/流月流日/调候快查/八字反查/双引擎对拍/合婚等 11 个）+ 六大专项深挖 prompts，Claude 等 AI 可按需查询，见 [docs/MCP.md](docs/MCP.md)
+- **统一八字 MCP** - 11 项八字高级能力已迁入 `react-mcp`，工具名前缀为 `bazi_`，本机和公网均可调用；本仓库保留网页算法与导出，不再单独启动 MCP，见 [docs/MCP.md](docs/MCP.md)
 - **响应式** - 移动端适配
 - **暗色模式** - 支持明暗主题切换
 
@@ -89,15 +95,11 @@ claude mcp add --transport http --scope user paipan-common-remote https://mcp.0x
 
 **当前流月单独采用观测时刻的时分和 UTC 偏移**：网页使用浏览器当前时刻，统一 MCP 使用 `queryTime`，均不继承出生地时区或出生真太阳时校正。流月按交节瞬间切换，晚子流派只控制日界；当前流年仍沿用上游的公历年份索引，不应视为精确到立春瞬间的切换。
 
-mystilight 一侧通过 `scripts/mystilight-jieqi-patch.mjs` 在 dev 预构建 / vite build / Vitest / `mcp:build` 中执行三处受保护的替换，分别处理出生节气尺度、观测时刻尺度与精确流月；每处目标必须恰好匹配一次，上游变化会使构建报错。独立对照与随机用例见 `tests/solar-term-scale.test.ts`。
+mystilight 一侧通过 `scripts/mystilight-jieqi-patch.mjs` 在 dev 预构建 / vite build / Vitest 中执行三处受保护的替换，分别处理出生节气尺度、观测时刻尺度与精确流月；每处目标必须恰好匹配一次，上游变化会使构建报错。独立对照与随机用例见 `tests/solar-term-scale.test.ts`。
 
-## 本地专用八字 MCP（AI 按需查询）
+## 本机使用统一 MCP
 
-```bash
-npm run mcp:build   # 产出 dist-mcp/server.mjs（stdio 传输，自包含）
-```
-
-仓库自带项目级 `.mcp.json`，构建后在本目录打开 Claude Code 并确认项目 MCP 配置即可使用。此服务名为 `bazi`，提供本项目的按盘查询工具；统一远程服务名为 `paipan-common-remote`，提供跨术数排盘和 common 检索。Codex、Claude Code、Claude Desktop 的本地接入与工具目录详见 [docs/MCP.md](docs/MCP.md)。
+在有权限访问的 [react-mcp 仓库](https://github.com/hackninety/react-mcp) 中执行 `npm ci`、`npm run build`，将客户端 `paipan-common` 的 stdio 命令指向 `node D:/WWW/react-mcp/dist/stdio.mjs`（换成自己的绝对路径）。无需构建本仓库的旧专用服务。完整命令和工具目录见 [docs/MCP.md](docs/MCP.md)。
 
 ## 开发
 
@@ -111,7 +113,7 @@ npm run dev
 # 构建生产版本
 npm run build
 
-# 回归测试（golden-case：四柱/起运/双引擎一致/分析模块/MCP）
+# 回归测试（golden-case：四柱/起运/双引擎一致/分析模块）
 npm test
 
 # UI e2e（Playwright：排盘/档案/合婚/流月下钻/导出下载）
@@ -164,7 +166,7 @@ wrangler pages deploy dist --project-name react-8char
 
 ### 环境变量
 
-网页排盘在浏览器端完成，无需服务端环境变量。本地专用 MCP 在运行它的电脑中计算；使用统一远程 MCP 时，输入会发送到上述 MCP 服务进行计算与检索。
+网页排盘在浏览器端完成，无需服务端环境变量。统一 MCP 的本机 stdio 连接在运行它的电脑中计算；使用统一远程 MCP 时，输入会发送到上述 MCP 服务进行计算与检索。
 
 ## 项目结构
 

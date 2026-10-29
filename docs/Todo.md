@@ -4,6 +4,10 @@
 
 ## 已完成
 
+### ✅ 统一 MCP 迁移（2026-10）
+旧专用 `mcp/`、`chartId` 缓存与独立构建/协议测试已移至 `react-mcp` 并改用完整生辰参数。当前入口为 `paipan-common`，八字工具前缀 `bazi_`；历史条目中的旧命令和服务结构仅记录当时实现，当前配置以 [MCP 使用说明](MCP.md) 为准。
+
+
 ### ✅ 校对时辰·定盘（2026-08，参照 react-zwds rectify）
 [`rectify.ts`](../src/lib/rectify.ts) + [`RectifyPanel`](../src/components/RectifyPanel.tsx)：时辰不详时同日
 十三时辰（早子~晚子）并排起盘（按标准时辰、不作真太阳时校正），差异列=四柱/时柱十神/起运；
@@ -86,7 +90,7 @@ tyme 引擎走简化扶抑 fallback（实测两法对同一命例判定一致）
 Markdown 导出（大运均分表 + 峰谷 TOP5 含因素）与 JSON 导出（紧凑 lifeKline 字段），供 AI 引用。
 
 ### ✅ MCP server 化（2026-07）
-排盘引擎暴露为 MCP stdio 工具（[`mcp/`](../mcp)，构建 `npm run mcp:build` → `dist-mcp/server.mjs` 自包含单文件）：
+排盘引擎暴露为 MCP stdio 工具（[历史 MCP 实现](https://github.com/hackninety/react-8char/tree/047073c61b226e37955f58fb7c3e5b94cf0e7153/mcp)，构建 `npm run mcp:build` → `dist-mcp/server.mjs` 自包含单文件）：
 `paipan`（紧凑摘要+chartId，进程内 LRU 缓存）/ `query_year`（单年详情含 K线逐项归因）/ `query_liuyue` /
 `query_liuri` / `get_kline` / `query_wuyunliuqi` / `query_tiaohou`（免排盘快查）/ `fanpai` / `compare_engines`。
 要点：入口先把 console.log 改道 stderr 再动态加载引擎（stdout 只准走 JSON-RPC，引擎耗时日志会撕协议）；
@@ -98,7 +102,7 @@ vitest（[`tests/`](../tests)，`npm test`，40 例秒级）三层固化：
 ① [`golden.test.ts`](../tests/golden.test.ts) 命例四柱/起运 + **双引擎硬一致断言**（防引擎升级回归的核心屏障）
 + 边界例（立春前后年月柱换界、早晚子时 sect 语义锁定、真太阳时跨日 sect1 四柱不变仅起运变/sect2 日柱退一日）；
 ② [`analysis.test.ts`](../tests/analysis.test.ts) 调候/司令（含交界提示与 UTC 换算）/组合预检/词典/地利（南半球/西经/国内）/K线（伏吟、干合、fallback 中和）/流月五虎遁/导出结构（流月窗口相对断言防跨年失效）；
-③ [`mcp.test.ts`](../tests/mcp.test.ts) SDK InMemoryTransport 免 spawn 全链路。
+③ [历史协议测试](https://github.com/hackninety/react-8char/blob/047073c61b226e37955f58fb7c3e5b94cf0e7153/tests/mcp.test.ts) SDK InMemoryTransport 免 spawn 全链路。
 期望值取自当前代码 + 双引擎对拍 + 手工复核（立春 2000-02-04 20:40 对天文数据、五虎遁/五鼠遁逐项核）后冻结。
 CI：[`.github/workflows/test.yml`](../.github/workflows/test.yml)（push/PR，TZ 钉 Asia/Shanghai），
 dependabot 每周引擎升级 PR 自动过测试。**测试中订正**：sect 语义实为 sect1 正统派=晚子时日柱算次日、

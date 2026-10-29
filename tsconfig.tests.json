@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": [
-      "ES2022"
+      "ES2022",
+      "DOM"
     ],
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -18,7 +19,6 @@
     "noUnusedParameters": true
   },
   "include": [
-    "mcp",
     "tests",
     "e2e",
     "playwright.config.ts",
