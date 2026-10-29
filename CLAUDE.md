@@ -52,7 +52,7 @@ React 19 + Vite + Tailwind 4 的八字排盘应用。核心设计哲学：**确�
 AI 角色 + 分析框架 + 反幻觉纪律 + 六大专项深挖 + 四流派视角切换协议，Markdown 导出与 AI Prompt 共用；改导出字段时须同步这里的字段说明文字。
 
 ### 统一 MCP
-八字全部 11 项工具能力、6 个专项提示词和 4 个经典资源已迁入 `react-mcp`，统一名称 `paipan-common`，本机 stdio 与公网 HTTP 同能力。工具前缀 `bazi_`，每次传完整 `birth/queryTime/options`，不再使用 `chartId`；协议构建及测试由统一仓库负责，本仓库保留网页算法、资产和纯逻辑/浏览器测试。接入见 `docs/MCP.md`。
+八字全部 11 项工具能力、6 个专项提示词和 4 个经典资源已迁入 `react-mcp`，统一名称 `paipan-common`，本机 stdio 与公网 HTTP 同能力。工具前缀 `bazi_`，每次传完整 `birth/options`（`queryTime` 只给 `bazi_paipan`），不再使用 `chartId`，未知参数直接报错；协议构建及测试由统一仓库负责，本仓库保留网页算法、资产和纯逻辑/浏览器测试。接入见 `docs/MCP.md`。
 
 ### 测试基线
 - `tests/golden.test.ts`：四柱/起运/双引擎硬一致 + 农历闰月查表，**期望值经手工核对后冻结**，用于防 dependabot 每周升级引擎依赖（mystilight-8char/tyme4ts/lunar-javascript）引入排盘回归。

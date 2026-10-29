@@ -41,14 +41,13 @@ claude mcp add --transport stdio --scope user paipan-common -- node D:/WWW/react
 
 六个基础工具为 `system_catalog`、`chart_calculate`、`prepare_reading`、`corpus_list`、`corpus_search`、`corpus_read`。先确认系统需要的参数，再计算、检索并读取原文，最后由 AI 分析。八字关联 common 公开命例库，答案默认不读取；`prepare_reading.searchQueries` 可明确给 1–3 个检索关键词，保留原问题并返回实际关键词。
 
-工具每次接收完整参数，不返回或依赖旧 `chartId`。出生日期、时分、时区、性别放在 `birth`；观测时刻放在 `queryTime`；引擎和流派放在 `options`。日期用公历，时区必须明确，真太阳时须出生经度；不能用旧 `city/utcOffset/sect` 平铺参数代替。
+工具每次接收完整参数，不返回或依赖旧 `chartId`。出生日期、时分、时区、性别放在 `birth`；引擎和流派放在 `options`。观测时刻 `queryTime` 只给 `bazi_paipan`，决定当前运限；单年、流月、流日、应期、K 线等按明确的 `year/fromYear/toYear` 查询，不接受 `queryTime`。日期用公历，时区必须明确，真太阳时须出生经度；不能用旧 `city/utcOffset/sect` 平铺参数代替，未知参数会直接报错。`options.latitude` 只影响 K 线地利，须同时提供 `birth.longitude`。
 
 例如 `bazi_query_year`：
 
 ```json
 {
   "birth": { "date": "1990-06-15", "time": "08:30", "timezone": "+08:00", "gender": "male", "trueSolarTime": false },
-  "queryTime": { "date": "2026-10-29", "time": "12:00", "timezone": "+08:00" },
   "options": { "engine": "mystilight", "school": "zhengtong" },
   "year": 2026
 }
