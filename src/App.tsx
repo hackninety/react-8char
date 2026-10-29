@@ -24,8 +24,12 @@ export default function App() {
 
   const [dark, setDark] = useState(getSystemDark);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<BaziResult | null>(null);
-  const [input, setInput] = useState<BaziInput | null>(null);
+  // 生辰和结果作为一次成功请求的快照发布，导出及档案不能混用两个请求。
+  const [chart, setChart] = useState<{ input: BaziInput; result: BaziResult } | null>(null);
+  const input = chart?.input ?? null;
+  const result = chart?.result ?? null;
+  const chartGeneration = useRef(0);
+  const submitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 载入档案时回填表单：写回快照后 key 重挂载（BaziForm 挂载时读 loadForm 回填，零侵入）
   const [formEpoch, setFormEpoch] = useState(0);
   // 档案列表变更信号（ProfileBar 增删后合婚面板重新读取）
@@ -57,40 +61,56 @@ export default function App() {
   }, [input]);
 
   const handleSubmit = useCallback((formInput: BaziInput, silent = false) => {
+    const generation = ++chartGeneration.current;
+    const isCurrent = () => chartGeneration.current === generation;
+    if (submitTimer.current !== null) clearTimeout(submitTimer.current);
     // 新命盘清除旧参考并卸载命例库，旧异步请求不能给新命盘回填引用。
     setCaseReference(null);
     caseLibraryGeneration.current += 1;
     setCaseLibraryEpoch(caseLibraryGeneration.current);
     setLoading(true);
-    setResult(null);
-    setInput(formInput);
+    setChart(null);
 
-    setTimeout(() => {
+    submitTimer.current = setTimeout(() => {
+      submitTimer.current = null;
       void (async () => {
         try {
           // 经引擎门面排盘（引擎代码懒加载）
           const res = await calculateChart(formInput, formInput.engine ?? DEFAULT_ENGINE);
-          setResult(res as unknown as BaziResult);
+          if (!isCurrent()) return;
+          setChart({ input: formInput, result: res as unknown as BaziResult });
+          setLoading(false);
           if (!silent) toast.success('排盘成功！数据已准备好', { icon: '✨' });
           // 对拍校验异步补挂，不阻塞主盘展示
           if (formInput.compare) {
             try {
               const rep = await compareEngines(formInput);
-              setResult((prev) =>
-                prev ? (({ ...prev, _compareReport: rep } as BaziResultX) as BaziResult) : prev,
+              if (!isCurrent()) return;
+              setChart((prev) =>
+                isCurrent() && prev ? {
+                  ...prev, result: ({ ...prev.result, _compareReport: rep } as BaziResultX) as BaziResult,
+                } : prev,
               );
             } catch (cmpErr) {
+              if (!isCurrent()) return;
               console.error('双引擎对拍失败', cmpErr);
             }
           }
         } catch (err) {
+          if (!isCurrent()) return;
           console.error(err);
           toast.error(`排盘失败：${err instanceof Error ? err.message : '未知错误'}`);
         } finally {
-          setLoading(false);
+          if (isCurrent()) setLoading(false);
         }
       })();
     }, 300);
+  }, []);
+
+  // 卸载或 StrictMode 重挂载使旧计算及延迟任务失效。
+  useEffect(() => () => {
+    chartGeneration.current += 1;
+    if (submitTimer.current !== null) clearTimeout(submitTimer.current);
   }, []);
 
   // 刷新后：检测到已存起盘参数则据此重算命盘（静默，不弹成功提示）
